@@ -2,13 +2,21 @@ import { create } from 'zustand'
 import Cookies from 'js-cookie'
 
 interface User {
-  id: string
+  id: number | string
+  user_id?: string  // Unique immutable user ID from backend
   username: string
+  name?: string
   email: string
   mobile?: string
   role: 'user' | 'admin' | 'super_admin'
   is_active: boolean
+  account_status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'DEACTIVATED'
   theme_preference?: string
+  created_at?: string
+  updated_at?: string
+  last_seen?: string
+  last_active_at?: string
+  is_online?: boolean
 }
 
 interface AuthState {
