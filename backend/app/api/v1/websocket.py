@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.core.websocket_manager import manager
 from app.core.database import get_db
-from app.core.security import get_current_user_from_token
+from app.core.permissions import get_current_user_from_token
 from app.models.user import User
 
 router = APIRouter()

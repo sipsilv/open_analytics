@@ -162,7 +162,8 @@ async def get_users(
     users = query.order_by(User.created_at.desc()).all()
     
     # Calculate is_online for each user
-    now = datetime.utcnow()
+    from datetime import timezone
+    now = datetime.now(timezone.utc)
     online_threshold = timedelta(minutes=5)
     
     result = []
@@ -173,7 +174,11 @@ async def get_users(
         # Check if user has recent activity (within 5 minutes)
         has_recent_activity = False
         if user.last_active_at:
-            time_diff = now - user.last_active_at.replace(tzinfo=None) if user.last_active_at.tzinfo else now - user.last_active_at
+            # Ensure both datetimes are timezone-aware for comparison
+            last_active = user.last_active_at
+            if last_active.tzinfo is None:
+                last_active = last_active.replace(tzinfo=timezone.utc)
+            time_diff = now - last_active
             has_recent_activity = time_diff < online_threshold
         
         # User is online if they have WebSocket connection OR recent activity (and account is active)
@@ -212,13 +217,18 @@ async def get_user(
         raise HTTPException(status_code=404, detail="User not found")
     
     # Calculate is_online
-    now = datetime.utcnow()
+    from datetime import timezone
+    now = datetime.now(timezone.utc)
     online_threshold = timedelta(minutes=5)
     
     has_websocket = manager.is_user_online(user.id)
     has_recent_activity = False
     if user.last_active_at:
-        time_diff = now - user.last_active_at.replace(tzinfo=None) if user.last_active_at.tzinfo else now - user.last_active_at
+        # Ensure both datetimes are timezone-aware for comparison
+        last_active = user.last_active_at
+        if last_active.tzinfo is None:
+            last_active = last_active.replace(tzinfo=timezone.utc)
+        time_diff = now - last_active
         has_recent_activity = time_diff < online_threshold
     
     is_online = (has_websocket or has_recent_activity) and user.is_active
