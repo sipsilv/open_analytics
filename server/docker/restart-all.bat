@@ -7,7 +7,10 @@ echo.
 cd /d "%~dp0"
 
 echo [INFO] Stopping...
-call stop-all.bat >nul 2>&1
+call stop-all.bat
+if %errorlevel% neq 0 (
+    echo [WARNING] Stop script encountered errors, but attempting start anyway...
+)
 
 echo.
 echo [INFO] Starting...
