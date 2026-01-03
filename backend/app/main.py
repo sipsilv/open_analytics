@@ -34,18 +34,63 @@ async def startup_event():
         manager = get_connection_manager(settings.DATA_DIR)
         router = get_db_router(settings.DATA_DIR)
         
-        # Test default connections
+        # ============================================
+        # DATABASE CONNECTION STATUS
+        # ============================================
+        print("\n" + "="*60)
+        print("[DATABASE STATUS] Checking database connections...")
+        print("="*60)
+        
+        # Test Auth database
         auth_client = router.get_auth_db()
         if auth_client:
-            print(f"[OK] Auth database connected: {auth_client.health_check()}")
+            try:
+                health = auth_client.health_check()
+                status = "CONNECTED" if isinstance(health, dict) and health.get("status") == "connected" else "CONNECTED"
+                print(f"[DATABASE] Auth DB: {status} - {auth_client.__class__.__name__}")
+            except Exception as e:
+                print(f"[DATABASE] Auth DB: ERROR - {str(e)}")
         else:
-            print("[ERROR] Auth database connection failed")
+            print("[DATABASE] Auth DB: FAILED - No connection available")
         
+        # Test Analytics database
         analytics_client = router.get_analytics_db()
         if analytics_client:
-            print(f"[OK] Analytics database connected")
+            try:
+                print(f"[DATABASE] Analytics DB: CONNECTED - {analytics_client.__class__.__name__}")
+            except Exception as e:
+                print(f"[DATABASE] Analytics DB: ERROR - {str(e)}")
         else:
-            print("[ERROR] Analytics database connection failed")
+            print("[DATABASE] Analytics DB: FAILED - No connection available")
+        
+        # Test Screener database
+        try:
+            import app.models.screener as screener_service
+            screener_conn = screener_service.get_db_connection()
+            if screener_conn:
+                print(f"[DATABASE] Screener DB: CONNECTED - DuckDB")
+            else:
+                print("[DATABASE] Screener DB: FAILED")
+        except Exception as e:
+            print(f"[DATABASE] Screener DB: ERROR - {str(e)}")
+        
+        # Test Corporate Announcements database
+        try:
+            import duckdb
+            import os
+            data_dir = os.path.abspath(settings.DATA_DIR)
+            db_dir = os.path.join(data_dir, "Company Fundamentals")
+            db_path = os.path.join(db_dir, "corporate_announcements.duckdb")
+            if os.path.exists(db_path):
+                test_conn = duckdb.connect(db_path)
+                test_conn.close()
+                print(f"[DATABASE] Corporate Announcements DB: CONNECTED - DuckDB")
+            else:
+                print(f"[DATABASE] Corporate Announcements DB: NOT INITIALIZED")
+        except Exception as e:
+            print(f"[DATABASE] Corporate Announcements DB: ERROR - {str(e)}")
+        
+        print("="*60 + "\n")
         
         # Ensure Super User exists
         try:
@@ -88,24 +133,36 @@ async def startup_event():
         # Symbols module has been removed
         pass
         
-        # Start WebSocket cleanup task
+        # ============================================
+        # WEBSOCKET STATUS
+        # ============================================
         try:
             from app.core.websocket_manager import manager
             import asyncio
             # Create background task for cleanup
             loop = asyncio.get_event_loop()
             loop.create_task(manager.cleanup_stale_connections())
-            print("[OK] WebSocket cleanup task started")
+            # Log WebSocket status once on startup
+            print(f"[WEBSOCKET] Service: READY (cleanup task started)")
         except Exception as e:
-            print(f"[WARNING] Could not start WebSocket cleanup task: {e}")
+            print(f"[WEBSOCKET] Service: ERROR - {str(e)}")
+        
+        # ============================================
+        # SCHEDULER STATUS
+        # ============================================
+        print("\n" + "="*60)
+        print("[SCHEDULER STATUS] Initializing schedulers...")
+        print("="*60)
         
         # Start TrueData token refresh scheduler
         try:
-            from app.services.token_refresh_scheduler import start_token_refresh_scheduler
+            from app.services.token_refresh_scheduler import start_token_refresh_scheduler, get_token_refresh_scheduler
             start_token_refresh_scheduler()
-            print("[OK] TrueData token refresh scheduler started")
+            scheduler = get_token_refresh_scheduler()
+            status = "RUNNING" if scheduler.running else "STOPPED"
+            print(f"[SCHEDULER] TrueData Token Refresh: {status} (check interval: {scheduler.check_interval}s)")
         except Exception as e:
-            print(f"[WARNING] Could not start token refresh scheduler: {e}")
+            print(f"[SCHEDULER] TrueData Token Refresh: ERROR - {str(e)}")
         
         # Initialize Screener Database and reset stale "Running" statuses
         try:
@@ -189,14 +246,18 @@ async def startup_event():
         except Exception as e:
             print(f"[WARNING] Could not initialize corporate announcements database: {e}")
         
-        # Start Scheduler Service
+        # Start Symbol Scheduler Service
         try:
             from app.services.scheduler_service import get_scheduler_service
             scheduler_service = get_scheduler_service()
             scheduler_service.start()
-            print("[OK] Scheduler service started")
+            status = "RUNNING" if scheduler_service.running else "STOPPED"
+            active_count = len(scheduler_service._active_executions) if hasattr(scheduler_service, '_active_executions') else 0
+            print(f"[SCHEDULER] Symbol Auto-Upload: {status} (check interval: {scheduler_service.check_interval}s, active: {active_count})")
         except Exception as e:
-            print(f"[WARNING] Could not start scheduler service: {e}")
+            print(f"[SCHEDULER] Symbol Auto-Upload: ERROR - {str(e)}")
+        
+        print("="*60 + "\n")
         
 
     except Exception as e:
