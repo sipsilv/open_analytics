@@ -367,6 +367,19 @@ class WebSocketWorker:
             logger.error(f"Invalid JSON: {raw_message[:200]}")
             return
         
+        # Handle TrueData error responses
+        if isinstance(data, dict):
+            if data.get("success") is False:
+                error_msg = data.get("message", "Unknown error")
+                logger.error(f"[TRUEDATA ERROR] {error_msg}")
+                print(f"[ANNOUNCEMENTS] ❌ TrueData error: {error_msg}")
+                return
+            # Check for connection success message
+            if data.get("success") is True and "segments" in data:
+                logger.info(f"[TRUEDATA] Connection confirmed: {data}")
+                print(f"[ANNOUNCEMENTS] ✅ TrueData connection confirmed")
+                return
+        
         # Parse announcement based on format
         announcement = self._parse_announcement(data, raw_message)
         
@@ -753,6 +766,7 @@ class WebSocketWorker:
                     self.stats["inserted"] += 1
                 
                 logger.info(f"Inserted announcement: {announcement['headline'][:50]}...")
+                print(f"[ANNOUNCEMENTS] 📥 New: {announcement['headline'][:60]}...")
                 
             except Exception as insert_error:
                 error_msg = str(insert_error).lower()

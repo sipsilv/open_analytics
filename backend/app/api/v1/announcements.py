@@ -200,10 +200,9 @@ async def get_announcements_status(
     
     service = get_announcements_service()
     
-    # Get TrueData connections
+    # Get TrueData connections (any type - could be DATA_FEED or WEBSOCKET)
     truedata_conns = db.query(Connection).filter(
-        Connection.provider == "TrueData",
-        Connection.connection_type == "DATA_FEED"
+        Connection.provider == "TrueData"
     ).all()
     
     workers_status = []
