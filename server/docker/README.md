@@ -103,7 +103,7 @@ All data is stored in the `../../data` directory, which is mounted as a volume. 
 ### Frontend (rubik-frontend)
 - **Port**: 3000
 - **Health Check**: `http://localhost:3000/`
-- **Base Image**: `node:18-alpine`
+- **Base Image**: `node:20-alpine`
 
 ## Networking
 

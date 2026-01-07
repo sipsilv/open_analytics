@@ -171,31 +171,6 @@ class AnnouncementsWebSocketService:
                 headline = announcement.get('news_headline', '') or ''
                 headline_preview = headline[:50] if headline else 'N/A'
                 logger.info(f"Inserted new announcement: {announcement_id} - {headline_preview}")
-                
-                # Broadcast immediately using the announcement data we already have (no DB fetch needed)
-                # This makes it much faster - we broadcast before enriching to minimize delay
-                try:
-                    from app.core.websocket_manager import manager
-                    
-                    # Prepare announcement for broadcast (use data we already have)
-                    broadcast_announcement = announcement.copy()
-                    
-                    # Enrich with descriptor metadata if available (non-blocking)
-                    descriptor_id = announcement.get("descriptor_id")
-                    if descriptor_id:
-                        try:
-                            desc_meta = service.get_descriptor_metadata(descriptor_id)
-                            if desc_meta:
-                                broadcast_announcement["descriptor_name"] = desc_meta.get("descriptor_name")
-                                broadcast_announcement["descriptor_category"] = desc_meta.get("descriptor_category")
-                        except Exception as desc_error:
-                            logger.debug(f"Could not fetch descriptor metadata: {desc_error}")
-                            # Continue without descriptor metadata - not critical
-                    
-                    # Broadcast immediately (non-blocking task)
-                    asyncio.create_task(manager.broadcast_announcement(broadcast_announcement))
-                except Exception as e:
-                    logger.warning(f"Could not broadcast announcement: {e}")
             else:
                 logger.debug(f"Announcement already exists: {announcement_id}")
                 

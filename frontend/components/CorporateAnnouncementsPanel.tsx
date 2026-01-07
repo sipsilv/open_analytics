@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Table, TableHeader, TableHeaderCell, TableBody, TableRow, TableCell } from '@/components/ui/Table'
 import { announcementsAPI } from '@/lib/api'
-import { useWebSocketStatus } from '@/lib/useWebSocket'
 
 interface Announcement {
   id: string
@@ -30,71 +29,22 @@ export function CorporateAnnouncementsPanel() {
   const [error, setError] = useState<string | null>(null)
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null)
   const [showDetails, setShowDetails] = useState(false)
-  
-  // Establish WebSocket connection for real-time updates
-  useWebSocketStatus()
 
   useEffect(() => {
     loadAnnouncements()
-  }, [])
-  
-  useEffect(() => {
-    // Listen for real-time announcement updates via WebSocket
-    const handleAnnouncementUpdate = (event: CustomEvent) => {
-      const newAnnouncement = event.detail
-      if (newAnnouncement && newAnnouncement.id) {
-        // Add new announcement to the beginning of the list
-        // Use functional update to avoid dependency on announcements
-        setAnnouncements(prev => {
-          // Check if announcement already exists (avoid duplicates)
-          const exists = prev.some(ann => ann.id === newAnnouncement.id)
-          if (!exists) {
-            return [newAnnouncement, ...prev]
-          }
-          return prev
-        })
-      }
-    }
-    
-    // Add event listener for announcement updates
-    window.addEventListener('announcementUpdate', handleAnnouncementUpdate as EventListener)
-    
-    return () => {
-      // Cleanup: remove event listener
-      window.removeEventListener('announcementUpdate', handleAnnouncementUpdate as EventListener)
-    }
   }, [])
 
   const loadAnnouncements = async () => {
     try {
       setLoading(true)
       setError(null)
-      console.log('[CorporateAnnouncementsPanel] Loading past announcements from database...')
-      
-      // Load past announcements from database (most recent ones)
-      // Then WebSocket will add new announcements on top in real-time
       const response: AnnouncementsResponse = await announcementsAPI.getAnnouncements({
-        page: 1,
-        page_size: 100  // Load last 100 past announcements from DB
+        limit: 50
       })
-      
-      console.log('[CorporateAnnouncementsPanel] API response:', {
-        hasResponse: !!response,
-        announcementsCount: response?.announcements?.length || 0,
-        total: response?.total || 0,
-        responseKeys: response ? Object.keys(response) : []
-      })
-      
-      const announcementsList = response?.announcements || []
-      console.log('[CorporateAnnouncementsPanel] Setting announcements:', announcementsList.length)
-      setAnnouncements(announcementsList)
-      
-      if (announcementsList.length === 0) {
-        console.warn('[CorporateAnnouncementsPanel] No announcements loaded from database')
-      }
+      setAnnouncements(response.announcements || [])
     } catch (err: any) {
-      console.error('[CorporateAnnouncementsPanel] Error loading announcements:', err)
       setError(err.message || 'Failed to load announcements')
+      console.error('Error loading announcements:', err)
     } finally {
       setLoading(false)
     }

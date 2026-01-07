@@ -84,15 +84,6 @@ export function useWebSocketStatus(
             }
             onStatusUpdateRef.current?.(update)
           }
-          
-          // Handle announcement updates
-          if (data.type === 'announcement_update' || data.event === 'new_announcement') {
-            // Dispatch custom event for announcement updates
-            const announcementEvent = new CustomEvent('announcementUpdate', {
-              detail: data.announcement
-            })
-            window.dispatchEvent(announcementEvent)
-          }
         } catch (err) {
           console.warn('[WebSocket] Failed to parse message:', err)
         }
