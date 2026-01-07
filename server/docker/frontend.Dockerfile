@@ -3,6 +3,7 @@ FROM node:18-bookworm-slim AS base
 
 # ---------------- deps ----------------
 FROM base AS deps
+RUN apk add --no-cache libc6-compat wget
 WORKDIR /app
 
 # Install system dependencies (Debian uses apt, NOT apk)
