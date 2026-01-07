@@ -33,6 +33,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 868849b (Added slack notification system)
       - name: Login to GHCR
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
