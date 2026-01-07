@@ -9,6 +9,34 @@ This directory contains Docker configuration files for running Rubik Analytics i
 
 ## Quick Start
 
+### Windows
+
+Use the unified management script:
+
+```cmd
+docker.bat start       # Start all services
+docker.bat stop        # Stop all services
+docker.bat restart     # Restart all services
+docker.bat status      # Show service status
+docker.bat logs        # View logs (all services)
+docker.bat logs backend # View backend logs only
+docker.bat rebuild     # Rebuild services without cache
+docker.bat help        # Show help message
+```
+
+Or run `docker.bat` without arguments for an interactive menu.
+
+### Linux/Mac
+
+Use the shell script:
+
+```bash
+./docker-start.sh  # Start services
+./docker-stop.sh   # Stop services
+```
+
+### Manual Commands
+
 1. **Create a `.env` file** (optional, for custom configuration):
    ```bash
    cp .env.example .env
@@ -114,29 +142,33 @@ Services communicate via the `rubik-network` bridge network:
 
 ## Troubleshooting
 
-### Check service status
+### Windows (Recommended)
+
+```cmd
+docker.bat status      # Check service status
+docker.bat logs backend # View backend logs
+docker.bat logs frontend # View frontend logs
+docker.bat restart     # Restart all services
+docker.bat rebuild     # Rebuild after code changes
+```
+
+### Linux/Mac/Manual
+
 ```bash
+# Check service status
 docker-compose ps
-```
 
-### View backend logs
-```bash
+# View backend logs
 docker-compose logs -f backend
-```
 
-### View frontend logs
-```bash
+# View frontend logs
 docker-compose logs -f frontend
-```
 
-### Restart a service
-```bash
+# Restart a service
 docker-compose restart backend
 docker-compose restart frontend
-```
 
-### Rebuild after code changes
-```bash
+# Rebuild after code changes
 docker-compose up -d --build
 ```
 
