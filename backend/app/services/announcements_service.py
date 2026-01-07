@@ -386,6 +386,7 @@ class AnnouncementsService:
             # Get total count (before deduplication - will be adjusted after)
             total_result = conn.execute(count_query, count_params).fetchone()
             total_before_dedup = total_result[0] if total_result else 0
+            logger.info(f"Total announcements in DB (before deduplication): {total_before_dedup}")
             
             # Apply pagination
             query += " ORDER BY trade_date DESC"
@@ -408,6 +409,7 @@ class AnnouncementsService:
             cursor = conn.execute(query, params)
             columns = [desc[0] for desc in cursor.description]
             result = cursor.fetchall()
+            logger.info(f"Fetched {len(result)} announcements from database (before deduplication)")
             
             announcements = []
             seen_keys = set()  # Track seen combinations for deduplication
@@ -456,6 +458,7 @@ class AnnouncementsService:
                         continue
                     
                     seen_keys.add(dedup_key)
+                    logger.debug(f"Added unique announcement (no company): headline='{news_headline[:50]}...', date='{date_part}'")
                 
                 announcements.append(ann)
             
