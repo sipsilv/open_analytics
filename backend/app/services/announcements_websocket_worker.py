@@ -151,58 +151,47 @@ class AnnouncementsWebSocketWorker:
             
             # Connect with longer timeout for initial handshake
             # Corporate Announcements WebSocket may take longer to establish
+            # Note: websockets 12.0+ uses async context manager on connect() directly
             try:
-                websocket = await asyncio.wait_for(
-                    websockets.connect(
+                async with asyncio.timeout(30.0):  # 30 second timeout for handshake
+                    async with websockets.connect(
                         ws_url,
                         ping_interval=30,
                         ping_timeout=10,
                         close_timeout=10
-                    ),
-                    timeout=30.0  # 30 second timeout for handshake
-                )
+                    ) as websocket:
+                        self.websocket = websocket
+                        self.current_reconnect_delay = self.reconnect_delay  # Reset on successful connect
+                        logger.info(f"Connected to Corporate Announcements WebSocket for connection {self.connection_id}")
+                        print(f"[ANNOUNCEMENTS] ✅ Connected to Corporate Announcements WebSocket for connection {self.connection_id}")
+                        
+                        # Process messages
+                        async for message in websocket:
+                            if self.stop_event.is_set():
+                                break
+                            
+                            try:
+                                # Parse and queue message
+                                parsed = self._parse_message(message)
+                                if parsed:
+                                    self.message_queue.put(parsed)
+                                    announcement_id = parsed.get('announcement_id', 'unknown')
+                                    headline = parsed.get('headline', '')[:50] if parsed.get('headline') else 'N/A'
+                                    logger.info(f"Received announcement: {announcement_id} - {headline}")
+                                    logger.debug(f"Queued announcement: {announcement_id}")
+                                else:
+                                    # This is expected - messages without headline/description are skipped
+                                    # Only log at debug level to reduce noise
+                                    logger.debug(f"Skipped invalid announcement message (no headline/description or invalid data)")
+                            except Exception as e:
+                                logger.error(f"Error parsing announcement message: {e}")
+                                logger.debug(f"Raw message: {message[:500] if isinstance(message, str) else str(message)[:500]}")
             except asyncio.TimeoutError:
                 logger.error(f"WebSocket connection timeout for connection {self.connection_id} after 30 seconds")
                 raise Exception(f"WebSocket connection timeout - check network and TrueData service status")
             except Exception as e:
                 logger.error(f"WebSocket connection failed for connection {self.connection_id}: {e}")
                 raise
-            
-            try:
-                async with websocket:
-                    self.websocket = websocket
-                    self.current_reconnect_delay = self.reconnect_delay  # Reset on successful connect
-                    logger.info(f"Connected to Corporate Announcements WebSocket for connection {self.connection_id}")
-                    print(f"[ANNOUNCEMENTS] ✅ Connected to Corporate Announcements WebSocket for connection {self.connection_id}")
-                    
-                    # Process messages
-                    async for message in websocket:
-                        if self.stop_event.is_set():
-                            break
-                        
-                        try:
-                            # Parse and queue message
-                            parsed = self._parse_message(message)
-                            if parsed:
-                                self.message_queue.put(parsed)
-                                announcement_id = parsed.get('announcement_id', 'unknown')
-                                headline = parsed.get('headline', '')[:50] if parsed.get('headline') else 'N/A'
-                                logger.info(f"Received announcement: {announcement_id} - {headline}")
-                                logger.debug(f"Queued announcement: {announcement_id}")
-                            else:
-                                # This is expected - messages without headline/description are skipped
-                                # Only log at debug level to reduce noise
-                                logger.debug(f"Skipped invalid announcement message (no headline/description or invalid data)")
-                        except Exception as e:
-                            logger.error(f"Error parsing announcement message: {e}")
-                            logger.debug(f"Raw message: {message[:500] if isinstance(message, str) else str(message)[:500]}")
-            finally:
-                # Ensure websocket is closed
-                try:
-                    if 'websocket' in locals():
-                        await websocket.close()
-                except:
-                    pass
                 
         except websockets.exceptions.ConnectionClosed:
             if self.running and not self.stop_event.is_set():
