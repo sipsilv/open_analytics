@@ -6,6 +6,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     curl \
     dos2unix \
+    tzdata \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy and install Python dependencies
@@ -32,6 +33,10 @@ RUN mkdir -p /app/data/auth/sqlite \
 
 # Fix line endings for Python files
 RUN find ./backend -type f -name "*.py" -exec dos2unix {} +
+
+# Set timezone (default to Asia/Kolkata/IST, can be overridden via TZ environment variable)
+ENV TZ=Asia/Kolkata
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Copy entrypoint script
 COPY server/docker/entrypoint.sh /app/entrypoint.sh

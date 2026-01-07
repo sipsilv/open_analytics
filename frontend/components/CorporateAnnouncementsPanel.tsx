@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Table, TableHeader, TableHeaderCell, TableBody, TableRow, TableCell } from '@/components/ui/Table'
 import { announcementsAPI } from '@/lib/api'
+import { useWebSocketStatus } from '@/lib/useWebSocket'
 
 interface Announcement {
   id: string
@@ -29,9 +30,39 @@ export function CorporateAnnouncementsPanel() {
   const [error, setError] = useState<string | null>(null)
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null)
   const [showDetails, setShowDetails] = useState(false)
+  
+  // Establish WebSocket connection for real-time updates
+  useWebSocketStatus()
 
   useEffect(() => {
     loadAnnouncements()
+  }, [])
+  
+  useEffect(() => {
+    // Listen for real-time announcement updates via WebSocket
+    const handleAnnouncementUpdate = (event: CustomEvent) => {
+      const newAnnouncement = event.detail
+      if (newAnnouncement && newAnnouncement.id) {
+        // Add new announcement to the beginning of the list
+        // Use functional update to avoid dependency on announcements
+        setAnnouncements(prev => {
+          // Check if announcement already exists (avoid duplicates)
+          const exists = prev.some(ann => ann.id === newAnnouncement.id)
+          if (!exists) {
+            return [newAnnouncement, ...prev]
+          }
+          return prev
+        })
+      }
+    }
+    
+    // Add event listener for announcement updates
+    window.addEventListener('announcementUpdate', handleAnnouncementUpdate as EventListener)
+    
+    return () => {
+      // Cleanup: remove event listener
+      window.removeEventListener('announcementUpdate', handleAnnouncementUpdate as EventListener)
+    }
   }, [])
 
   const loadAnnouncements = async () => {
@@ -54,13 +85,16 @@ export function CorporateAnnouncementsPanel() {
     if (!dateStr) return 'N/A'
     try {
       const date = new Date(dateStr)
-      return date.toLocaleDateString('en-IN', {
+      // Explicitly use Asia/Kolkata timezone to match Windows server timezone
+      const formatter = new Intl.DateTimeFormat('en-IN', {
+        timeZone: 'Asia/Kolkata',
         year: 'numeric',
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
       })
+      return formatter.format(date)
     } catch {
       return dateStr
     }
@@ -83,8 +117,9 @@ export function CorporateAnnouncementsPanel() {
   if (loading) {
     return (
       <Card title="Corporate Announcements" compact>
-        <div className="flex items-center justify-center py-8">
-          <p className="text-xs font-sans text-text-secondary">Loading announcements...</p>
+        <div className="flex flex-col items-center justify-center py-12 gap-2">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="text-text-secondary">Loading announcements...</p>
         </div>
       </Card>
     )

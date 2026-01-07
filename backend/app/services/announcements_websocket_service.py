@@ -171,6 +171,28 @@ class AnnouncementsWebSocketService:
                 headline = announcement.get('news_headline', '') or ''
                 headline_preview = headline[:50] if headline else 'N/A'
                 logger.info(f"Inserted new announcement: {announcement_id} - {headline_preview}")
+                
+                # Broadcast to all connected WebSocket clients
+                try:
+                    from app.core.websocket_manager import manager
+                    # Get full announcement details for broadcasting
+                    full_announcement = service.get_announcement_by_id(announcement_id)
+                    if full_announcement:
+                        # Enrich with descriptor metadata if available
+                        if full_announcement.get("descriptor_id"):
+                            desc_meta = service.get_descriptor_metadata(full_announcement["descriptor_id"])
+                            if desc_meta:
+                                full_announcement["descriptor_name"] = desc_meta.get("descriptor_name")
+                                full_announcement["descriptor_category"] = desc_meta.get("descriptor_category")
+                        
+                        # Broadcast asynchronously (we're already in an async context)
+                        try:
+                            # Create task to broadcast (non-blocking)
+                            asyncio.create_task(manager.broadcast_announcement(full_announcement))
+                        except Exception as broadcast_error:
+                            logger.warning(f"Error creating broadcast task: {broadcast_error}")
+                except Exception as e:
+                    logger.warning(f"Could not broadcast announcement: {e}")
             else:
                 logger.debug(f"Announcement already exists: {announcement_id}")
                 

@@ -421,10 +421,19 @@ export default function AnnouncementsPage() {
                   {error}
                 </TableCell>
               </TableRow>
+            ) : loading && announcements.length === 0 ? (
+              <TableRow index={0}>
+                <TableCell colSpan={6} className="px-3 py-12 text-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p className="text-text-secondary">Loading announcements...</p>
+                  </div>
+                </TableCell>
+              </TableRow>
             ) : announcements.length === 0 ? (
               <TableRow index={0}>
                 <TableCell colSpan={6} className="text-center py-8 text-text-secondary">
-                  {loading ? 'Loading...' : `No data (Total: ${total})`}
+                  {`No data (Total: ${total})`}
                 </TableCell>
               </TableRow>
             ) : announcements.map((ann, index) => {
