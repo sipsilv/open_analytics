@@ -151,58 +151,47 @@ class AnnouncementsWebSocketWorker:
             
             # Connect with longer timeout for initial handshake
             # Corporate Announcements WebSocket may take longer to establish
+            # Note: websockets 12.0+ uses async context manager on connect() directly
             try:
-                websocket = await asyncio.wait_for(
-                    websockets.connect(
+                async with asyncio.timeout(30.0):  # 30 second timeout for handshake
+                    async with websockets.connect(
                         ws_url,
                         ping_interval=30,
                         ping_timeout=10,
                         close_timeout=10
-                    ),
-                    timeout=30.0  # 30 second timeout for handshake
-                )
+                    ) as websocket:
+                        self.websocket = websocket
+                        self.current_reconnect_delay = self.reconnect_delay  # Reset on successful connect
+                        logger.info(f"Connected to Corporate Announcements WebSocket for connection {self.connection_id}")
+                        print(f"[ANNOUNCEMENTS] ✅ Connected to Corporate Announcements WebSocket for connection {self.connection_id}")
+                        
+                        # Process messages
+                        async for message in websocket:
+                            if self.stop_event.is_set():
+                                break
+                            
+                            try:
+                                # Parse and queue message
+                                parsed = self._parse_message(message)
+                                if parsed:
+                                    self.message_queue.put(parsed)
+                                    announcement_id = parsed.get('announcement_id', 'unknown')
+                                    headline = parsed.get('headline', '')[:50] if parsed.get('headline') else 'N/A'
+                                    logger.info(f"Received announcement: {announcement_id} - {headline}")
+                                    logger.debug(f"Queued announcement: {announcement_id}")
+                                else:
+                                    # This is expected - messages without headline/description are skipped
+                                    # Only log at debug level to reduce noise
+                                    logger.debug(f"Skipped invalid announcement message (no headline/description or invalid data)")
+                            except Exception as e:
+                                logger.error(f"Error parsing announcement message: {e}")
+                                logger.debug(f"Raw message: {message[:500] if isinstance(message, str) else str(message)[:500]}")
             except asyncio.TimeoutError:
                 logger.error(f"WebSocket connection timeout for connection {self.connection_id} after 30 seconds")
                 raise Exception(f"WebSocket connection timeout - check network and TrueData service status")
             except Exception as e:
                 logger.error(f"WebSocket connection failed for connection {self.connection_id}: {e}")
                 raise
-            
-            try:
-                async with websocket:
-                    self.websocket = websocket
-                    self.current_reconnect_delay = self.reconnect_delay  # Reset on successful connect
-                    logger.info(f"Connected to Corporate Announcements WebSocket for connection {self.connection_id}")
-                    print(f"[ANNOUNCEMENTS] ✅ Connected to Corporate Announcements WebSocket for connection {self.connection_id}")
-                    
-                    # Process messages
-                    async for message in websocket:
-                        if self.stop_event.is_set():
-                            break
-                        
-                        try:
-                            # Parse and queue message
-                            parsed = self._parse_message(message)
-                            if parsed:
-                                self.message_queue.put(parsed)
-                                announcement_id = parsed.get('announcement_id', 'unknown')
-                                headline = parsed.get('headline', '')[:50] if parsed.get('headline') else 'N/A'
-                                logger.info(f"Received announcement: {announcement_id} - {headline}")
-                                logger.debug(f"Queued announcement: {announcement_id}")
-                            else:
-                                # This is expected - messages without headline/description are skipped
-                                # Only log at debug level to reduce noise
-                                logger.debug(f"Skipped invalid announcement message (no headline/description or invalid data)")
-                        except Exception as e:
-                            logger.error(f"Error parsing announcement message: {e}")
-                            logger.debug(f"Raw message: {message[:500] if isinstance(message, str) else str(message)[:500]}")
-            finally:
-                # Ensure websocket is closed
-                try:
-                    if 'websocket' in locals():
-                        await websocket.close()
-                except:
-                    pass
                 
         except websockets.exceptions.ConnectionClosed:
             if self.running and not self.stop_event.is_set():
@@ -294,9 +283,30 @@ class AnnouncementsWebSocketWorker:
                     symbol_bse = None
                     exchange = None
                     
+                    # Invalid symbols - these are category keywords, not actual trading symbols
+                    INVALID_SYMBOLS = {
+                        "COMPLIANCES", "COMPLIANCE", "DIVIDEND", "DIVIDENDS", 
+                        "ANNOUNCEMENT", "ANNOUNCEMENTS", "REGULATION", "REGULATIONS",
+                        "DISCLOSURES", "DISCLOSURE", "DETAILS", "BSE", "NSE",
+                        "CERTIFICATE", "CERTIFICATES", "QUARTERLY", "ANNUAL",
+                        "INTIMATION", "REG", "SEBI", "LODR", "GOVERNANCE",
+                        "STATEMENT", "REPORT", "MEETING", "BOARD", "AGM", "EGM",
+                        "OUTCOME", "RESULTS", "FINANCIAL", "INVESTOR", "GRIEVANCE",
+                        "RECORD", "DATE", "INTEREST", "PAYMENT", "REDEMPTION",
+                        "PROHIBITION", "INSIDER", "TRADING", "PRICE", "SENSITIVE",
+                        "INFORMATION", "EVENT", "UPDATE", "UPDATES", "BUSINESS",
+                        "CHANGE", "MANAGEMENT", "PRESS", "RELEASE", "MEDIA",
+                        "ANALYST", "MEET", "PARTICIPATION", "CONSUMER", "SHOW",
+                    }
+                    
                     if symbol_raw and isinstance(symbol_raw, str):
-                        symbol_upper = symbol_raw.upper()
-                        if "_BSE" in symbol_upper or symbol_upper.endswith("_B"):
+                        symbol_upper = symbol_raw.upper().strip()
+                        
+                        # Skip if symbol is an invalid keyword
+                        if symbol_upper in INVALID_SYMBOLS or symbol_upper.replace("_BSE", "").replace("_NSE", "").replace("_B", "").replace("_N", "").strip() in INVALID_SYMBOLS:
+                            logger.debug(f"Skipping invalid symbol (keyword): {symbol_raw}")
+                            symbol_raw = None
+                        elif "_BSE" in symbol_upper or symbol_upper.endswith("_B"):
                             # BSE symbol
                             symbol_bse = symbol_upper.replace("_BSE", "").replace("_B", "").strip()
                             exchange = "BSE"
@@ -474,6 +484,40 @@ class AnnouncementsWebSocketWorker:
                     logger.debug(f"Skipping announcement {announcement_id}: invalid headline '{headline}'")
                     return None
                 
+                # Extract attachment_id first
+                attachment_id_value = (
+                    data.get("attachment_id") or 
+                    data.get("AttachmentID") or
+                    data.get("attachment") or
+                    data.get("Attachment") or
+                    data.get("file_id") or
+                    data.get("FileID")
+                )
+                
+                # Extract link, but exclude if it's the same as attachment_id
+                link_value = (
+                    data.get("link") or
+                    data.get("Link") or
+                    data.get("LINK") or
+                    data.get("announcement_link") or
+                    data.get("AnnouncementLink") or
+                    data.get("announcement_url") or
+                    data.get("AnnouncementURL") or
+                    data.get("source_url") or
+                    data.get("SourceURL") or
+                    data.get("web_link") or
+                    data.get("WebLink") or
+                    data.get("web_url") or
+                    data.get("WebURL") or
+                    data.get("url") or
+                    data.get("Url") or
+                    data.get("URL")
+                )
+                
+                # Only set link if it's different from attachment_id
+                if link_value and link_value == attachment_id_value:
+                    link_value = None
+                
                 parsed = {
                     "announcement_id": str(announcement_id),
                     "symbol": symbol,  # Keep for reference
@@ -503,14 +547,8 @@ class AnnouncementsWebSocketWorker:
                         data.get("timestamp") or
                         data.get("Timestamp")
                     ),
-                    "attachment_id": (
-                        data.get("attachment_id") or 
-                        data.get("AttachmentID") or
-                        data.get("attachment") or
-                        data.get("Attachment") or
-                        data.get("file_id") or
-                        data.get("FileID")
-                    ),
+                    "attachment_id": attachment_id_value,
+                    "link": link_value,
                     "received_at": datetime.now(timezone.utc).isoformat(),
                     "raw_payload": message  # Store raw for debugging
                 }
