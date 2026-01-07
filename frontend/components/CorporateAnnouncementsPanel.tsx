@@ -69,16 +69,32 @@ export function CorporateAnnouncementsPanel() {
     try {
       setLoading(true)
       setError(null)
+      console.log('[CorporateAnnouncementsPanel] Loading past announcements from database...')
+      
       // Load past announcements from database (most recent ones)
       // Then WebSocket will add new announcements on top in real-time
       const response: AnnouncementsResponse = await announcementsAPI.getAnnouncements({
         page: 1,
         page_size: 100  // Load last 100 past announcements from DB
       })
-      setAnnouncements(response.announcements || [])
+      
+      console.log('[CorporateAnnouncementsPanel] API response:', {
+        hasResponse: !!response,
+        announcementsCount: response?.announcements?.length || 0,
+        total: response?.total || 0,
+        responseKeys: response ? Object.keys(response) : []
+      })
+      
+      const announcementsList = response?.announcements || []
+      console.log('[CorporateAnnouncementsPanel] Setting announcements:', announcementsList.length)
+      setAnnouncements(announcementsList)
+      
+      if (announcementsList.length === 0) {
+        console.warn('[CorporateAnnouncementsPanel] No announcements loaded from database')
+      }
     } catch (err: any) {
+      console.error('[CorporateAnnouncementsPanel] Error loading announcements:', err)
       setError(err.message || 'Failed to load announcements')
-      console.error('Error loading announcements:', err)
     } finally {
       setLoading(false)
     }
