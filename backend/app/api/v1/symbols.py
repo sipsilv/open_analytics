@@ -44,7 +44,9 @@ def init_symbols_database():
     db_path = get_symbols_db_path()
     
     try:
+        # Use consistent connection configuration (same as get_db_connection)
         conn = duckdb.connect(db_path)
+        conn.execute("PRAGMA enable_progress_bar=false")
         
         # Create symbols table
         conn.execute("""
@@ -229,8 +231,9 @@ def reload_series_lookup(force: bool = False):
     """
     conn = None
     try:
+        # Use get_db_connection() for consistent configuration
+        conn = get_db_connection()
         db_path = get_symbols_db_path()
-        conn = duckdb.connect(db_path)
         
         csv_path = os.path.join(
             os.path.dirname(db_path),
@@ -348,18 +351,17 @@ def reload_series_lookup(force: bool = False):
             conn.close()
 
 def get_db_connection():
-    """Get a DuckDB connection to the symbols database with performance optimizations"""
+    """Get a DuckDB connection to the symbols database with consistent configuration"""
     try:
         db_path = get_symbols_db_path()
         if not os.path.exists(db_path):
             logger.info(f"Symbols database not found at {db_path}, initializing...")
             init_symbols_database()
+        # Use consistent configuration - no read_only parameter (defaults to False)
+        # All connections must use the same config to avoid conflicts
         conn = duckdb.connect(db_path)
-        # Performance optimizations for ultra-fast processing
-        conn.execute("PRAGMA threads=8")  # Use multiple threads
-        conn.execute("PRAGMA memory_limit='8GB'")  # Increase memory limit
-        conn.execute("PRAGMA enable_progress_bar=false")  # Disable progress bar
-        conn.execute("PRAGMA enable_object_cache=true")  # Enable object cache
+        # Set consistent PRAGMA settings for all connections
+        conn.execute("PRAGMA enable_progress_bar=false")
         return conn
     except Exception as e:
         logger.error(f"Failed to get database connection: {str(e)}", exc_info=True)

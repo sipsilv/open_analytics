@@ -685,7 +685,72 @@ export const symbolsAPI = {
   bulkStatus: async (ids: number[], status: string) => {
     const response = await api.patch('/admin/symbols/status/bulk', { ids, status })
     return response.data
-  }
+  },
+}
+
+export const announcementsAPI = {
+  // Get announcements list
+  getAnnouncements: async (params?: {
+    from_date?: string
+    to_date?: string
+    symbol?: string
+    limit?: number
+    offset?: number
+    page?: number
+    page_size?: number
+  }) => {
+    const response = await api.get('/announcements', { params })
+    return response.data
+  },
+
+  // Get single announcement
+  getAnnouncement: async (id: string) => {
+    const response = await api.get(`/announcements/${id}`)
+    return response.data
+  },
+
+  // Get TrueData connection
+  getTrueDataConnection: async () => {
+    const response = await api.get('/announcements/truedata-connection')
+    return response.data
+  },
+
+  // Get database status
+  getDatabaseStatus: async () => {
+    const response = await api.get('/announcements/db-status')
+    return response.data
+  },
+
+  // Fetch announcements from TrueData
+  fetchAnnouncements: async (connectionId: number, params?: {
+    from_date?: string
+    to_date?: string
+    symbol?: string
+    top_n?: number
+  }) => {
+    const response = await api.post('/announcements/fetch', {
+      connection_id: connectionId,
+      ...params
+    })
+    return response.data
+  },
+
+  // Get announcement attachment (on-demand fetch from TrueData)
+  // Returns blob directly (axios with responseType: 'blob' returns blob in response.data)
+  getAttachment: async (id: string) => {
+    const response = await api.get(`/announcements/${id}/attachment`, {
+      responseType: 'blob'
+    })
+    return response.data // axios returns blob in data when responseType is 'blob'
+  },
+
+  // Refresh descriptor metadata
+  refreshDescriptors: async (connectionId: number) => {
+    const response = await api.post('/announcements/descriptors/refresh', {
+      connection_id: connectionId
+    })
+    return response.data
+  },
 }
 
 // Screener API

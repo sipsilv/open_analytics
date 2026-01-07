@@ -19,6 +19,10 @@ services:
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://frontend:3000,http://127.0.0.1:3000,http://rubik-frontend:3000}
       - TRUEDATA_DEFAULT_AUTH_URL=${TRUEDATA_DEFAULT_AUTH_URL:-https://auth.truedata.in/token}
       - TRUEDATA_DEFAULT_WEBSOCKET_PORT=${TRUEDATA_DEFAULT_WEBSOCKET_PORT:-8086}
+      # Admin user creation (optional - only used on first startup)
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
     volumes:
       - ../../data:/app/data
     restart: unless-stopped
@@ -39,7 +43,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://backend:8000}
       - NODE_ENV=production
     depends_on:
       backend:

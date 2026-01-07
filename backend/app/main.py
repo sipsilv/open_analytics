@@ -7,7 +7,7 @@ import sys
 
 # Configure logging to suppress ONLY WebSocket access logs
 # Keep all other normal logs (HTTP requests, application logs, etc.)
-from app.api.v1 import auth, users, admin, connections, websocket, symbols, screener
+from app.api.v1 import auth, users, admin, connections, websocket, symbols, screener, announcements
 from app.core.config import settings
 from app.core.database import get_connection_manager, get_db_router
 
@@ -313,6 +313,54 @@ async def startup_event():
         except Exception as e:
             pass  # Silent - already logged in database status section
         
+        # Initialize Corporate Announcements Database
+        try:
+            from app.services.announcements_service import init_announcements_database
+            init_announcements_database()
+            print(f"  Announcements DB   : INITIALIZED - DuckDB")
+        except Exception as e:
+            print(f"  Announcements DB   : ERROR - {str(e)}")
+        
+        # Start Corporate Announcements WebSocket Service
+        try:
+            from app.services.announcements_websocket_service import get_announcements_websocket_service
+            from app.models.connection import Connection
+            from app.core.database import get_db
+            
+            # Get active TrueData connection
+            db = next(get_db())
+            try:
+                truedata_conn = db.query(Connection).filter(
+                    Connection.provider == "TrueData",
+                    Connection.is_enabled == True
+                ).first()
+                
+                if truedata_conn:
+                    ws_service = get_announcements_websocket_service()
+                    connection_id = truedata_conn.id
+                    
+                    # Start WebSocket in background task (async)
+                    async def start_ws():
+                        # Get a fresh DB session for the WebSocket service
+                        db_session = next(get_db())
+                        try:
+                            await ws_service.start_background(connection_id, db_session)
+                        except Exception as e:
+                            logging.error(f"Error starting announcements WebSocket: {e}")
+                        # Note: Don't close db_session here - WebSocket service uses it during connection setup
+                    
+                    # Create background task
+                    import asyncio
+                    ws_service.task = asyncio.create_task(start_ws())
+                    
+                    print(f"  Announcements WS  : STARTING - Connection ID {connection_id}")
+                else:
+                    print(f"  Announcements WS  : SKIPPED - No active TrueData connection")
+            finally:
+                db.close()
+        except Exception as e:
+            print(f"  Announcements WS  : ERROR - {str(e)}")
+        
         # Start Symbol Scheduler Service
         try:
             from app.services.scheduler_service import get_scheduler_service
@@ -395,6 +443,15 @@ async def shutdown_event():
         except Exception as e:
             print(f"[WARNING] Error stopping scheduler service: {e}")
         
+        # Stop Corporate Announcements WebSocket Service
+        try:
+            from app.services.announcements_websocket_service import get_announcements_websocket_service
+            ws_service = get_announcements_websocket_service()
+            ws_service.stop()
+            print("[OK] Announcements WebSocket service stopped")
+        except Exception as e:
+            print(f"[WARNING] Error stopping announcements WebSocket service: {e}")
+        
         
         # Close database connections
         try:
@@ -414,6 +471,7 @@ app.include_router(admin.router, prefix="/api/v1/admin", tags=["admin"])
 app.include_router(connections.router, prefix="/api/v1/admin/connections", tags=["connections"])
 app.include_router(symbols.router, prefix="/api/v1/admin/symbols", tags=["symbols"])
 app.include_router(screener.router, prefix="/api/v1/admin/screener", tags=["screener"])
+app.include_router(announcements.router, prefix="/api/v1/announcements", tags=["announcements"])
 app.include_router(websocket.router, prefix="/api/v1", tags=["websocket"])
 
 @app.get("/health")
