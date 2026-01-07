@@ -15,6 +15,7 @@ export default function TrueDataPage() {
   const router = useRouter()
   const [connection, setConnection] = useState<any>(null)
   const [tokenInfo, setTokenInfo] = useState<any>(null)
+  const [websocketStatus, setWebsocketStatus] = useState<{running: boolean, connected: boolean} | null>(null)
   const [loading, setLoading] = useState(true)
   const [countdown, setCountdown] = useState<string>('--:--:--')
   const [countdownColor, setCountdownColor] = useState<'green' | 'orange' | 'red'>('green')
@@ -82,6 +83,20 @@ export default function TrueDataPage() {
   useEffect(() => {
     loadConnection()
   }, [])
+  
+  // Auto-refresh WebSocket status every 10 seconds when connection exists
+  useEffect(() => {
+    if (!connection) return
+    
+    loadWebSocketStatus() // Load immediately
+    const wsStatusInterval = setInterval(() => {
+      loadWebSocketStatus()
+    }, 10000)
+    
+    return () => {
+      clearInterval(wsStatusInterval)
+    }
+  }, [connection])
 
   const loadConnection = async () => {
     try {
@@ -105,9 +120,11 @@ export default function TrueDataPage() {
       if (truedata) {
         setConnection(truedata)
         await loadTokenStatus(truedata.id)
+        await loadWebSocketStatus()
       } else {
         // No TrueData connection found
         setConnection(null)
+        setWebsocketStatus(null)
       }
     } catch (error) {
       console.error('Error loading connection:', error)
@@ -116,6 +133,22 @@ export default function TrueDataPage() {
     }
   }
 
+
+  const loadWebSocketStatus = async () => {
+    try {
+      const { announcementsAPI } = await import('@/lib/api')
+      const response = await announcementsAPI.getTrueDataConnection()
+      if (response.websocket_running !== undefined) {
+        setWebsocketStatus({
+          running: response.websocket_running || false,
+          connected: response.websocket_connected || false
+        })
+      }
+    } catch (error) {
+      console.error('Error loading WebSocket status:', error)
+      setWebsocketStatus({ running: false, connected: false })
+    }
+  }
 
   const loadTokenStatus = async (connectionId: number) => {
     try {
@@ -316,6 +349,7 @@ export default function TrueDataPage() {
       
       await loadConnection() // Reload connection to get updated status
       await loadTokenStatus(connection.id)
+      await loadWebSocketStatus() // Refresh WebSocket status
       
       // Show success message in modal (refresh always generates a new token)
       setSuccessMessage(response.message || 'Token refreshed successfully!')
@@ -456,6 +490,7 @@ export default function TrueDataPage() {
               if (connection?.id) {
                 await loadTokenStatus(connection.id)
                 await loadConnection()
+                await loadWebSocketStatus()
               }
             }}
             disabled={loading}
@@ -567,6 +602,35 @@ export default function TrueDataPage() {
               </tr>
 
               {/* WebSocket Status Row */}
+              {connection && (
+                <tr className="hover:bg-background/50 transition-colors">
+                  <td className="py-3 px-4 text-sm font-sans font-medium text-text-secondary align-top">WebSocket Status</td>
+                  <td className="py-3 px-4 align-top">
+                    {websocketStatus ? (
+                      <div className="flex items-center gap-3">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-sans font-semibold ${
+                          websocketStatus.connected 
+                            ? 'bg-success/10 text-success border border-success/20' 
+                            : websocketStatus.running
+                            ? 'bg-warning/10 text-warning border border-warning/20'
+                            : 'bg-error/10 text-error border border-error/20'
+                        }`}>
+                          {websocketStatus.connected ? 'Connected' : websocketStatus.running ? 'Running' : 'Disconnected'}
+                        </span>
+                        <span className="text-xs font-sans text-text-secondary">
+                          {websocketStatus.connected 
+                            ? 'Receiving live announcements' 
+                            : websocketStatus.running
+                            ? 'Service running but not connected'
+                            : 'Not connected'}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-sm font-sans text-text-secondary">Loading...</span>
+                    )}
+                  </td>
+                </tr>
+              )}
 
               {/* Token Status Row */}
               <tr className="hover:bg-background/50 transition-colors border-t-2 border-border">

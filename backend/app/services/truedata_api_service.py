@@ -173,7 +173,30 @@ class TrueDataAPIService:
                 raise ValueError(f"Unsupported HTTP method: {method}")
             
             response.raise_for_status()
-            return response.json()
+            
+            # Check if response has content
+            if not response.content:
+                raise ValueError("Empty response from TrueData API")
+            
+            # Check content type - TrueData may return CSV instead of JSON
+            content_type = response.headers.get('Content-Type', '').lower()
+            
+            # Try to parse JSON first
+            try:
+                return response.json()
+            except ValueError:
+                # If JSON parsing fails, check if it's CSV
+                text_content = response.text.strip()
+                
+                # Check if it looks like CSV (starts with header row)
+                if text_content and (',' in text_content or '\t' in text_content):
+                    # It's likely CSV - return as text for caller to parse
+                    logger.info(f"TrueData API returned CSV format instead of JSON")
+                    return {"_format": "csv", "_data": text_content}
+                
+                # Log the actual response for debugging
+                logger.error(f"Failed to parse JSON response. Status: {response.status_code}, Content-Type: {content_type}, Content: {response.text[:500]}")
+                raise ValueError(f"Invalid JSON response from TrueData API. Response: {response.text[:200]}")
             
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 401:
@@ -200,7 +223,17 @@ class TrueDataAPIService:
                     else:
                         response = requests.post(url, headers=headers, params=params, json=data, timeout=timeout)
                     response.raise_for_status()
-                    return response.json()
+                    
+                    # Check if response has content
+                    if not response.content:
+                        raise ValueError("Empty response from TrueData API after token refresh")
+                    
+                    # Try to parse JSON
+                    try:
+                        return response.json()
+                    except ValueError as json_error:
+                        logger.error(f"Failed to parse JSON after token refresh. Status: {response.status_code}, Content: {response.text[:500]}")
+                        raise ValueError(f"Invalid JSON response from TrueData API: {str(json_error)}. Response: {response.text[:200]}")
             
             logger.error(f"HTTP error calling Corporate API {endpoint}: {e}")
             raise
@@ -329,6 +362,79 @@ class TrueDataAPIService:
         """Get corporate information"""
         params = {"symbol": symbol, **kwargs}
         return self.call_corporate_api("getCorporateInfo", params=params)
+    
+    def get_announcement_attachment(self, announcement_id: str) -> requests.Response:
+        """
+        Get announcement attachment file from TrueData
+        
+        Args:
+            announcement_id: Announcement ID
+            
+        Returns:
+            requests.Response object with binary file content
+            
+        Note:
+            This endpoint returns binary data (PDF/document), not JSON
+            Endpoint: GET /announcementfile?id=<announcement_id>
+        """
+        token = self._get_token()
+        url = f"{self.CORPORATE_API_BASE}announcementfile"
+        
+        headers = {
+            "Authorization": f"Bearer {token}"
+            # No Content-Type header - let requests handle binary response
+        }
+        
+        params = {"id": announcement_id}
+        
+        try:
+            response = requests.get(
+                url,
+                headers=headers,
+                params=params,
+                timeout=60,  # Longer timeout for file downloads
+                stream=True  # Stream response for large files
+            )
+            
+            response.raise_for_status()
+            
+            # Return the response object directly (contains binary data)
+            return response
+            
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                # Token expired, try to refresh
+                logger.warning(f"Token expired for connection {self.connection_id}, attempting refresh")
+                credentials = self._get_credentials()
+                username = credentials.get("username")
+                password = credentials.get("password")
+                auth_url = credentials.get("auth_url", self.AUTH_URL)
+                
+                if username and password:
+                    self._token_service.generate_token(
+                        connection_id=self.connection_id,
+                        username=username,
+                        password=password,
+                        auth_url=auth_url
+                    )
+                    # Retry with new token
+                    token = self._get_token()
+                    headers["Authorization"] = f"Bearer {token}"
+                    response = requests.get(
+                        url,
+                        headers=headers,
+                        params=params,
+                        timeout=60,
+                        stream=True
+                    )
+                    response.raise_for_status()
+                    return response
+            
+            logger.error(f"HTTP error fetching attachment {announcement_id}: {e.response.status_code} - {e.response.text[:200]}")
+            raise
+        except Exception as e:
+            logger.error(f"Error fetching attachment {announcement_id}: {e}")
+            raise
 
 
 def get_truedata_api_service(connection_id: int, db_session=None) -> TrueDataAPIService:
