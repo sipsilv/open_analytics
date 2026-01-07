@@ -69,8 +69,11 @@ export function CorporateAnnouncementsPanel() {
     try {
       setLoading(true)
       setError(null)
+      // Load all past announcements from database (no limit, or use a large limit)
+      // The backend will return all announcements ordered by trade_date DESC (newest first)
       const response: AnnouncementsResponse = await announcementsAPI.getAnnouncements({
-        limit: 50
+        page: 1,
+        page_size: 1000  // Load up to 1000 announcements to show past data
       })
       setAnnouncements(response.announcements || [])
     } catch (err: any) {
