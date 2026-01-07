@@ -31,18 +31,6 @@ WORKDIR /app
 
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-
-COPY --from=deps /app/node_modules ./node_modules
-COPY frontend/ ./frontend/
-WORKDIR /app/frontend
-
-# Copy node_modules from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-
-# Copy frontend source code
-COPY frontend/ ./
-
-# Set environment for build
 ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY --from=deps /app/node_modules ./node_modules
