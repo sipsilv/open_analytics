@@ -13,16 +13,9 @@ ADMIN_EMAIL=${ADMIN_EMAIL:-}
 ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
 
 # Run database initialization
-if [ -n "$ADMIN_USERNAME" ] && [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then
-    echo "[INFO] Creating admin user from environment variables..."
-    python scripts/init/init_auth_database.py \
-        --username "$ADMIN_USERNAME" \
-        --email "$ADMIN_EMAIL" \
-        --password "$ADMIN_PASSWORD"
-else
-    echo "[INFO] Initializing database (no admin credentials provided, will skip admin user creation)..."
-    python scripts/init/init_auth_database.py
-fi
+# Note: scripts/init/init_auth_database.py seems to be missing
+# Windows start-all.bat says: "Database initialization is handled automatically by the backend on startup"
+echo "[INFO] Starting backend (skipping explicit init script)..."
 
 echo "==========================================="
 echo "  STARTING RUBIK ANALYTICS BACKEND"
