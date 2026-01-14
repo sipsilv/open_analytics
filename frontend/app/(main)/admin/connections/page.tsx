@@ -161,7 +161,7 @@ export default function ConnectionsPage() {
       </div>
 
       {/* Connection Categories - Similar to Reference Data */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="flex flex-wrap justify-center gap-6 items-stretch">
         {connectionCategories.map((category) => {
           const IconComponent = category.icon
 
@@ -182,8 +182,8 @@ export default function ConnectionsPage() {
           }
 
           return (
-            <Card key={category.key} className="hover:shadow-lg transition-all duration-200 h-full border-2">
-              <div className="p-6">
+            <Card key={category.key} className="hover:shadow-lg transition-all duration-200 flex flex-col w-full max-w-sm">
+              <div className="p-6 flex flex-col h-full">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">

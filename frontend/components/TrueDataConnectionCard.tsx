@@ -228,8 +228,8 @@ export function TrueDataConnectionCard({ connection, onConfigure, onViewDetails,
   }
 
   return (
-    <Card className="p-6 border-2 hover:shadow-lg transition-all duration-200">
-      <div className="space-y-5">
+    <Card className="p-6 border-2 hover:shadow-lg transition-all duration-200 flex flex-col w-full max-w-sm">
+      <div className="space-y-5 flex-1 flex flex-col h-full">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -268,14 +268,14 @@ export function TrueDataConnectionCard({ connection, onConfigure, onViewDetails,
                 <span className="text-xs text-text-secondary">Expires In</span>
                 <div className="flex items-center gap-2">
                   <span className={`text-xl font-mono font-bold tracking-wider ${countdownColor === 'red' ? 'text-error' :
-                      countdownColor === 'orange' ? 'text-warning' :
-                        'text-success'
+                    countdownColor === 'orange' ? 'text-warning' :
+                      'text-success'
                     }`}>
                     {countdown}
                   </span>
                   <div className={`w-2.5 h-2.5 rounded-full ${countdownColor === 'red' ? 'bg-error animate-pulse' :
-                      countdownColor === 'orange' ? 'bg-warning' :
-                        'bg-success'
+                    countdownColor === 'orange' ? 'bg-warning' :
+                      'bg-success'
                     }`}></div>
                 </div>
               </div>
