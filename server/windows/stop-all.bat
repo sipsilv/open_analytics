@@ -13,38 +13,26 @@ echo.
 
 REM Stop backend (port 8000)
 echo [INFO] Stopping backend server...
-netstat -ano | findstr :8000 >nul 2>&1
-if %errorlevel% equ 0 (
-    for /f "tokens=5" %%a in ('netstat -ano ^| findstr :8000') do (
-        set PID_VAL=%%a
-        if not "!PID_VAL!"=="" (
-            echo [INFO] Attempting graceful stop for Backend (PID: !PID_VAL!)...
-            taskkill /PID !PID_VAL! >nul 2>&1
-            timeout /t 2 /nobreak >nul
-            taskkill /PID !PID_VAL! /F >nul 2>&1
-            echo [OK] Backend stopped (PID: !PID_VAL!)
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr :8000') do (
+    set "PORT_PID=%%a"
+        if not "!PORT_PID!"=="" (
+            echo [INFO] Attempting graceful stop for PID !PORT_PID!...
+            taskkill /PID !PORT_PID! >nul 2>&1
+            ping 127.0.0.1 -n 3 >nul
+            taskkill /PID !PORT_PID! /F >nul 2>&1
         )
-    )
-) else (
-    echo [INFO] Backend server not running
 )
 
 REM Stop frontend (port 3000)
 echo [INFO] Stopping frontend server...
-netstat -ano | findstr :3000 >nul 2>&1
-if %errorlevel% equ 0 (
-    for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3000') do (
-        set PID_VAL=%%a
-        if not "!PID_VAL!"=="" (
-            echo [INFO] Attempting graceful stop for Frontend (PID: !PID_VAL!)...
-            taskkill /PID !PID_VAL! >nul 2>&1
-            timeout /t 2 /nobreak >nul
-            taskkill /PID !PID_VAL! /F >nul 2>&1
-            echo [OK] Frontend stopped (PID: !PID_VAL!)
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3000') do (
+    set "PORT_PID=%%a"
+        if not "!PORT_PID!"=="" (
+            echo [INFO] Attempting graceful stop for PID !PORT_PID!...
+            taskkill /PID !PORT_PID! >nul 2>&1
+            ping 127.0.0.1 -n 3 >nul
+            taskkill /PID !PORT_PID! /F >nul 2>&1
         )
-    )
-) else (
-    echo [INFO] Frontend server not running
 )
 
 REM Kill any Python processes that might be locking database files
@@ -59,7 +47,7 @@ for /f "tokens=2" %%a in ('tasklist /FI "IMAGENAME eq python.exe" /FO LIST 2^>nu
         )
     )
 )
-timeout /t 1 /nobreak >nul
+ping 127.0.0.1 -n 2 >nul
 
 REM Kill any Node processes
 echo [INFO] Checking for Node processes...
@@ -73,7 +61,7 @@ for /f "tokens=2" %%a in ('tasklist /FI "IMAGENAME eq node.exe" /FO LIST 2^>nul 
         )
     )
 )
-timeout /t 1 /nobreak >nul
+ping 127.0.0.1 -n 2 >nul
 
 REM Verify ports are free
 echo.

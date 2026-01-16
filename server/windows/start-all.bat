@@ -191,9 +191,9 @@ if not exist "%FRONTEND_DIR%\node_modules" (
 REM Start frontend server directly
 start "Rubik Frontend" cmd /k "cd /d "%FRONTEND_DIR%" && npm run dev"
 
-timeout /t 3 /nobreak >nul
+ping 127.0.0.1 -n 3 >nul
 
-timeout /t 3 /nobreak >nul
+ping 127.0.0.1 -n 3 >nul
 
 echo.
 echo ========================================
