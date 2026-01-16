@@ -55,56 +55,41 @@ def get_today_counts(channel_ids: List[int]) -> dict:
     Queries DuckDB for message counts for the given channel IDs for the current day (UTC).
     Returns dict: { channel_id_int: count }
     """
-    if not os.path.exists(DB_PATH):
-        return {}
+    from app.services.shared_db import get_shared_db
+    db = get_shared_db()
 
     counts = {}
-    conn = None
     try:
-        conn = duckdb.connect(DB_PATH, read_only=True)
-        # Check if table exists
-        tables = conn.execute("SHOW TABLES").fetchall()
-        table_exists = any(t[0] == TABLE_NAME for t in tables)
-        
-        if not table_exists:
-            return {}
-
-        # Query
-        # Assuming telegram_chat_id depends on how it was stored. 
-        # Listener stores it as str(chat.id). 
-        # NB: Telethon IDs for channels are usually -100... or just positive int depending on context.
-        # But `TelegramChannel.channel_id` is BigInt (the raw ID).
-        # We need to match string representation.
-        
         today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
         
-        # We fetch counts grouped by telegram_chat_id
+        # Use shared DB runner to avoid locks
         query = f"""
             SELECT telegram_chat_id, COUNT(*) 
             FROM {TABLE_NAME} 
             WHERE received_at >= ?
             GROUP BY telegram_chat_id
         """
-        results = conn.execute(query, [today_start]).fetchall()
+        results = db.run_listing_query(query, [today_start], fetch='all')
         
-        for row in results:
-            chat_id_str = row[0]
-            count = row[1]
-            try:
-                # Listener stores chat_id. Telethon chat_id might be different?
-                # Usually we just match them. 
-                # If listener stored "-10012345", and DB has 12345 or -10012345?
-                # We try to strict match first.
-                c_id = int(chat_id_str)
-                counts[c_id] = count
-            except:
-                pass
+        if results:
+            for row in results:
+                chat_id_str = row[0]
+                count = row[1]
+                try:
+                    # Normalize: strip -100 prefix and get absolute value to match raw IDs in registration table
+                    # Listener stores as "-10012345" or "-975074580"
+                    # Registration stores as 12345 or 975074580
+                    raw_id_str = chat_id_str.replace("-100", "")
+                    normalized_id = abs(int(raw_id_str))
+                    counts[normalized_id] = count
+                except Exception as e:
+                    logger.warning(f"Failed to normalize chat ID {chat_id_str}: {e}")
+        
+        if counts:
+            logger.info(f"Today Counts fetched: {counts}")
                 
     except Exception as e:
-        logger.error(f"Error fetching stats from DuckDB: {e}")
-    finally:
-        if conn:
-            conn.close()
+        logger.error(f"Error fetching stats from Shared DB: {e}")
             
     return counts
 

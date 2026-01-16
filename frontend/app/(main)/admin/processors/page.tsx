@@ -85,6 +85,10 @@ export default function ProcessorsPage() {
                                     <span className="text-warning">Pending</span>
                                     <span className="font-bold text-warning">{stats.pending}</span>
                                 </div>
+                                <div className="flex justify-between items-center p-1.5 bg-blue-500/5 rounded text-sm">
+                                    <span className="text-blue-500">Pending to AI</span>
+                                    <span className="font-bold text-blue-500">{stats.pending_enrichment}</span>
+                                </div>
                                 <div className="flex justify-between items-center p-1.5 bg-text-secondary/5 rounded text-sm">
                                     <span className="text-text-secondary dark:text-[#9ca3af]">Duplicates Removed</span>
                                     <span className="font-bold text-text-secondary dark:text-[#9ca3af]">{stats.duplicates}</span>

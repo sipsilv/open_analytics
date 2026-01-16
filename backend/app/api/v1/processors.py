@@ -7,6 +7,8 @@ router = APIRouter()
 
 # AI enrichment removed
 
+from app.services.news_ai.db import get_pipeline_backlog
+
 @router.get("/stats", response_model=dict)
 def get_processor_stats(
     current_user: User = Depends(get_current_user)
@@ -18,11 +20,11 @@ def get_processor_stats(
     stats = get_global_stats()
     
     # Get AI Stats
-    # AI stats removed
-    
-    # Merge
-    # Merge
-    # stats.update(ai_stats) - AI removed
+    try:
+        pipeline_stats = get_pipeline_backlog()
+        stats['pending_enrichment'] = pipeline_stats.get('ai_pending', 0)
+    except Exception as e:
+        stats['pending_enrichment'] = 0
     
     return stats
 

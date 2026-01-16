@@ -36,18 +36,40 @@ def init_db():
             file_path TEXT,
             urls TEXT,
             received_at TIMESTAMP,
+            is_extracted BOOLEAN DEFAULT FALSE,
             UNIQUE(telegram_chat_id, telegram_msg_id)
         );
         """
         db.run_listing_query(query)
         
-        # Migration: Ensure file_path column exists for existing tables
+        # Migration: Ensure columns exist
         try:
             cols = db.run_listing_query(f"DESCRIBE {TABLE_NAME}", fetch='all')
             col_names = [c[0] for c in cols]
+            
             if 'file_path' not in col_names:
-                logger.info(f"Migrating {TABLE_NAME}: Adding file_path column")
-                db.run_listing_query(f"ALTER TABLE {TABLE_NAME} ADD COLUMN file_path TEXT")
+                try:
+                    logger.info(f"Migrating {TABLE_NAME}: Adding file_path column")
+                    db.run_listing_query(f"ALTER TABLE {TABLE_NAME} ADD COLUMN file_path TEXT")
+                except Exception as e:
+                    if "already exists" not in str(e).lower():
+                        logger.warning(f"Failed to add file_path: {e}")
+
+            if 'is_extracted' not in col_names:
+                try:
+                    logger.info(f"Migrating {TABLE_NAME}: Adding is_extracted column")
+                    db.run_listing_query(f"ALTER TABLE {TABLE_NAME} ADD COLUMN is_extracted BOOLEAN DEFAULT FALSE")
+                except Exception as e:
+                    if "already exists" not in str(e).lower():
+                        logger.warning(f"Failed to add is_extracted: {e}")
+
+            if 'extracted_at' not in col_names:
+                try:
+                    logger.info(f"Migrating {TABLE_NAME}: Adding extracted_at column")
+                    db.run_listing_query(f"ALTER TABLE {TABLE_NAME} ADD COLUMN extracted_at TIMESTAMP")
+                except Exception as e:
+                    if "already exists" not in str(e).lower():
+                        logger.warning(f"Failed to add extracted_at: {e}")
         except Exception as e:
              logger.warning(f"Migration check failed (minor): {e}")
         logger.info(f"Database initialized at {DB_PATH}")
@@ -113,3 +135,16 @@ def run_cleanup():
         logger.error(f"Cleanup failed: {e}")
     finally:
         pass # Do NOT close shared connection
+
+def get_last_msg_id(chat_id: str) -> int:
+    """Returns the highest telegram_msg_id for a given chat_id."""
+    db = get_db()
+    try:
+        # We cast to BIGINT because telegram_msg_id is stored as TEXT for flexibility
+        query = f"SELECT MAX(CAST(telegram_msg_id AS BIGINT)) FROM {TABLE_NAME} WHERE telegram_chat_id = ?"
+        result = db.run_listing_query(query, [str(chat_id)], fetch='one')
+        if result and result[0]:
+            return int(result[0])
+    except Exception as e:
+        logger.error(f"Error getting last msg id for {chat_id}: {e}")
+    return 0

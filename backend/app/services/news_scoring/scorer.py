@@ -1,4 +1,4 @@
-from .config import SCORING_THRESHOLD
+from .config import SCORING_THRESHOLD, TRUSTED_SOURCES
 import re
 
 # ✅ 85 Corporate Action Keywords ✓
@@ -66,14 +66,7 @@ SPAM_KEYWORDS = {
     "scalping", "scalp", "intraday", "btst", "stbt", "course", "class"
 }
 
-# ✅ 25 Trusted Sources ✓
-TRUSTED_SOURCES = {
-    "reuters", "bloomberg", "cnbc", "moneycontrol", "bse", "nse",
-    "livemint", "economic times", "business standard",
-    "financial express", "bsemsm", "nsemsm", "sebi", "rbi",
-    "press information bureau", "press trust india", "pti", "ani",
-    "dowjones", "wsj", "ft", "businessline", "hindubusinessline", "self"
-}
+# ✅ 25 Trusted Sources ✓ (Imported from config)
 
 def calculate_structural_score(text, link_text):
     score = 0
@@ -97,7 +90,7 @@ def calculate_structural_score(text, link_text):
         
     return min(score, 35)
 
-def calculate_keyword_score(text):
+def calculate_keyword_score(text, is_trusted=False):
     score = 0
     if not text:
         return 0
@@ -127,8 +120,10 @@ def calculate_keyword_score(text):
         score += 10
             
     # Spam Penalty (-20 if ANY spam keyword found)
-    if any(kw in text_lower for kw in SPAM_KEYWORDS):
-        score -= 20
+    # CRITICAL FIX: Skip penalty for trusted sources (e.g. "MoneyControl Channel")
+    if not is_trusted:
+        if any(kw in text_lower for kw in SPAM_KEYWORDS):
+            score -= 20
             
     # Cap between -20 and 35
     return max(-20, min(score, 35))
@@ -166,8 +161,14 @@ def score_news(raw_id, source_handle, text, link_text, ocr_text):
     """
     Compute final score and decision.
     """
+    is_trusted = False
+    if source_handle:
+        source_lower = source_handle.lower()
+        if any(trusted in source_lower for trusted in TRUSTED_SOURCES):
+            is_trusted = True
+
     struct_score = calculate_structural_score(text, link_text)
-    keyword_score = calculate_keyword_score(text)
+    keyword_score = calculate_keyword_score(text, is_trusted=is_trusted)
     source_score = calculate_source_score(source_handle)
     content_score = calculate_content_type_score(text, link_text, ocr_text)
     

@@ -108,13 +108,14 @@ def sync_queue():
         existing_ids = db.run_ai_query(f"SELECT news_id FROM {AI_TABLE} UNION SELECT news_id FROM ai_queue", fetch='all')
         existing_ids_list = [row[0] for row in existing_ids]
 
-        where_clause = ""
+        where_clause = "WHERE 1=1"
         if existing_ids_list:
             ids_str = ",".join(map(str, existing_ids_list))
-            where_clause = f"WHERE score_id NOT IN ({ids_str})"
+            where_clause += f" AND score_id NOT IN ({ids_str})"
 
         # 2. Fetch new scores from scoring DB
-        scoring_query = f"SELECT score_id FROM {SCORING_TABLE} {where_clause} ORDER BY scored_at ASC LIMIT 100"
+        # Exclude items explicitly marked as 'drop' (case-insensitive)
+        scoring_query = f"SELECT score_id FROM {SCORING_TABLE} {where_clause} AND (decision IS NULL OR lower(decision) != 'drop') ORDER BY scored_at ASC LIMIT 100"
         new_scores = db.run_scoring_query(scoring_query, fetch='all')
 
         if new_scores:
@@ -397,3 +398,41 @@ def set_system_setting(key, value):
     except Exception as e:
         logger.error(f"Error setting {key}: {e}")
         return False
+
+def get_pipeline_backlog():
+    """Get counts of unprocessed items across all stages."""
+    db = get_db()
+    stats = {}
+    
+    try:
+        # 1. Listing (Unextracted)
+        res = db.run_listing_query("SELECT COUNT(*) FROM telegram_listing WHERE is_extracted = FALSE", fetch='one')
+        stats["listing_unextracted"] = res[0] if res else 0
+    except Exception as e:
+        stats["listing_unextracted_error"] = str(e)
+
+    try:
+        # 2. Raw (Undeduplicated & Unscored)
+        res_dedup = db.run_raw_query("SELECT COUNT(*) FROM telegram_raw WHERE is_deduplicated = FALSE", fetch='one')
+        stats["raw_undeduplicated"] = res_dedup[0] if res_dedup else 0
+        
+        res_score = db.run_raw_query("SELECT COUNT(*) FROM telegram_raw WHERE is_scored = FALSE AND is_duplicate = FALSE", fetch='one')
+        stats["raw_unscored"] = res_score[0] if res_score else 0
+    except Exception as e:
+        stats["raw_error"] = str(e)
+
+    try:
+        # 3. AI Queue (Pending)
+        res = db.run_ai_query("SELECT COUNT(*) FROM ai_queue WHERE status = 'PENDING'", fetch='one')
+        stats["ai_pending"] = res[0] if res else 0
+    except Exception as e:
+        stats["ai_error"] = str(e)
+
+    try:
+        # 4. Final Total
+        res = db.run_final_query("SELECT COUNT(*) FROM final_news", fetch='one')
+        stats["final_total"] = res[0] if res else 0
+    except Exception as e:
+        stats["final_error"] = str(e)
+
+    return stats

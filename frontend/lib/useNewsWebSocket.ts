@@ -33,7 +33,8 @@ interface UseNewsWebSocketReturn {
 }
 
 export function useNewsWebSocket(
-    onNewNews?: (news: NewsItem) => void
+    onNewNews?: (news: NewsItem) => void,
+    onBatchUpdate?: (newsItems: NewsItem[]) => void
 ): UseNewsWebSocketReturn {
     const [isConnected, setIsConnected] = useState(false)
     const [error, setError] = useState<Error | null>(null)
@@ -44,8 +45,35 @@ export function useNewsWebSocket(
     const maxReconnectAttempts = 10
     const reconnectDelay = 3000
 
+    // NEW: Batching system
+    const newsBufferRef = useRef<NewsItem[]>([])
+    const flushIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
     const onNewNewsRef = useRef(onNewNews)
     onNewNewsRef.current = onNewNews
+    const onBatchUpdateRef = useRef(onBatchUpdate)
+    onBatchUpdateRef.current = onBatchUpdate
+
+    // FLUSH SYSTEM: Send buffered news to UI every 500ms
+    useEffect(() => {
+        flushIntervalRef.current = setInterval(() => {
+            if (newsBufferRef.current.length > 0) {
+                const batch = [...newsBufferRef.current]
+                newsBufferRef.current = []
+
+                if (onBatchUpdateRef.current) {
+                    onBatchUpdateRef.current(batch)
+                } else if (onNewNewsRef.current) {
+                    // Fallback to individual calls if no batch handler
+                    batch.forEach(item => onNewNewsRef.current?.(item))
+                }
+            }
+        }, 500)
+
+        return () => {
+            if (flushIntervalRef.current) clearInterval(flushIntervalRef.current)
+        }
+    }, [])
 
     const connect = useCallback(() => {
         if (isConnectingRef.current) return
@@ -73,7 +101,8 @@ export function useNewsWebSocket(
                     if (data.type === 'news_update' || data.event === 'new_news') {
                         const news = data.data || data
                         if (news && news.news_id) {
-                            onNewNewsRef.current?.(news)
+                            // Add to buffer instead of immediate call
+                            newsBufferRef.current.push(news)
                         }
                     }
                 } catch (err) {

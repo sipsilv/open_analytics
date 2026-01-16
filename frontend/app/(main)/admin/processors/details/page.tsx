@@ -280,11 +280,27 @@ export default function ProcessorDetailsPage() {
                                                     </span>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <span className={`text-xs font-bold ${row.sentiment === 'Positive' ? 'text-success' :
-                                                        row.sentiment === 'Negative' ? 'text-error' : 'text-warning'
-                                                        }`}>
-                                                        {row.sentiment}
-                                                    </span>
+                                                    {(() => {
+                                                        const s = (row.sentiment || '').trim().toLowerCase();
+                                                        const isPos = s === 'positive';
+                                                        const isNeg = s === 'negative';
+                                                        const color = isPos ? '#10b981' : isNeg ? '#f43f5e' : '#f59e0b';
+                                                        const bgColor = isPos ? 'rgba(16, 185, 129, 0.1)' : isNeg ? 'rgba(244, 63, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)';
+
+                                                        return (
+                                                            <span
+                                                                className="text-[10px] font-bold px-2 py-0.5 rounded-full capitalize"
+                                                                style={{
+                                                                    color: color,
+                                                                    backgroundColor: bgColor,
+                                                                    border: `1px solid ${color}33`,
+                                                                    display: 'inline-block'
+                                                                }}
+                                                            >
+                                                                {row.sentiment || 'Neutral'}
+                                                            </span>
+                                                        );
+                                                    })()}
                                                 </TableCell>
                                                 <TableCell numeric className="font-bold text-text-primary">{row.impact_score}</TableCell>
                                                 <TableCell className="text-xs text-text-secondary">{row.ai_model}</TableCell>

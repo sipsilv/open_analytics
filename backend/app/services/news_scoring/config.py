@@ -15,8 +15,11 @@ BATCH_SIZE = 50
 
 # Scoring Config
 SCORING_THRESHOLD = 25
-TRUSTED_SOURCES = [
-    "reuters", "bloomberg", "cnbc", "moneycontrol", 
-    "bse", "nse", "livemint", "economic times", "business standard",
-    "self", "me" # Allow user test messages
-]
+TRUSTED_SOURCES = {
+    "reuters", "bloomberg", "cnbc", "moneycontrol", "bse", "nse",
+    "livemint", "economic times", "business standard",
+    "financial express", "bsemsm", "nsemsm", "sebi", "rbi",
+    "press information bureau", "press trust india", "pti", "ani",
+    "dowjones", "wsj", "ft", "businessline", "hindubusinessline", "self", "me",
+    "wall_street_journal", "wsjnews"
+}

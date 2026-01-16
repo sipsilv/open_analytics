@@ -2,9 +2,16 @@ from fastapi import APIRouter, Depends, Query
 from typing import List, Optional
 from app.core.permissions import get_current_user
 from app.models.user import User
-from app.services.news_ai.db import get_final_news, get_system_setting, set_system_setting
+from app.services.news_ai.db import get_final_news, get_system_setting, set_system_setting, get_pipeline_backlog
 
 router = APIRouter()
+
+@router.get("/backlog", response_model=dict)
+def get_news_backlog():
+    """
+    Get counts of unprocessed news items in the pipeline.
+    """
+    return get_pipeline_backlog()
 
 @router.get("/")
 def get_news(

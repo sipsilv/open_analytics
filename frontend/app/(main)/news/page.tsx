@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, memo } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { newsAPI } from '@/lib/api'
@@ -32,7 +32,7 @@ const formatDate = (dateStr?: string) => {
 }
 
 // Sub-component for individual news items to manage expansion state and "seen" detection
-function NewsCard({ item, onSeen }: { item: NewsItem, onSeen?: (id: number) => void }) {
+const NewsCard = memo(function NewsCard({ item, onSeen }: { item: NewsItem; onSeen?: (id: number) => void }) {
     const [isExpanded, setIsExpanded] = useState(false)
     const [hasOverflow, setHasOverflow] = useState(false)
     const summaryRef = useRef<HTMLParagraphElement>(null)
@@ -202,7 +202,7 @@ function NewsCard({ item, onSeen }: { item: NewsItem, onSeen?: (id: number) => v
             </Card>
         </div>
     )
-}
+})
 
 export default function NewsPage() {
     const [news, setNews] = useState<NewsItem[]>([])
@@ -246,24 +246,29 @@ export default function NewsPage() {
         if (page !== 1) setPage(1)
     }, [debouncedSearch])
 
-    const { isConnected: wsConnected } = useNewsWebSocket((newNews) => {
-        console.log('[NewsPage] Received real-time news:', newNews.news_id);
+    const { isConnected: wsConnected } = useNewsWebSocket(undefined, (batch: NewsItem[]) => {
+        if (!batch || batch.length === 0) return;
+
+        console.log(`[NewsPage] Received batch of ${batch.length} news items`);
 
         const currentPage = pageRef.current
         const main = document.querySelector('main')
         const scrolled = main ? main.scrollTop > 300 : false
 
         // Update news list ONLY if on page 1
-        if (currentPage === 1) {
-            setNews(prev => {
-                const exists = prev.some(item => item.news_id === newNews.news_id)
-                if (exists) return prev
-                return [newNews, ...prev].slice(0, 100)
-            })
-        }
+        setNews(prev => {
+            if (currentPage !== 1) return prev
+
+            // Filter out existing news items (just in case) and add new ones
+            const existingIds = new Set(prev.map(item => item.news_id))
+            const newItems = batch.filter(item => !existingIds.has(item.news_id))
+
+            if (newItems.length === 0) return prev
+            return [...newItems, ...prev].slice(0, 100)
+        })
 
         // Always update total for pagination summary
-        setTotal(prev => prev + 1)
+        setTotal(prev => prev + batch.length)
         setLastUpdated(new Date())
 
         // Show notification if:
@@ -272,7 +277,7 @@ export default function NewsPage() {
         if ((scrolled && currentPage === 1) || currentPage > 1) {
             setUnseenIds(prev => {
                 const next = new Set(prev)
-                next.add(newNews.news_id)
+                batch.forEach(item => next.add(item.news_id))
                 return next
             })
             setShowNotification(true)

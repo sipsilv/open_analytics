@@ -54,13 +54,13 @@ async def run_extraction_service():
             # Run blocking DB operation in thread
             count = await asyncio.to_thread(process_extraction_batch)
             if count == 0:
-                await asyncio.sleep(5)
+                await asyncio.sleep(0.5)
             else:
                 logger.info(f"[Extractor] Processed {count} items.")
                 await asyncio.sleep(0.5)
         except Exception as e:
             logger.error(f"[Extractor] Error: {e}")
-            await asyncio.sleep(5)
+            await asyncio.sleep(2)
 
 async def run_dedup_service():
     """Runs the Deduplication Worker (Loop)."""
@@ -75,13 +75,13 @@ async def run_dedup_service():
         try:
             count = await asyncio.to_thread(process_dedup_batch)
             if count == 0:
-                await asyncio.sleep(5)
+                await asyncio.sleep(0.5)
             else:
                 logger.info(f"[Dedup] Processed {count} items.")
                 await asyncio.sleep(0.5)
         except Exception as e:
             logger.error(f"[Dedup] Error: {e}")
-            await asyncio.sleep(5)
+            await asyncio.sleep(2)
 
 async def run_scoring_service():
     """Runs the Scoring Worker (Loop)."""
@@ -96,13 +96,13 @@ async def run_scoring_service():
         try:
             count = await asyncio.to_thread(process_scoring_batch)
             if count == 0:
-                await asyncio.sleep(5)
+                await asyncio.sleep(0.5)
             else:
                 logger.info(f"[Scorer] Processed {count} items.")
                 await asyncio.sleep(0.5)
         except Exception as e:
             logger.error(f"[Scorer] Error: {e}")
-            await asyncio.sleep(5)
+            await asyncio.sleep(2)
 
 async def run_ai_enrichment_service():
     """Runs the AI Enrichment Worker (Loop)."""
@@ -117,13 +117,13 @@ async def run_ai_enrichment_service():
         try:
             count = await asyncio.to_thread(process_ai_batch)
             if count == 0:
-                await asyncio.sleep(10) # AI is expensive/slower, sleep more
+                await asyncio.sleep(1) # Reduced from 3s
             else:
                 logger.info(f"[AI Enrichment] Enriched {count} items.")
                 await asyncio.sleep(1)
         except Exception as e:
             logger.error(f"[AI Enrichment] Error: {e}")
-            await asyncio.sleep(10)
+            await asyncio.sleep(5)
 
 
 async def run_cleanup_task():

@@ -65,6 +65,7 @@ def ensure_schema():
             content_hash TEXT,
             is_duplicate BOOLEAN DEFAULT FALSE,
             duplicate_of_raw_id BIGINT,
+            is_deduplicated BOOLEAN DEFAULT FALSE,
             is_scored BOOLEAN DEFAULT FALSE,
             deduped_at TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -87,6 +88,7 @@ def ensure_schema():
             add_col_if_missing('content_hash', 'TEXT')
             add_col_if_missing('is_duplicate', 'BOOLEAN DEFAULT FALSE')
             add_col_if_missing('duplicate_of_raw_id', 'BIGINT')
+            add_col_if_missing('is_deduplicated', 'BOOLEAN DEFAULT FALSE')
             add_col_if_missing('is_scored', 'BOOLEAN DEFAULT FALSE')
             add_col_if_missing('deduped_at', 'TIMESTAMP')
             

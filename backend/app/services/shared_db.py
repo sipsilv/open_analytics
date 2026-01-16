@@ -84,11 +84,32 @@ class SharedDatabase:
                 logger.info(f"Opening SHARED connection to {LISTING_DB_PATH}")
                 try:
                     # Opened as RW so Listener can write and Extractor can migrate
+                    os.makedirs(os.path.dirname(LISTING_DB_PATH), exist_ok=True)
                     self.listing_conn = duckdb.connect(LISTING_DB_PATH, read_only=False)
                 except Exception as e:
-                     # Fallback if file doesn't exist yet or locked
-                     logger.warning(f"Shared Listing DB connect failed: {e}")
-                     return None
+                    err_msg = str(e)
+                    if "WAL" in err_msg or "Catalog" in err_msg or "Binder Error" in err_msg:
+                        logger.warning(f"Detected Listing DB corruption or WAL error: {e}. Attempting recovery...")
+                        try:
+                            if self.listing_conn: self.listing_conn.close()
+                            self.listing_conn = None
+                            
+                            import time
+                            ts = int(time.time())
+                            if os.path.exists(LISTING_DB_PATH):
+                                os.rename(LISTING_DB_PATH, f"{LISTING_DB_PATH}.corrupt.{ts}")
+                            wal_path = f"{LISTING_DB_PATH}.wal"
+                            if os.path.exists(wal_path):
+                                os.rename(wal_path, f"{wal_path}.corrupt.{ts}")
+                            
+                            logger.info("Corrupted Listing DB moved to backup. Creating fresh DB...")
+                            self.listing_conn = duckdb.connect(LISTING_DB_PATH, read_only=False)
+                        except Exception as recovery_err:
+                            logger.error(f"Listing DB Recovery Failed: {recovery_err}")
+                            raise
+                    else:
+                        logger.warning(f"Shared Listing DB connect failed: {e}")
+                        return None
             return self.listing_conn
 
     def get_ai_connection(self):

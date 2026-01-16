@@ -2,11 +2,18 @@ import logging
 import asyncio
 import re
 import os
-from datetime import datetime, timezone
+import time
+from datetime import datetime, timedelta, timezone
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 
-from .db import insert_message
+from .db import insert_message, get_last_msg_id
+
+def ist_converter(*args):
+    # UTC + 5:30
+    return (datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)).timetuple()
+
+logging.Formatter.converter = ist_converter
 
 logger = logging.getLogger("telegram_listener.core")
 
@@ -15,11 +22,133 @@ URL_REGEX = r'(https?://\S+)'
 
 class TelegramListener:
     def __init__(self, config):
+        # Setup File Logging with UTF-8 encoding to handle emoji and Unicode
+        file_handler = logging.FileHandler("listener_turbo.log", encoding='utf-8')
+        file_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
+        logger.addHandler(file_handler)
+        logger.setLevel(logging.INFO)
+        
+        # Suppress Telethon's noisy disconnection logs
+        logging.getLogger('telethon').setLevel(logging.WARNING)
+
         self.api_id = config['api_id']
         self.api_hash = config['api_hash']
         self.session_string = config['session_string']
         self.channels = config['channels'] # List of int IDs
         self.client = None
+
+    async def _keep_alive_loop(self):
+        """Sends a ping to self every 60s to keep connection active."""
+        logger.info("[KeepAlive] Task Started.")
+        while True:
+            try:
+                await asyncio.sleep(60)
+                me = await self.client.get_me()
+                logger.info(f"[KeepAlive] Ping Success ({me.username or me.first_name}).")
+            except Exception as e:
+                logger.error(f"[KeepAlive] Failed: {e}")
+
+    async def _polling_loop(self):
+        """Actively polls channels for new messages every 3 seconds."""
+        logger.info("[Polling] Task Started - Checking for new messages every 3 seconds.")
+        
+        while True:
+            try:
+                await asyncio.sleep(3)  # Poll every 3 seconds
+                
+                for channel_id in self.channels:
+                    try:
+                        # Get the last message ID we've seen for this channel
+                        last_id = get_last_msg_id(channel_id)
+                        
+                        # Convert channel ID to proper format
+                        # Telegram channels need -100 prefix
+                        channel_id_str = str(channel_id)
+                        if not channel_id_str.startswith('-100'):
+                            # Add -100 prefix for channels
+                            telegram_channel_id = int(f"-100{abs(channel_id)}")
+                        else:
+                            telegram_channel_id = channel_id
+                        
+                        # Only fetch messages from the last 10 minutes
+                        from datetime import datetime, timedelta, timezone
+                        ten_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=10)
+                        
+                        # Fetch recent messages (limit to 20, within last 10 minutes)
+                        messages = await self.client.get_messages(
+                            telegram_channel_id, 
+                            limit=20,
+                            offset_date=ten_minutes_ago
+                        )
+                        
+                        new_messages = []
+                        for msg in messages:
+                            if msg.id > last_id:
+                                new_messages.append(msg)
+                        
+                        # Process new messages in chronological order (oldest first)
+                        for msg in reversed(new_messages):
+                            await self._process_message(msg, channel_id)
+                            
+                    except Exception as e:
+                        logger.error(f"[Polling] Error checking channel {channel_id}: {e}")
+                        
+            except Exception as e:
+                logger.error(f"[Polling] Loop error: {e}")
+                await asyncio.sleep(5)
+
+    async def _process_message(self, msg, chat_id):
+        """Process a single message and save to database."""
+        try:
+            safe_text = (msg.message[:20] if msg.message else "").encode('ascii', 'ignore').decode('ascii')
+            logger.info(f"Captured msg {msg.id} from {chat_id} (Media: {msg.media is not None})")
+            
+            # Get the chat object for this message
+            chat = await msg.get_chat()
+            
+            # Use the existing message processing logic
+            await self._process_message_direct(msg, chat)
+        except Exception as e:
+            logger.error(f"Error processing message {msg.id}: {e}")
+
+    async def catch_up(self):
+        """Fetches messages missed while the listener was offline."""
+        logger.info("[CatchUp] Starting catch-up process for enabled channels...")
+        for channel_id in self.channels:
+            try:
+                chat_id_str = str(channel_id)
+                last_db_id = await asyncio.to_thread(get_last_msg_id, chat_id_str)
+                
+                logger.info(f"[CatchUp] Channel {chat_id_str}: Last ID in DB is {last_db_id}")
+                
+                # Fetch entity (Try with -100 prefix first as most are channels)
+                try:
+                    entity = await self.client.get_entity(int(f"-100{channel_id}"))
+                except:
+                    entity = await self.client.get_entity(channel_id)
+                
+                count = 0
+                limit = None if last_db_id > 0 else 50
+                # Limit catch-up to the last 2 hours to avoid excessive history dump
+                cutoff_2h = datetime.now(timezone.utc) - timedelta(hours=2)
+                
+                async for msg in self.client.iter_messages(
+                    channel_id, 
+                    min_id=last_db_id, 
+                    limit=limit, 
+                    reverse=True,
+                    offset_date=cutoff_2h
+                ):
+                    await self._process_message_direct(msg, entity)
+                    count += 1
+                
+                if count > 0:
+                    logger.info(f"[CatchUp] Channel {getattr(entity, 'title', chat_id_str)}: Recovered {count} missed messages.")
+                else:
+                    logger.info(f"[CatchUp] Channel {getattr(entity, 'title', chat_id_str)}: Already up to date.")
+                    
+            except Exception as e:
+                logger.error(f"[CatchUp] Failed for channel {channel_id}: {e}")
 
     async def start(self):
         """Starts the Telethon client and event loop."""
@@ -40,16 +169,31 @@ class TelegramListener:
             logger.error("Session is invalid or expired.")
             raise Exception("Telegram Session Invalid")
         
-        logger.info(f"Connected as: { (await self.client.get_me()).username }")
-        logger.info(f"Listening to {len(self.channels)} channels...")
+        me = await self.client.get_me()
+        logger.info(f"Connected as: { me.username or me.first_name }")
+        logger.info(f"Listening to {len(self.channels)} channels: {self.channels}")
 
         # Register Event Handler
         # We listen to incoming messages from the specific channels
         # channels list can be empty if we just want to listen to everything, but requirements said "Subscribe only to ENABLED channels"
-        # optimizing: pass chats to events.NewMessage
+        
+        # RAW DEBUG HANDLER
+        @self.client.on(events.Raw)
+        async def raw_handler(update):
+            # Only log interesting updates to avoid noise
+            type_name = type(update).__name__
+            # Skip noise like UpdateChannelMessageViews, UpdateReadHistoryOutbox, etc.
+            if type_name in ['UpdateNewChannelMessage', 'UpdateNewMessage', 'UpdateShortMessage']:
+                logger.info(f"[TURBO-RAW] Update received: {type_name}")
+
         @self.client.on(events.NewMessage())
         async def handler(event):
             try:
+                # TURBO LOGGING: See EVERYTHING
+                # Sanitize text to prevent Unicode encoding errors on Windows console
+                safe_text = (event.raw_text[:20] if event.raw_text else "").encode('ascii', 'ignore').decode('ascii')
+                logger.info(f"[TURBO] NewMessage Event! ChatID: {event.chat_id} | Text: {safe_text}...")
+                
                 chat = await event.get_chat()
                 chat_id = chat.id
                 
@@ -78,7 +222,7 @@ class TelegramListener:
                 current_id_str = str(chat_id)
                 
                 if current_id_str in valid_ids or current_id_str.replace("-100", "") in valid_ids:
-                    await self._process_message(event)
+                    await self._process_message_direct(event.message, chat)
                 else:
                     logger.warning(f"Ignored msg from {chat_id} ({getattr(chat, 'title', 'NoTitle')}) - Not in enabled list.")
                     pass
@@ -86,18 +230,36 @@ class TelegramListener:
             except Exception as e:
                 logger.error(f"Error processing message: {e}")
 
-        # Start the client but DONT block
-        # run_until_disconnected() blocks the event loop if awaited here.
-        # Since we are running in an asyncio loop in WorkerManager, we just need to be connected.
-        # The client will keep running receiving events in the background.
-        logger.info("[Listener] Client started and listening (non-blocking).")
-        # await self.client.run_until_disconnected() <--- REMOVED BLOCKING CALL
-
-    async def _process_message(self, event):
-        """Extracts raw data and saves to DB."""
-        msg = event.message
-        chat = await event.get_chat()
+        # Start the client and block until disconnected
         
+        # Start KeepAlive Task
+        logger.info("[Listener] Starting KeepAlive Task...")
+        asyncio.create_task(self._keep_alive_loop())
+        
+        # Polling disabled - event-based listener is working correctly
+        # Start Polling Task
+        # logger.info("[Listener] Starting Polling Task (checking every 3 seconds)...")
+        # asyncio.create_task(self._polling_loop())
+        
+        logger.info("[Listener] Client started and listening (blocking).")
+        
+        # Custom Keep-Alive Loop instead of run_until_disconnected
+        # run_until_disconnected seems to crash or exit immediately in this setup
+        logger.info("[Listener] Entering Custom Loop...")
+        try:
+            while True:
+                await asyncio.sleep(1)
+                # We could check self.client.is_connected() here if useful
+        except asyncio.CancelledError:
+            logger.info("[Listener] Task Cancelled.")
+        except Exception as e:
+            logger.critical(f"[Listener] CRASHED in Custom Loop: {e}", exc_info=True)
+            raise e
+        finally:
+            logger.info("[Listener] Stopped.")
+
+    async def _process_message_direct(self, msg, chat):
+        """Extracts raw data and saves to DB."""
         # Determine Source Handle (username or title)
         source_handle = getattr(chat, 'username', None) or getattr(chat, 'title', 'Unknown')
         
