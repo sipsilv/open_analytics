@@ -49,6 +49,8 @@ class SharedDatabase:
                 try:
                     os.makedirs(os.path.dirname(RAW_DB_PATH), exist_ok=True)
                     self.raw_conn = duckdb.connect(RAW_DB_PATH, read_only=False)
+                    # Aggressive checkpointing to minimize WAL size and inconsistency on crash
+                    self.raw_conn.execute("PRAGMA checkpoint_threshold='10MB'")
                 except Exception as e:
                     err_msg = str(e)
                     # Check for Lock Error (Concurrent access)
@@ -96,6 +98,7 @@ class SharedDatabase:
                     os.makedirs(os.path.dirname(LISTING_DB_PATH), exist_ok=True)
                     # Opened as RW so Listener can write and Extractor can migrate
                     self.listing_conn = duckdb.connect(LISTING_DB_PATH, read_only=False)
+                    self.listing_conn.execute("PRAGMA checkpoint_threshold='10MB'")
                 except Exception as e:
                     err_msg = str(e)
                     if "lock" in err_msg.lower() or "resource temporarily unavailable" in err_msg.lower():
@@ -142,6 +145,7 @@ class SharedDatabase:
                 try:
                     os.makedirs(os.path.dirname(AI_DB_PATH), exist_ok=True)
                     self.ai_conn = duckdb.connect(AI_DB_PATH, read_only=False)
+                    self.ai_conn.execute("PRAGMA checkpoint_threshold='10MB'")
                 except Exception as e:
                     err_msg = str(e)
                     if "lock" in err_msg.lower() or "resource temporarily unavailable" in err_msg.lower():
@@ -188,6 +192,7 @@ class SharedDatabase:
                 try:
                     os.makedirs(os.path.dirname(SCORING_DB_PATH), exist_ok=True)
                     self.scoring_conn = duckdb.connect(SCORING_DB_PATH, read_only=False)
+                    self.scoring_conn.execute("PRAGMA checkpoint_threshold='10MB'")
                 except Exception as e:
                     err_msg = str(e)
                     if "lock" in err_msg.lower() or "resource temporarily unavailable" in err_msg.lower():
@@ -235,6 +240,7 @@ class SharedDatabase:
                 try:
                     os.makedirs(os.path.dirname(FINAL_DB_PATH), exist_ok=True)
                     self.final_conn = duckdb.connect(FINAL_DB_PATH, read_only=False)
+                    self.final_conn.execute("PRAGMA checkpoint_threshold='10MB'")
                 except Exception as e:
                     err_msg = str(e)
                     # Check for Lock Error (Concurrent access)

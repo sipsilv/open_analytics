@@ -18,11 +18,13 @@ if %errorlevel% equ 0 (
     for /f "tokens=5" %%a in ('netstat -ano ^| findstr :8000') do (
         set PID_VAL=%%a
         if not "!PID_VAL!"=="" (
+            echo [INFO] Attempting graceful stop for Backend (PID: !PID_VAL!)...
+            taskkill /PID !PID_VAL! >nul 2>&1
+            timeout /t 2 /nobreak >nul
             taskkill /PID !PID_VAL! /F >nul 2>&1
             echo [OK] Backend stopped (PID: !PID_VAL!)
         )
     )
-    timeout /t 2 /nobreak >nul
 ) else (
     echo [INFO] Backend server not running
 )
@@ -34,11 +36,13 @@ if %errorlevel% equ 0 (
     for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3000') do (
         set PID_VAL=%%a
         if not "!PID_VAL!"=="" (
+            echo [INFO] Attempting graceful stop for Frontend (PID: !PID_VAL!)...
+            taskkill /PID !PID_VAL! >nul 2>&1
+            timeout /t 2 /nobreak >nul
             taskkill /PID !PID_VAL! /F >nul 2>&1
             echo [OK] Frontend stopped (PID: !PID_VAL!)
         )
     )
-    timeout /t 2 /nobreak >nul
 ) else (
     echo [INFO] Frontend server not running
 )
