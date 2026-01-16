@@ -3,15 +3,10 @@ const path = require('path')
 
 const nextConfig = {
   reactStrictMode: true,
-  output: 'standalone',
-  eslint: {
-    // Disable ESLint during production builds
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    // Disable TypeScript errors during production builds
-    ignoreBuildErrors: true,
-  },
+
+  experimental: {
+    outputFileTracingRoot: path.join(__dirname, '../../'),
+  }
 }
 
 module.exports = nextConfig

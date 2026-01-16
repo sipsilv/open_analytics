@@ -129,6 +129,38 @@ export function ConnectionModal({ isOpen, onClose, connection, onUpdate, categor
                 if (connection.details?.session_string) {
                     setIsVerified(true)
                 }
+                if (connection.details?.session_string) {
+                    setIsVerified(true)
+                }
+            } else if (connection.connection_type === 'AI_ML') {
+                setApiKey('') // Masked
+                setBaseUrl(connection.details?.base_url || '')
+
+                // Determine if model is standard or custom
+                const savedModel = connection.details?.model_name || ''
+                const existingDetails = { ...connection.details }
+
+                // Standard lists (flattened for check)
+                const standardModels = [
+                    'llama3', 'llama3:70b', 'llama2', 'mistral', 'mixtral', 'gemma', 'phi3', // Ollama
+                    'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro', // Gemini
+                    'llama-3.1-sonar-small-128k-online', 'llama-3.1-sonar-large-128k-online', 'llama-3.1-sonar-huge-128k-online', // Perplexity
+                    'llama-3.1-sonar-small-128k-chat', 'llama-3.1-sonar-large-128k-chat'
+                ]
+
+                if (savedModel && !standardModels.includes(savedModel)) {
+                    // It's a custom model
+                    existingDetails.model_name = 'custom'
+                    existingDetails.custom_model_name = savedModel
+                } else {
+                    existingDetails.model_name = savedModel
+                }
+
+                // Update formData details immediately so select renders correctly
+                setFormData(prev => ({
+                    ...prev,
+                    details: existingDetails
+                }))
             } else {
                 setAuthType('API_KEY')
                 // For generic connections, don't populate secrets
@@ -281,6 +313,28 @@ export function ConnectionModal({ isOpen, onClose, connection, onUpdate, categor
                 if (baseUrl && baseUrl.trim()) {
                     details.session_path = baseUrl.trim()
                 }
+                if (baseUrl && baseUrl.trim()) {
+                    details.session_path = baseUrl.trim()
+                }
+            } else if (formData.connection_type === 'AI_ML') {
+                // AI Connections
+                if (apiKey && apiKey.trim()) {
+                    details.api_key = apiKey.trim()
+                }
+                if (baseUrl && baseUrl.trim()) {
+                    details.base_url = baseUrl.trim()
+                }
+
+                // Handle Model Name Selection
+                let model = formData.details?.model_name
+                // If user selected 'custom', grab the value from custom_model_name
+                if (model === 'custom' && formData.details?.custom_model_name) {
+                    model = formData.details.custom_model_name
+                }
+
+                if (model) {
+                    details.model_name = model
+                }
             } else {
                 // Standard API key authentication
                 if (apiKey && apiKey.trim()) {
@@ -400,24 +454,50 @@ export function ConnectionModal({ isOpen, onClose, connection, onUpdate, categor
                             </div>
 
 
+
                             <div className="grid grid-cols-2 gap-4">
-                                <Input
-                                    label="Provider"
-                                    value={formData.provider}
-                                    onChange={(e) => {
-                                        const newProvider = e.target.value
-                                        setFormData(prev => ({ ...prev, provider: newProvider }))
-                                        // Auto-detect TrueData and switch to TOKEN auth (normalize like backend)
-                                        const providerNormalized = newProvider.toUpperCase().replace(/\s+/g, '').replace(/_/g, '').replace(/-/g, '')
-                                        if (providerNormalized === 'TRUEDATA') {
-                                            setAuthType('TOKEN')
-                                        } else if (authType === 'TOKEN') {
-                                            setAuthType('API_KEY')
-                                        }
-                                    }}
-                                    required
-                                    placeholder="e.g. Binance, OpenAI, TrueData"
-                                />
+                                {formData.connection_type === 'AI_ML' ? (
+                                    <div className="w-full">
+                                        <label className="block text-sm font-sans font-medium text-[#9ca3af] mb-1.5">
+                                            Provider <span className="text-red-400">*</span>
+                                        </label>
+                                        <select
+                                            value={formData.provider}
+                                            onChange={(e) => {
+                                                const newProvider = e.target.value
+                                                setFormData(prev => ({ ...prev, provider: newProvider }))
+                                            }}
+                                            className="w-full px-3 py-2 border border-[#1f2a44] rounded-lg bg-[#121b2f] text-[#e5e7eb] focus:ring-2 focus:ring-primary/30 outline-none"
+                                            required
+                                        >
+                                            <option value="">Select Provider</option>
+                                            <option value="Ollama">Ollama</option>
+                                            <option value="OpenAI">OpenAI</option>
+                                            <option value="Gemini">Google Gemini</option>
+                                            <option value="Perplexity">Perplexity</option>
+                                            <option value="Anthropic">Anthropic</option>
+                                            <option value="Custom">Custom</option>
+                                        </select>
+                                    </div>
+                                ) : (
+                                    <Input
+                                        label="Provider"
+                                        value={formData.provider}
+                                        onChange={(e) => {
+                                            const newProvider = e.target.value
+                                            setFormData(prev => ({ ...prev, provider: newProvider }))
+                                            // Auto-detect TrueData and switch to TOKEN auth (normalize like backend)
+                                            const providerNormalized = newProvider.toUpperCase().replace(/\s+/g, '').replace(/_/g, '').replace(/-/g, '')
+                                            if (providerNormalized === 'TRUEDATA') {
+                                                setAuthType('TOKEN')
+                                            } else if (authType === 'TOKEN') {
+                                                setAuthType('API_KEY')
+                                            }
+                                        }}
+                                        required
+                                        placeholder="e.g. Binance, OpenAI, TrueData"
+                                    />
+                                )}
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="w-full">
@@ -598,6 +678,165 @@ export function ConnectionModal({ isOpen, onClose, connection, onUpdate, categor
                                             </div>
                                         )}
                                     </>
+                                ) : formData.connection_type === 'AI_ML' ? (
+                                    <>
+                                        {/* AI/ML Specific Fields */}
+                                        <Input
+                                            label="Base URL"
+                                            value={baseUrl}
+                                            onChange={(e) => setBaseUrl(e.target.value)}
+                                            placeholder={formData.provider?.toLowerCase().includes('ollama') ? "http://localhost:11434" : "Optional for Cloud Providers"}
+                                            required={formData.provider?.toLowerCase().includes('ollama')}
+                                        />
+
+                                        <Input
+                                            label="API Key"
+                                            value={apiKey}
+                                            onChange={(e) => setApiKey(e.target.value)}
+                                            type="password"
+                                            placeholder={connection ? "Leave blank to keep unchanged" : "Enter API Key (Optional for Local)"}
+                                        />
+
+                                        <div className="grid grid-cols-1 gap-4">
+                                            <div className="w-full">
+                                                <label className="block text-sm font-sans font-medium text-[#9ca3af] mb-1.5">Model Name</label>
+                                                <select
+                                                    value={formData.details?.model_name || ''}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value
+                                                        setFormData(prev => ({ ...prev, details: { ...prev.details, model_name: val } }))
+                                                    }}
+                                                    className="w-full px-3 py-2 border border-[#1f2a44] rounded-lg bg-[#121b2f] text-[#e5e7eb] focus:ring-2 focus:ring-primary/30 outline-none"
+                                                    required
+                                                >
+                                                    <option value="" disabled>Select a Model</option>
+
+                                                    {/* Show models based on selected provider */}
+                                                    {formData.provider === 'Ollama' ? (
+                                                        <>
+                                                            <optgroup label="Llama">
+                                                                <option value="llama3">llama3</option>
+                                                                <option value="llama3:70b">llama3:70b</option>
+                                                                <option value="llama2">llama2</option>
+                                                            </optgroup>
+                                                            <optgroup label="Mistral / Mixtral">
+                                                                <option value="mistral">mistral</option>
+                                                                <option value="mixtral">mixtral</option>
+                                                            </optgroup>
+                                                            <optgroup label="Other">
+                                                                <option value="gemma">gemma</option>
+                                                                <option value="phi3">phi3</option>
+                                                                <option value="gpt-oss:120b">gpt-oss:120b</option>
+                                                            </optgroup>
+                                                            <option value="custom">Custom (Type manually below)</option>
+                                                        </>
+                                                    ) : formData.provider === 'Gemini' ? (
+                                                        <>
+                                                            <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                                                            <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                                                            <option value="gemini-1.0-pro">Gemini 1.0 Pro</option>
+                                                            <option value="custom">Custom (Type manually below)</option>
+                                                        </>
+                                                    ) : formData.provider === 'Perplexity' ? (
+                                                        <>
+                                                            <optgroup label="Sonar Online">
+                                                                <option value="llama-3.1-sonar-small-128k-online">Sonar Small Online (8B)</option>
+                                                                <option value="llama-3.1-sonar-large-128k-online">Sonar Large Online (70B)</option>
+                                                                <option value="llama-3.1-sonar-huge-128k-online">Sonar Huge Online (405B)</option>
+                                                            </optgroup>
+                                                            <optgroup label="Sonar Chat">
+                                                                <option value="llama-3.1-sonar-small-128k-chat">Sonar Small Chat (8B)</option>
+                                                                <option value="llama-3.1-sonar-large-128k-chat">Sonar Large Chat (70B)</option>
+                                                            </optgroup>
+                                                            <option value="custom">Custom (Type manually below)</option>
+                                                        </>
+                                                    ) : formData.provider === 'OpenAI' ? (
+                                                        <>
+                                                            <optgroup label="GPT-4">
+                                                                <option value="gpt-4o">GPT-4o</option>
+                                                                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                                                <option value="gpt-4">GPT-4</option>
+                                                            </optgroup>
+                                                            <optgroup label="GPT-3.5">
+                                                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                                            </optgroup>
+                                                            <option value="custom">Custom (Type manually below)</option>
+                                                        </>
+                                                    ) : formData.provider === 'Anthropic' ? (
+                                                        <>
+                                                            <optgroup label="Claude 3">
+                                                                <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                                                                <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+                                                                <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+                                                            </optgroup>
+                                                            <option value="custom">Custom (Type manually below)</option>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            {/* Show all models if Custom or no provider selected */}
+                                                            <optgroup label="Ollama Models">
+                                                                <option value="llama3">llama3</option>
+                                                                <option value="llama3:70b">llama3:70b</option>
+                                                                <option value="llama2">llama2</option>
+                                                                <option value="mistral">mistral</option>
+                                                                <option value="mixtral">mixtral</option>
+                                                                <option value="gemma">gemma</option>
+                                                                <option value="phi3">phi3</option>
+                                                                <option value="gpt-oss:120b">gpt-oss:120b</option>
+                                                            </optgroup>
+                                                            <optgroup label="Google Gemini">
+                                                                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                                                                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                                                                <option value="gemini-1.0-pro">Gemini 1.0 Pro</option>
+                                                            </optgroup>
+                                                            <optgroup label="Perplexity">
+                                                                <option value="llama-3.1-sonar-small-128k-online">Sonar Small Online (8B)</option>
+                                                                <option value="llama-3.1-sonar-large-128k-online">Sonar Large Online (70B)</option>
+                                                                <option value="llama-3.1-sonar-huge-128k-online">Sonar Huge Online (405B)</option>
+                                                                <option value="llama-3.1-sonar-small-128k-chat">Sonar Small Chat (8B)</option>
+                                                                <option value="llama-3.1-sonar-large-128k-chat">Sonar Large Chat (70B)</option>
+                                                            </optgroup>
+                                                            <optgroup label="OpenAI">
+                                                                <option value="gpt-4o">GPT-4o</option>
+                                                                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                                                <option value="gpt-4">GPT-4</option>
+                                                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                                            </optgroup>
+                                                            <optgroup label="Anthropic Claude">
+                                                                <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                                                                <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+                                                                <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+                                                            </optgroup>
+                                                            <option value="custom">Custom (Type manually below)</option>
+                                                        </>
+                                                    )}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        {/* Allow custom input if 'custom' is selected */}
+                                        {formData.details?.model_name === 'custom' && (
+                                            <Input
+                                                label="Custom Model Name"
+                                                value={formData.details?.custom_model_name || ''}
+                                                onChange={(e) => {
+                                                    const val = e.target.value
+                                                    setFormData(prev => ({ ...prev, details: { ...prev.details, custom_model_name: val } }))
+                                                }}
+                                                placeholder="Enter model name (e.g. my-finetune:v1)"
+                                                required
+                                            />
+                                        )}
+
+                                        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-400 mt-4">
+                                            <p className="flex items-start gap-2">
+                                                <span className="text-lg">ℹ️</span>
+                                                <span>
+                                                    <strong>Note:</strong> Advanced configuration (Prompt Template, Timeout, Active Status) can be set using the <strong>Config</strong> button after creating the connection.
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </>
                                 ) : (
                                     <>
                                         <Input
@@ -634,10 +873,11 @@ export function ConnectionModal({ isOpen, onClose, connection, onUpdate, categor
                                     {loading ? 'Saving...' : connection ? 'Update Connection' : 'Create Connection'}
                                 </Button>
                             </div>
+                            {/* Closing form and main content divs */}
                         </form>
                     </div>
                 </div>
-            </div >
-        </div >
+            </div>
+        </div>
     )
 }

@@ -66,7 +66,7 @@ async def get_connections(
                         port = config.get("websocket_port", settings.TRUEDATA_DEFAULT_WEBSOCKET_PORT)
                     
                     # Mask sensitive fields
-                    sensitive_keys = ['password', 'api_secret', 'access_token', 'api_hash', 'bot_token', 'secret_key', 'api_key_secret']
+                    sensitive_keys = ['password', 'api_secret', 'access_token', 'api_hash', 'bot_token', 'secret_key', 'api_key_secret', 'api_key']
                     safe_details = {
                         k: ('********' if k in sensitive_keys or 'secret' in k.lower() or 'password' in k.lower() or 'hash' in k.lower() or 'token' in k.lower() else v) 
                         for k, v in config.items()
@@ -206,7 +206,9 @@ async def get_connections(
                 updated_at=None
             )
             result.append(manager_conn_response)
+            
     
+    # AI connections are now in SQLite and returned naturally from the query above
     return result
 
 @router.post("/", response_model=ConnectionResponse)
@@ -365,12 +367,26 @@ async def create_connection(
         connection_status = ConnectionStatus.CONNECTED
         connection_health = ConnectionHealth.HEALTHY
 
+
+    # Validate AI Connection - Skip adapter validation, handled by ai_connection_manager
+    elif connection_data.connection_type == "AI_ML":
+        # Set initial status - will be validated when connection is tested
+        connection_status = ConnectionStatus.DISCONNECTED
+        connection_health = ConnectionHealth.HEALTHY
+        logger.info(f"AI Connection will be created: {connection_data.provider}")
+
+
     # Encrypt details if present
     encrypted_creds = None
     if connection_data.details:
         try:
             logger.info(f"Creating connection - details keys: {list(connection_data.details.keys())}")
-            logger.info(f"Details content (masked): { {k: ('***' if k in ['password', 'api_secret'] else v) for k, v in connection_data.details.items()} }")
+            # Mask sensitive keys
+            masked_details = {
+                k: ('***' if k in ['password', 'api_secret', 'api_key', 'access_token'] else v) 
+                for k, v in connection_data.details.items()
+            }
+            logger.info(f"Details content (masked): {masked_details}")
             json_str = json.dumps(connection_data.details)
             encrypted_creds = encrypt_data(json_str)
             logger.info(f"Credentials encrypted successfully, length: {len(encrypted_creds)}")
@@ -387,6 +403,9 @@ async def create_connection(
             detail=error_message
         )
 
+    # All connections including AI_ML are now stored in SQLite
+    # AI-specific fields (model_name, base_url, timeout, etc.) are stored in the encrypted credentials JSON
+    
     new_conn = Connection(
         name=connection_data.name,
         connection_type=connection_data.connection_type,
@@ -441,7 +460,37 @@ async def create_connection(
         {"name": new_conn.name, "type": new_conn.connection_type, "status": connection_status.value}
     )
     
-    return new_conn
+    # Create response with details
+    from app.schemas.connection import ConnectionResponse
+    
+    # Use masked details we created earlier
+    response_details = masked_details if connection_data.details else {}
+    
+    # Extract URL/Port if TrueData
+    url = None
+    port = None
+    if is_truedata:
+        url = connection_data.details.get("auth_url", settings.TRUEDATA_DEFAULT_AUTH_URL)
+        port = connection_data.details.get("websocket_port", settings.TRUEDATA_DEFAULT_WEBSOCKET_PORT)
+
+    return ConnectionResponse(
+        id=new_conn.id,
+        name=new_conn.name,
+        connection_type=new_conn.connection_type,
+        provider=new_conn.provider,
+        description=new_conn.description,
+        environment=new_conn.environment,
+        status=new_conn.status,
+        health=new_conn.health,
+        is_enabled=new_conn.is_enabled,
+        last_checked_at=new_conn.last_checked_at,
+        last_success_at=new_conn.last_success_at,
+        created_at=new_conn.created_at,
+        updated_at=new_conn.updated_at,
+        url=url,
+        port=port,
+        details=response_details
+    )
 
 @router.get("/{id}", response_model=ConnectionResponse)
 async def get_connection(
@@ -449,6 +498,43 @@ async def get_connection(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_admin_user)
 ):
+    # Handle AI Connections (Negative IDs)
+    if id < 0:
+        try:
+            from app.services.ai_connection_manager import get_ai_connection
+            ai = get_ai_connection(abs(id))
+            if not ai:
+                raise HTTPException(status_code=404, detail="AI Connection not found")
+            
+            details_dict = {
+                "base_url": ai['base_url'],
+                "model_name": ai['model_name'],
+                "timeout_seconds": ai['timeout_seconds'],
+                "ai_prompt_template": ai['ai_prompt_template'],
+                "is_active": ai['is_active'],
+                "api_key": ai['api_key'] # Return encrypted or let frontend handle blank if masked
+            }
+            
+            return ConnectionResponse(
+                id=ai['connection_id'] * -1, 
+                name=ai['connection_name'],
+                connection_type='AI_ML',
+                provider=ai['provider_type'],
+                description=f"Model: {ai['model_name']}",
+                environment="PROD",
+                status=ai['status'],
+                health="HEALTHY" if ai['status'] == 'CONNECTED' else "DOWN",
+                is_enabled=ai['is_enabled'],
+                last_checked_at=ai['last_checked_at'],
+                last_success_at=None,
+                created_at=ai['created_at'],
+                updated_at=ai['updated_at'],
+                details=details_dict
+            )
+        except Exception as e:
+            logger.error(f"Error fetching AI connection {id}: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
     conn = db.query(Connection).filter(Connection.id == id).first()
     if not conn:
         raise HTTPException(status_code=404, detail="Connection not found")
@@ -534,6 +620,97 @@ async def get_connection_status(
     
     return response
 
+    return response
+
+@router.post("/{id}/test")
+async def test_connection(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
+):
+    """Test a specific connection logic"""
+    # All connections including AI_ML are now in SQLite
+    conn = db.query(Connection).filter(Connection.id == id).first()
+    if not conn:
+        raise HTTPException(status_code=404, detail="Connection not found")
+
+    # Decrypt credentials
+    details = {}
+    if conn.credentials:
+        try:
+            details = json.loads(decrypt_data(conn.credentials))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail="Could not decrypt credentials")
+
+    success = False
+    message = "Unknown Connection Type"
+
+    if conn.connection_type == "AI_ML":
+        # Simple connectivity test for AI connections
+        if details.get("base_url"):
+            try:
+                import requests
+                response = requests.get(details["base_url"], timeout=5)
+                if response.status_code < 500:
+                    success = True
+                    message = f"Successfully connected to {conn.provider} at {details['base_url']}"
+                else:
+                    success = False
+                    message = f"Server error from {details['base_url']}: {response.status_code}"
+            except requests.exceptions.Timeout:
+                success = False
+                message = "Connection timeout - server not responding"
+            except requests.exceptions.ConnectionError:
+                success = False
+                message = "Connection failed - unable to reach server"
+            except Exception as e:
+                success = False
+                message = f"Connection error: {str(e)}"
+        else:
+            success = True
+            message = f"AI connection configured for {conn.provider} with model {details.get('model_name', 'unknown')}"
+            
+    elif conn.connection_type == "TELEGRAM_BOT":
+        # Reuse logic from create/update if possible, or simple check
+        try:
+            import requests # or aiohttp
+            token = details.get('bot_token')
+            if not token:
+                success = False
+                message = "Missing Bot Token"
+            else:
+                resp = requests.get(f"https://api.telegram.org/bot{token}/getMe", timeout=10)
+                if resp.status_code == 200:
+                    success = True
+                    message = "Telegram Bot Connected"
+                else:
+                    success = False
+                    message = f"Telegram Error: {resp.text}"
+        except Exception as e:
+            success = False
+            message = str(e)
+            
+    # Update Status
+    if success:
+        conn.status = "CONNECTED"
+        conn.health = "HEALTHY"
+        conn.last_checked_at = datetime.now(timezone.utc)
+        conn.last_success_at = datetime.now(timezone.utc)
+        conn.error_logs = None
+    else:
+        conn.status = "ERROR"
+        conn.health = "DOWN"
+        conn.last_checked_at = datetime.now(timezone.utc)
+        conn.error_logs = json.dumps({"error": message})
+        
+    db.commit()
+    
+    return {
+        "success": success,
+        "message": message,
+        "status": conn.status
+    }
+
 @router.put("/{id}", response_model=ConnectionResponse)
 async def update_connection(
     id: int,
@@ -541,6 +718,77 @@ async def update_connection(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_admin_user)
 ):
+    # Handle AI Connections (Negative IDs)
+    if id < 0:
+        try:
+            from app.services.ai_connection_manager import update_ai_connection, get_ai_connection
+            
+            # Map update_data to AI fields
+            db_id = abs(id)
+            updates = {}
+            
+            if update_data.details:
+                if 'prompt' in update_data.details:
+                    updates['prompt_template'] = update_data.details['prompt']
+                # Frontend might send 'ai_prompt_template'
+                if 'ai_prompt_template' in update_data.details:
+                    updates['prompt_template'] = update_data.details['ai_prompt_template']
+                    
+                if 'model_name' in update_data.details:
+                    updates['model_name'] = update_data.details['model_name']
+                    
+                if 'timeout' in update_data.details:
+                    updates['timeout'] = int(update_data.details['timeout'])
+                if 'timeout_seconds' in update_data.details:
+                    updates['timeout'] = int(update_data.details['timeout_seconds'])
+                    
+                if 'is_active' in update_data.details:
+                    updates['is_active'] = bool(update_data.details['is_active'])
+                    
+                if 'base_url' in update_data.details:
+                    updates['base_url'] = update_data.details['base_url']
+
+                if 'api_key' in update_data.details:
+                    updates['api_key'] = update_data.details['api_key']
+
+            # Call update
+            update_ai_connection(db_id, **updates)
+            
+            # Re-fetch to return full response
+            # Since we just implemented get logic above, we can assume a helper or just re-fetch using manager
+            ai = get_ai_connection(db_id)
+            if not ai:
+                 raise HTTPException(status_code=404, detail="AI Connection not found after update")
+                 
+            details_dict = {
+                "base_url": ai['base_url'],
+                "model_name": ai['model_name'],
+                "timeout_seconds": ai['timeout_seconds'],
+                "ai_prompt_template": ai['ai_prompt_template'],
+                "is_active": ai['is_active']
+            }
+            
+            return ConnectionResponse(
+                id=ai['connection_id'] * -1, 
+                name=ai['connection_name'],
+                connection_type='AI_ML',
+                provider=ai['provider_type'],
+                description=f"Model: {ai['model_name']}",
+                environment="PROD",
+                status=ai['status'],
+                health="HEALTHY" if ai['status'] == 'CONNECTED' else "DOWN",
+                is_enabled=ai['is_enabled'],
+                last_checked_at=ai['last_checked_at'],
+                last_success_at=None,
+                created_at=ai['created_at'],
+                updated_at=ai['updated_at'],
+                details=details_dict
+            )
+            
+        except Exception as e:
+            logger.error(f"Error updating AI connection {id}: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
     logger.info(f"Received update request for connection ID {id} with data: {update_data}")
     conn = db.query(Connection).filter(Connection.id == id).first()
     if not conn:
@@ -747,7 +995,32 @@ async def update_connection(
                  else:
                       conn.status = ConnectionStatus.ERROR.value
                       conn.health = ConnectionHealth.DOWN.value
-                
+            
+            elif conn.connection_type == "AI_ML":
+                 try:
+                     from app.services.ai_adapter import get_adapter
+                     adapter = get_adapter(conn.provider, final_details)
+                     success, message = adapter.test_connection()
+                     
+                     if success:
+                         conn.status = ConnectionStatus.CONNECTED.value
+                         conn.health = ConnectionHealth.HEALTHY.value
+                         conn.last_checked_at = datetime.now(timezone.utc)
+                         conn.last_success_at = datetime.now(timezone.utc)
+                         conn.error_logs = None
+                         logger.info(f"AI Connection re-validated: {message}")
+                     else:
+                         conn.status = ConnectionStatus.ERROR.value
+                         conn.health = ConnectionHealth.DOWN.value
+                         conn.error_logs = json.dumps({"error": message})
+                         logger.warning(f"AI Connection re-validation failed: {message}")
+                         
+                 except Exception as e:
+                     conn.status = ConnectionStatus.ERROR.value
+                     conn.health = ConnectionHealth.DOWN.value
+                     conn.error_logs = json.dumps({"error": str(e)})
+                     logger.error(f"AI Connection Update Error: {e}")
+
             elif conn.connection_type == "TELEGRAM_BOT":
                  bot_token = final_details.get("bot_token")
                  logger.info(f"Validating Telegram Bot Token: {bot_token[:5]}... (Length: {len(bot_token) if bot_token else 0})")
@@ -844,12 +1117,33 @@ async def delete_connection(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_admin_user)
 ):
-    # Only SUPER ADMIN can delete - get_admin_user allows both, so strict check needed?
-    # Actually get_admin_user allows 'admin' and 'super_admin'.
-    # Master prompt said "Only SUPER_ADMIN can delete a connection".
-    
+    # Only SUPER ADMIN can delete
     if current_user.role.lower() != "super_admin":
         raise HTTPException(status_code=403, detail="Only Super Admin can delete connections")
+
+    # Handle AI Connections (Negative IDs)
+    if id < 0:
+        try:
+            from app.services.ai_connection_manager import delete_ai_connection
+            # Use manager to delete
+            success = delete_ai_connection(abs(id))
+            if not success:
+                 raise HTTPException(status_code=404, detail="AI Connection not found")
+            
+            # Log audit
+            log_audit_event(
+                db, 
+                current_user.id, 
+                "DELETE_CONNECTION", 
+                "connections", 
+                str(id), 
+                {"type": "AI_ML"}, 
+                None
+            )
+            return {"message": "AI Connection deleted"}
+        except Exception as e:
+            logger.error(f"Error deleting AI connection {id}: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
         
     conn = db.query(Connection).filter(Connection.id == id).first()
     if not conn:
@@ -889,6 +1183,7 @@ async def toggle_connection(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_admin_user)
 ):
+    # All connections including AI_ML are now in SQLite
     conn = db.query(Connection).filter(Connection.id == id).first()
     if not conn:
         raise HTTPException(status_code=404, detail="Connection not found")
@@ -1060,8 +1355,6 @@ async def test_connection(
             db.commit()
             return {"status": "success" if is_connected else "error", "message": message}
 
-            db.commit()
-            return {"status": "success" if is_connected else "error", "message": message}
 
         # Add Telegram User Test Logic
         elif provider_normalized in ["TELEGRAMUSER", "TELEGRAM_USER"]:
@@ -1795,3 +2088,49 @@ def create_connection_response(conn: Connection) -> ConnectionResponse:
     }
     
     return ConnectionResponse.model_validate(conn_dict)
+
+
+@router.get("/ai/models")
+async def get_ai_models(
+    provider: str,
+    base_url: Optional[str] = None,
+    current_user: User = Depends(get_admin_user)
+):
+    """Fetch available models for a given provider."""
+    provider = provider.lower()
+    models = []
+    
+    if "ollama" in provider:
+        if not base_url:
+             # Try to find a default or require it? 
+             # For now return empty or error.
+             return {"models": []}
+        
+        try:
+            # Clean base_url - ensure no trailing slash
+            base_url = base_url.rstrip("/")
+            # Also ensure it has http/https
+            if not base_url.startswith("http"):
+                base_url = "http://" + base_url
+                
+            response = requests.get(f"{base_url}/api/tags", timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                models = [model['name'] for model in data.get('models', [])]
+        except Exception as e:
+            logger.error(f"Error fetching Ollama models: {e}")
+            pass
+            
+    elif "gemini" in provider:
+        models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"]
+        
+    elif "perplexity" in provider:
+        models = [
+            "llama-3.1-sonar-small-128k-online", 
+            "llama-3.1-sonar-large-128k-online", 
+            "llama-3.1-sonar-huge-128k-online",
+            "llama-3.1-sonar-small-128k-chat", 
+            "llama-3.1-sonar-large-128k-chat"
+        ]
+        
+    return {"models": models}

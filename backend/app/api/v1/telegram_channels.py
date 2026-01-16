@@ -6,8 +6,17 @@ from app.core.permissions import get_current_user
 from app.models.user import User
 from app.services.telegram_service import TelegramService
 from pydantic import BaseModel
+import duckdb
+import os
+from datetime import datetime, timezone
+import logging
+
+# Import config from the listener module
+# Ensure path is correct relative to where app is running
+from app.services.telegram_raw_listener.config import DB_PATH, TABLE_NAME
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # --- Schemas ---
 class ChannelDiscoveryResponse(BaseModel):
@@ -32,12 +41,57 @@ class ChannelResponse(BaseModel):
     member_count: Optional[int]
     is_enabled: bool
     status: str
+    today_count: Optional[int] = 0  # New field for stats
     
     class Config:
         from_attributes = True
 
 class ToggleChannelRequest(BaseModel):
     is_enabled: bool
+
+# --- Helpers ---
+def get_today_counts(channel_ids: List[int]) -> dict:
+    """
+    Queries DuckDB for message counts for the given channel IDs for the current day (UTC).
+    Returns dict: { channel_id_int: count }
+    """
+    from app.services.shared_db import get_shared_db
+    db = get_shared_db()
+
+    counts = {}
+    try:
+        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        # Use shared DB runner to avoid locks
+        query = f"""
+            SELECT telegram_chat_id, COUNT(*) 
+            FROM {TABLE_NAME} 
+            WHERE received_at >= ?
+            GROUP BY telegram_chat_id
+        """
+        results = db.run_listing_query(query, [today_start], fetch='all')
+        
+        if results:
+            for row in results:
+                chat_id_str = row[0]
+                count = row[1]
+                try:
+                    # Normalize: strip -100 prefix and get absolute value to match raw IDs in registration table
+                    # Listener stores as "-10012345" or "-975074580"
+                    # Registration stores as 12345 or 975074580
+                    raw_id_str = chat_id_str.replace("-100", "")
+                    normalized_id = abs(int(raw_id_str))
+                    counts[normalized_id] = count
+                except Exception as e:
+                    logger.warning(f"Failed to normalize chat ID {chat_id_str}: {e}")
+        
+        if counts:
+            logger.info(f"Today Counts fetched: {counts}")
+                
+    except Exception as e:
+        logger.error(f"Error fetching stats from Shared DB: {e}")
+            
+    return counts
 
 # --- Endpoints ---
 
@@ -103,10 +157,46 @@ def list_channels(
     db: Session = Depends(get_db)
 ):
     """
-    List registered channels for a connection.
+    List registered channels for a connection, with stats.
     """
     service = TelegramService(db)
-    return service.get_registered_channels(connection_id)
+    channels = service.get_registered_channels(connection_id)
+    
+    # 1. Collect IDs
+    channel_ids = [c.channel_id for c in channels]
+    
+    # 2. Fetch Stats from DuckDB
+    stats = get_today_counts(channel_ids)
+    
+    # 3. Merge and formatting
+    response = []
+    for c in channels:
+        # Determine Status
+        status_str = "IDLE"
+        if c.is_enabled:
+            status_str = "ACTIVE"
+        
+        # Get count (direct ID match, or maybe telethon handling?)
+        # For now direct match.
+        count = stats.get(c.channel_id, 0)
+        
+        # Create response object
+        # We manually construct to inject 'today_count' and override 'status'
+        c_resp = ChannelResponse(
+            id=c.id,
+            connection_id=c.connection_id,
+            channel_id=c.channel_id,
+            title=c.title,
+            username=c.username,
+            type=c.type,
+            member_count=c.member_count,
+            is_enabled=c.is_enabled,
+            status=status_str,
+            today_count=count
+        )
+        response.append(c_resp)
+        
+    return response
 
 @router.patch("/{channel_id}/toggle", response_model=ChannelResponse)
 def toggle_channel(
@@ -122,7 +212,32 @@ def toggle_channel(
     channel = service.toggle_channel(channel_id, request.is_enabled)
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
-    return channel
+        
+    # Re-wrap to include stats/status logic (basic here)
+    status_str = "ACTIVE" if channel.is_enabled else "IDLE"
+    
+    # Fetch stats just for this one? Or return 0. 
+    # Frontend will probably refresh list or use return value.
+    # Let's try to fetch stats quickly
+    count = 0 
+    try:
+        s = get_today_counts([channel.channel_id])
+        count = s.get(channel.channel_id, 0)
+    except:
+        pass
+
+    return ChannelResponse(
+        id=channel.id,
+        connection_id=channel.connection_id,
+        channel_id=channel.channel_id,
+        title=channel.title,
+        username=channel.username,
+        type=channel.type,
+        member_count=channel.member_count,
+        is_enabled=channel.is_enabled,
+        status=status_str,
+        today_count=count
+    )
 
 @router.delete("/{channel_id}")
 def delete_channel(
