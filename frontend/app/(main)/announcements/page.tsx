@@ -8,7 +8,6 @@ import { announcementsAPI } from '@/lib/api'
 import { useAnnouncementsWebSocket } from '@/lib/useAnnouncementsWebSocket'
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronRight as ChevronRightIcon, Eye, Download, AlertCircle, Radio, Search, Calendar } from 'lucide-react'
 
-}
 
 interface Announcement {
   id: string
