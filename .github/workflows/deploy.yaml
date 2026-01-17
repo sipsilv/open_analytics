@@ -76,7 +76,7 @@ jobs:
         run: |
           docker build \
             -f server/docker/frontend.Dockerfile \
-            --build-arg NEXT_PUBLIC_API_URL=https://api.rubikanalytics.net \
+            --build-arg NEXT_PUBLIC_API_URL=https://api.openanalytics.co.in \
             -t ghcr.io/${{ github.repository_owner }}/rubik-frontend:latest \
             .
           docker push ghcr.io/${{ github.repository_owner }}/rubik-frontend:latest

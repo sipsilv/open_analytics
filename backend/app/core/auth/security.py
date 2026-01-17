@@ -125,8 +125,16 @@ def decrypt_data(token: str) -> str:
         f = get_fernet()
         return f.decrypt(token.encode()).decode()
     except Exception as e:
-        # Use logger instead of print, and only at warning level since this might be expected
         import logging
+        from cryptography.fernet import InvalidToken
         logger = logging.getLogger(__name__)
-        logger.warning(f"Decryption failed (this may be expected for legacy/corrupted data): {str(e)[:100]}")
+        
+        if isinstance(e, InvalidToken):
+            logger.error(
+                "❌ DECRYPTION FAILURE: The provided ENCRYPTION_KEY does not match the key used to encrypt this data. "
+                "Ensure your environment variable matches the key used when this connection was created."
+            )
+        else:
+            logger.warning(f"Decryption failed (this may be expected for legacy/corrupted data): {str(e)[:100]}")
+        
         raise
