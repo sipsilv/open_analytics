@@ -1,7 +1,13 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.sql import func
+from sqlalchemy.orm import synonym
 from app.core.database import Base
 import uuid
+
+class UserRole:
+    USER = "user"
+    ADMIN = "admin"
+    SUPER_ADMIN = "super_admin"
 
 class User(Base):
     __tablename__ = "users"
@@ -13,7 +19,8 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)  # Required email
     mobile = Column(String, unique=True, index=True, nullable=False)  # Required mobile
     hashed_password = Column(String, nullable=False)
-    role = Column(String, default="user", nullable=False)  # user, admin, super_admin
+    role = Column(String, default=UserRole.USER, nullable=False)  # user, admin, super_admin
+    full_name = synonym("name")
     is_active = Column(Boolean, default=True, nullable=False)
     account_status = Column(String, default="ACTIVE", nullable=False) # PENDING, INACTIVE, ACTIVE, SUSPENDED, DEACTIVATED
     theme_preference = Column(String, default="dark", nullable=False)  # dark, light
