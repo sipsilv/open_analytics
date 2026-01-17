@@ -1,3 +1,7 @@
-from app.api.v1 import auth, users, admin, connections, symbols, websocket, screener, announcements, news
+from . import auth, users, admin, symbols, screener, announcements, news, system, telegram, processors, debug
 
-__all__ = ["auth", "users", "admin", "connections", "symbols", "websocket", "screener", "announcements", "news"]
+__all__ = [
+    "auth", "users", "admin", "symbols", "screener", 
+    "announcements", "news", "system", "telegram", 
+    "processors", "debug"
+]

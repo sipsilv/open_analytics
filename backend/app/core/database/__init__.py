@@ -4,8 +4,8 @@ Database module - dynamic multi-database support
 from typing import Optional, Generator
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session
-from app.core.database.connection_manager import ConnectionManager
-from app.core.database.router import DatabaseRouter
+from .connection_manager import ConnectionManager
+from .router import DatabaseRouter
 from app.core.config import settings
 
 # SQLAlchemy Base for models
