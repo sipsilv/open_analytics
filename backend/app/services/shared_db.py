@@ -96,6 +96,7 @@ class SharedDatabase:
                     os.makedirs(os.path.dirname(LISTING_DB_PATH), exist_ok=True)
                     # Opened as RW so Listener can write and Extractor can migrate
                     self.listing_conn = duckdb.connect(LISTING_DB_PATH, read_only=False)
+                    self.listing_conn.execute("PRAGMA checkpoint_threshold='10MB'")
                 except Exception as e:
                     err_msg = str(e)
                     if "lock" in err_msg.lower() or "resource temporarily unavailable" in err_msg.lower():
