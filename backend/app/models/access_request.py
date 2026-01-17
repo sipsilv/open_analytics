@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text
 from sqlalchemy.sql import func
+from sqlalchemy.orm import synonym
 from app.core.database import Base
 
 class AccessRequest(Base):
@@ -7,12 +8,14 @@ class AccessRequest(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
+    # Synonym for tests
+    full_name = synonym("name")
+    
     email = Column(String, nullable=True, index=True)  # Optional email
     mobile = Column(String, nullable=False, index=True)  # Required mobile
     company = Column(String, nullable=True)
     reason = Column(Text, nullable=False)
-    # requested_role and request_type are NOT database columns - the actual table doesn't have them
-    # Use @property below to provide them as read-only attributes
+    
     status = Column(String, default="pending", nullable=False)  # pending, approved, rejected
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

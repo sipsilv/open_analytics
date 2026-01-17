@@ -8,8 +8,8 @@ class TestTelegramService:
     def service(self):
         # Mock dependencies
         db_mock = MagicMock()
-        service = TelegramService(db_mock)
-        service.repo = MockTelegramRepository()
+        repo = MockTelegramRepository()
+        service = TelegramService(db_mock, repository=repo)
         return service
 
     def test_register_channel_new(self, service):
@@ -31,7 +31,7 @@ class TestTelegramService:
         # (Assuming service uses get_channel_by_username check)
 
     def test_get_channels_metrics(self, service):
-        service.register_channel("c1", "C1")
-        stats = service.get_registered_channels_with_stats()
+        service.register_channel("c1", "C1", connection_id=1)
+        stats = service.get_registered_channels_with_stats(connection_id=1)
         assert len(stats) == 1
         assert stats[0]['username'] == "c1"

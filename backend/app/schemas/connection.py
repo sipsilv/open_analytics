@@ -36,8 +36,8 @@ class ConnectionResponse(BaseModel):
     status: str
     health: str
     is_enabled: bool
-    last_checked_at: Optional[datetime]
-    last_success_at: Optional[datetime]
+    last_checked_at: Optional[datetime] = None
+    last_success_at: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime]
     url: Optional[str] = None  # Public URL (e.g., auth_url for TrueData)

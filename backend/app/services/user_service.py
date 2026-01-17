@@ -18,14 +18,20 @@ from app.providers.telegram_bot import TelegramBotService
 from app.core.auth.security import verify_password, get_password_hash
 from app.core.database import get_connection_manager, get_db_router
 from app.core.config import settings
+import random
+import re
+import uuid
 
 class UserService:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, user_repo: Optional[UserRepository] = None):
         self.db = db
-        self.user_repo = UserRepository()
+        self.user_repo = user_repo or UserRepository()
         self.feedback_repo = FeedbackRepository()
         self.feature_request_repo = FeatureRequestRepository()
         self.telegram_service = TelegramNotificationService()
+
+    async def get_user_by_email(self, email: str) -> Optional[User]:
+        return self.user_repo.get_by_email(self.db, email)
 
     def update_last_active(self, user: User) -> User:
         user.last_active_at = datetime.utcnow()
@@ -140,6 +146,89 @@ class UserService:
             except Exception as e:
                 print(f"Failed to send profile update alert: {e}")
 
+        user.updated_at = datetime.utcnow()
+        return self.user_repo.update(self.db, user)
+
+    def _generate_user_id(self, mobile: str) -> str:
+        """Standardize user_id generation logic"""
+        mobile_normalized = re.sub(r'\D', '', str(mobile))
+        if len(mobile_normalized) >= 10:
+            mobile_part = mobile_normalized[-10:]
+        elif len(mobile_normalized) >= 4:
+            mobile_part = mobile_normalized[-4:]
+        else:
+            mobile_part = mobile_normalized.zfill(4)
+        
+        random_id = random.randint(1000, 9999)
+        user_id = f"{random_id}{mobile_part}"
+        
+        # Check for collision
+        counter = 0
+        max_attempts = 100
+        while counter < max_attempts:
+            existing = self.user_repo.get_by_user_id(self.db, user_id)
+            if not existing:
+                return user_id
+            random_id = random.randint(1000, 9999)
+            user_id = f"{random_id}{mobile_part}"
+            counter += 1
+            
+        # Fallback to UUID
+        return f"{uuid.uuid4().hex[:8]}{mobile_part}"
+
+    async def create_user(self, user_data: Any) -> User:
+        """Standardized user creation used by admin and tests"""
+        # Handle dict or Pydantic model
+        data = user_data if isinstance(user_data, dict) else user_data.dict()
+        
+        email = data.get("email")
+        username = data.get("username")
+        mobile = data.get("mobile")
+        password = data.get("password")
+        # Handle both name and full_name
+        name = data.get("name") or data.get("full_name")
+        role = data.get("role") or "user"
+        is_active = data.get("is_active", True)
+
+        if not email or not username:
+             raise HTTPException(status_code=400, detail="Email and username are required")
+
+        if self.user_repo.get_by_email(self.db, email):
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        if self.user_repo.get_by_username(self.db, username):
+            raise HTTPException(status_code=400, detail="Username already taken")
+
+        user_id = self._generate_user_id(mobile or "0000")
+        
+        user = User(
+            email=email,
+            username=username,
+            mobile=mobile or "0000000000",
+            name=name,
+            hashed_password=get_password_hash(password) if password else "placeholder",
+            role=role,
+            is_active=is_active,
+            user_id=user_id
+        )
+        return self.user_repo.create(self.db, user)
+
+    async def update_user(self, user_id: int, user_data: Any) -> User:
+        """Standardized user update"""
+        user = self.user_repo.get_by_id(self.db, user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        data = user_data if isinstance(user_data, dict) else user_data.dict(exclude_unset=True)
+        
+        # Mapping for full_name to name
+        if "full_name" in data and "name" not in data:
+            data["name"] = data.pop("full_name")
+            
+        for key, value in data.items():
+            if hasattr(user, key) and value is not None:
+                setattr(user, key, value)
+        
         user.updated_at = datetime.utcnow()
         return self.user_repo.update(self.db, user)
 

@@ -5,8 +5,13 @@ from tests.mocks.mock_content_repositories import MockNewsRepository
 class TestNewsService:
     @pytest.fixture
     def service(self):
-        service = NewsService()
-        service.repo = MockNewsRepository()
+        repo = MockNewsRepository()
+        # Inject standard repo behavior
+        service = NewsService(
+            get_final_news_func=repo.get_news,
+            get_backlog_func=lambda: {"ai_pending": 0}
+        )
+        service.repo = repo
         return service
 
     def test_fetch_news(self, service):

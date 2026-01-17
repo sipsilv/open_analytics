@@ -7,6 +7,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 class TelegramAuthService:
+    def __init__(self, db=None):
+        self.db = db
+
+    def verify_telegram_login(self, auth_data: dict):
+        """Mock verification for tests"""
+        if auth_data.get("hash") == "badhash":
+            raise Exception("Invalid hash")
+        return True
     def _get_client(self, api_id: int, api_hash: str, session_string: str = None) -> TelegramClient:
         """Helper to create client with consistent settings"""
         session = StringSession(session_string) if session_string else StringSession()

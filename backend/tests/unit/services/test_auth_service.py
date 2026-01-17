@@ -12,49 +12,48 @@ class TestAuthService:
     def service(self):
         repo = MockUserRepository()
         # Seed users
-        repo.create({
-            "email": "user@example.com",
-            "hashed_password": get_password_hash("password123"),
-            "username": "testuser",
-            "full_name": "Test User",
-            "role": UserRole.USER,
-            "is_active": True
-        })
-        repo.create({
-            "email": "admin@example.com",
-            "hashed_password": get_password_hash("admin123"),
-            "username": "superadmin",
-            "full_name": "Super Admin",
-            "role": UserRole.SUPER_ADMIN,
-            "is_active": True
-        })
-        repo.create({
-            "email": "blocked@example.com",
-            "hashed_password": get_password_hash("password123"),
-            "username": "blockeduser",
-            "full_name": "Blocked User",
-            "role": UserRole.USER,
-            "is_active": False
-        })
+        repo.create(None, User(
+            email="user@example.com",
+            hashed_password=get_password_hash("password123"),
+            username="testuser",
+            name="Test User",
+            role=UserRole.USER,
+            is_active=True
+        ))
+        repo.create(None, User(
+            email="admin@example.com",
+            hashed_password=get_password_hash("admin123"),
+            username="superadmin",
+            name="Super Admin",
+            role=UserRole.SUPER_ADMIN,
+            is_active=True
+        ))
+        repo.create(None, User(
+            email="blocked@example.com",
+            hashed_password=get_password_hash("password123"),
+            username="blockeduser",
+            name="Blocked User",
+            role=UserRole.USER,
+            is_active=False
+        ))
         
         service = AuthService(db=None) # DB session mocked
         service.user_repo = repo # Inject mock repo
         service._create_token_response = MagicMock(return_value={"access_token": "token"}) # Mock token gen
         return service
 
-    def test_login_success(self, service):
+    @pytest.mark.asyncio
+    async def test_login_success(self, service):
         req = LoginRequest(identifier="user@example.com", password="password123")
-        token = service.login(req) # Should not raise
+        token = await service.login(req)
         assert token is not None
 
-    def test_login_invalid_password(self, service):
+    @pytest.mark.asyncio
+    async def test_login_invalid_password(self, service):
         req = LoginRequest(identifier="user@example.com", password="wrongpassword")
         with pytest.raises(HTTPException) as exc:
-            # Need to await if it was async? Service login is async def? 
-            # Let's check source code... wait, login is async def.
-            # We need pytest-asyncio or just run it properly. 
-            pass 
-            # Reviewing code, login IS async def.
+            await service.login(req)
+        assert exc.value.status_code == 401
             
     # Re-writing mocks to handle async properly if needed
     # Check if verify_password is mocked? No, it uses real hashing which is fine for unit tests.
@@ -63,13 +62,13 @@ class TestAuthService:
 async def test_login_async_flow():
     # Helper to prevent creating class-based async issues if pytest-asyncio not fully config
     repo = MockUserRepository()
-    repo.create({
-        "email": "async@example.com",
-        "hashed_password": get_password_hash("pass"),
-        "username": "asyncuser",
-        "role": UserRole.USER,
-        "is_active": True
-    })
+    repo.create(None, User(
+        email="async@example.com",
+        hashed_password=get_password_hash("pass"),
+        username="asyncuser",
+        role=UserRole.USER,
+        is_active=True
+    ))
     
     service = AuthService(db=MagicMock())
     service.user_repo = repo
@@ -92,13 +91,13 @@ async def test_login_async_flow():
 async def test_login_super_admin_bypass():
     repo = MockUserRepository()
     password = get_password_hash("adminpass")
-    repo.create({
-        "email": "admin@example.com",
-        "hashed_password": password,
-        "username": "admin",
-        "role": UserRole.SUPER_ADMIN,
-        "is_active": False # Inactive initially
-    })
+    repo.create(None, User(
+        email="admin@example.com",
+        hashed_password=password,
+        username="admin",
+        role=UserRole.SUPER_ADMIN,
+        is_active=False # Inactive initially
+    ))
     
     db_mock = MagicMock()
     service = AuthService(db=db_mock)
@@ -108,20 +107,20 @@ async def test_login_super_admin_bypass():
     # Super admin login should SUCCEED and Auto-Activate
     await service.login(LoginRequest(identifier="admin@example.com", password="adminpass"))
     
-    user = repo.get_by_email("admin@example.com")
+    user = repo.get_by_email(None, "admin@example.com")
     assert user.is_active is True # Should be activated
     assert db_mock.commit.called # Should commit changes
 
 @pytest.mark.asyncio
 async def test_login_blocked_user():
     repo = MockUserRepository()
-    repo.create({
-        "email": "blocked@example.com",
-        "hashed_password": get_password_hash("pass"),
-        "username": "blocked",
-        "role": UserRole.USER,
-        "is_active": False
-    })
+    repo.create(None, User(
+        email="blocked@example.com",
+        hashed_password=get_password_hash("pass"),
+        username="blocked",
+        role=UserRole.USER,
+        is_active=False
+    ))
     
     service = AuthService(db=MagicMock())
     service.user_repo = repo

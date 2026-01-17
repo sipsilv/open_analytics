@@ -23,6 +23,7 @@ from app.core.auth.security import get_password_hash
 from app.core.websocket.manager import manager
 from app.core.logging.audit import AuditService
 from app.services.telegram_notification_service import TelegramNotificationService
+from app.services.user_service import UserService
 
 class AdminService:
     def __init__(self, db: Session):
@@ -31,76 +32,11 @@ class AdminService:
         self.access_request_repo = AccessRequestRepository()
         self.feedback_repo = FeedbackRepository()
         self.feature_request_repo = FeatureRequestRepository()
+        self.user_service = UserService(db)
 
     # --- User Management ---
 
-    def _generate_user_id(self, mobile: str) -> str:
-        """
-        Generate a unique user_id based on random 4-digit ID and partial mobile number.
-        """
-        if not mobile:
-            raise ValueError("Mobile number is required to generate user_id")
-        
-        mobile_normalized = re.sub(r'[^\d]', '', mobile or '')
-        if not mobile_normalized:
-            raise ValueError("Mobile number must contain at least one digit")
-        
-        if len(mobile_normalized) >= 6:
-            mobile_part = mobile_normalized[-6:]
-        elif len(mobile_normalized) >= 4:
-            mobile_part = mobile_normalized[-4:]
-        else:
-            mobile_part = mobile_normalized.zfill(4)
-        
-        random_id = random.randint(1000, 9999)
-        user_id = f"{random_id}{mobile_part}"
-        
-        counter = 0
-        max_attempts = 9000
-        initial_random_id = random_id
-        tried_ids = set()
-        
-        while True:
-            existing = self.db.query(User).filter(User.user_id == user_id).first()
-            if not existing and user_id not in tried_ids:
-                tried_ids.add(user_id)
-                break
-            
-            random_id += 1
-            if random_id > 9999:
-                random_id = 1000
-            
-            if counter > 0 and random_id == initial_random_id:
-                uuid_part = str(uuid.uuid4())[:8].replace('-', '')
-                user_id = f"{uuid_part}{mobile_part}"
-                if not self.db.query(User).filter(User.user_id == user_id).first():
-                    break
-                counter += 1
-                if counter > max_attempts:
-                     user_id = f"{str(uuid.uuid4()).replace('-', '')}{mobile_part}"
-                     break
-                continue
-            
-            user_id = f"{random_id}{mobile_part}"
-            counter += 1
-            
-            if counter > max_attempts:
-                uuid_part = str(uuid.uuid4())[:8].replace('-', '')
-                user_id = f"{uuid_part}{mobile_part}"
-                if not self.db.query(User).filter(User.user_id == user_id).first():
-                    break
-                user_id = f"{str(uuid.uuid4()).replace('-', '')}{mobile_part}"
-                break
-        
-        if len(user_id) > 255:
-             max_mobile_len = 255 - len(str(random_id))
-             if max_mobile_len > 0:
-                 mobile_part = mobile_part[:max_mobile_len]
-                 user_id = f"{random_id}{mobile_part}"
-             else:
-                 user_id = str(uuid.uuid4()).replace('-', '')[:50]
-        
-        return user_id
+    # Delegated to UserService
 
     async def get_users(self, search: Optional[str] = None) -> List[dict]:
         query = self.db.query(User)
@@ -194,53 +130,7 @@ class AdminService:
         return user_dict
 
     async def create_user(self, user_data: UserCreate, admin: User) -> User:
-        username = str(user_data.username).strip() if user_data.username else ""
-        mobile = str(user_data.mobile).strip() if user_data.mobile else ""
-        email = str(user_data.email).strip() if user_data.email else ""
-        
-        if not username or not email or not mobile:
-            raise HTTPException(status_code=400, detail="Username, Email and Mobile are mandatory")
-            
-        if self.user_repo.get_by_username(self.db, username):
-             raise HTTPException(status_code=400, detail="Username already exists")
-        if self.user_repo.get_by_email(self.db, email):
-             raise HTTPException(status_code=400, detail="Email already exists")
-        if self.user_repo.get_by_mobile(self.db, mobile):
-             raise HTTPException(status_code=400, detail="Mobile number already exists")
-             
-        if not user_data.password or not str(user_data.password).strip():
-            raise HTTPException(status_code=400, detail="Password is required")
-            
-        try:
-            user_id = self._generate_user_id(mobile)
-            
-            name = str(user_data.name).strip() if user_data.name and str(user_data.name).strip() else None
-            password = str(user_data.password).strip()
-            role = (user_data.role or "user").strip().lower() if user_data.role else "user"
-            if role not in ["user", "admin"]:
-                role = "user"
-                
-            user = User(
-                user_id=user_id,
-                username=username,
-                name=name,
-                email=email,
-                mobile=mobile,
-                hashed_password=get_password_hash(password),
-                role=role,
-                is_active=True,
-            )
-            self.db.add(user)
-            self.db.commit()
-            self.db.refresh(user)
-            return user
-        except IntegrityError:
-             self.db.rollback()
-             # Retry logic could be implemented here as in original code, simplifying for now
-             raise HTTPException(status_code=400, detail="User creation failed due to database constraint violation")
-        except Exception as e:
-            self.db.rollback()
-            raise HTTPException(status_code=500, detail=str(e))
+        return await self.user_service.create_user(user_data)
 
     async def update_user(self, user_id: int, user_data: UserUpdate, admin: User) -> User:
         user = self.user_repo.get_by_id(self.db, user_id)
@@ -253,75 +143,42 @@ class AdminService:
         old_mobile = user.mobile
         old_role = user.role
         
-        # Super admin check
         user_role_lower = user.role.lower() if user.role else ""
         if user_role_lower == "super_admin" and admin.id != user.id:
             if admin.role.lower() != "super_admin":
                 raise HTTPException(status_code=403, detail="Cannot modify super_admin user")
 
-        if user_data.name is not None:
-             if old_name != user_data.name:
-                 changes_detail.append(f"Name: {old_name or 'None'} → {user_data.name}")
-             user.name = user_data.name
+        # Use UserService.update_user for the core update
+        # This will also handle name/full_name mapping and basic validation
+        updated_user = await self.user_service.update_user(user_id, user_data)
         
-        if user_data.email is not None:
-            if user_data.email and user_data.email != old_email:
-                if self.user_repo.get_by_email(self.db, user_data.email):
-                     raise HTTPException(status_code=400, detail="Email already exists")
-                changes_detail.append(f"Email: {old_email or 'None'} → {user_data.email}")
-            user.email = user_data.email
-            
-        if user_data.mobile is not None:
-            if not user_data.mobile:
-                 raise HTTPException(status_code=400, detail="Mobile number is required")
-            if user_data.mobile != old_mobile:
-                if self.user_repo.get_by_mobile(self.db, user_data.mobile):
-                     raise HTTPException(status_code=400, detail="Mobile number already exists")
-                changes_detail.append(f"Mobile: {old_mobile or 'None'} → {user_data.mobile}")
-            user.mobile = user_data.mobile
-            
-        user.updated_at = datetime.utcnow()
-        
-        if user_data.theme_preference:
-            if user_data.theme_preference not in ["dark", "light"]:
-                 raise HTTPException(status_code=400, detail="Theme preference must be 'dark' or 'light'")
-            user.theme_preference = user_data.theme_preference
-        
-        if user_data.role is not None:
-            admin_role_lower = admin.role.lower() if admin.role else ""
-            if admin_role_lower != "super_admin":
-                raise HTTPException(status_code=403, detail="Only super_admin can change user roles")
-            
-            if user_role_lower == "super_admin":
-                raise HTTPException(status_code=403, detail="Cannot change super_admin role")
-                
-            new_role_lower = user_data.role.lower().strip()
-            if new_role_lower not in ["user", "admin"]:
-                 raise HTTPException(status_code=400, detail="Role must be 'user' or 'admin'")
-            
-            if old_role != new_role_lower:
-                changes_detail.append(f"Role: {old_role} → {new_role_lower}")
-            user.role = new_role_lower
-            
-        self.db.commit()
-        self.db.refresh(user)
-        
-        if user.telegram_chat_id and changes_detail:
+        # Track changes for notification
+        if user_data.name is not None and user_data.name != old_name:
+            changes_detail.append(f"Name: {old_name or 'None'} → {user_data.name}")
+        if user_data.email is not None and user_data.email != old_email:
+            changes_detail.append(f"Email: {old_email or 'None'} → {user_data.email}")
+        if user_data.mobile is not None and user_data.mobile != old_mobile:
+            changes_detail.append(f"Mobile: {old_mobile or 'None'} → {user_data.mobile}")
+        if user_data.role is not None and user_data.role != old_role:
+             changes_detail.append(f"Role: {old_role} → {user_data.role}")
+
+        # Telegram Notification
+        if updated_user.telegram_chat_id and changes_detail:
              try:
                 ns = TelegramNotificationService()
                 changes_text = "\n".join([f"• {change}" for change in changes_detail])
                 msg = (
                     f"📝 <b>Profile Updated by Admin</b>\n\n"
-                    f"Hello <b>{user.username}</b>,\n\n"
+                    f"Hello <b>{updated_user.username}</b>,\n\n"
                     f"Your profile has been updated by administrator <b>{admin.username}</b>.\n\n"
                     f"<b>Changes made:</b>\n{changes_text}\n\n"
                     f"— Open Analytics"
                 )
-                await ns.send_info_notification(user, msg)
+                await ns.send_info_notification(updated_user, msg)
              except:
-                 pass
+                pass
         
-        return user
+        return updated_user
 
     def delete_user(self, user_id: int, admin: User):
         user = self.user_repo.get_by_id(self.db, user_id)

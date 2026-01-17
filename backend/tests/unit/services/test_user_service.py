@@ -16,9 +16,10 @@ class TestUserService:
             "role": UserRole.SUPER_ADMIN,
             "is_active": True
         })
-        return UserService(repo)
+        return UserService(db=None, user_repo=repo)
 
-    def test_create_user(self, service):
+    @pytest.mark.asyncio
+    async def test_create_user(self, service):
         user_data = {
             "email": "test@example.com",
             "password": "password123", # Service handles hashing
@@ -27,7 +28,7 @@ class TestUserService:
             "role": UserRole.USER
         }
         
-        user = service.create_user(user_data)
+        user = await service.create_user(user_data)
         
         assert user.email == "test@example.com"
         assert user.full_name == "Test User"
@@ -35,7 +36,8 @@ class TestUserService:
         # Ensure password was hashed
         assert user.hashed_password != "password123"
 
-    def test_create_user_duplicate_email(self, service):
+    @pytest.mark.asyncio
+    async def test_create_user_duplicate_email(self, service):
         user_data = {
             "email": "test@example.com",
             "password": "password123",
@@ -43,16 +45,17 @@ class TestUserService:
             "is_active": True,
             "role": UserRole.USER
         }
-        service.create_user(user_data)
+        await service.create_user(user_data)
         
         # Expect error on duplicate
         with pytest.raises(Exception) as exc:
-            service.create_user(user_data)
+            await service.create_user(user_data)
         assert "Email already registered" in str(exc.value)
 
-    def test_update_user(self, service):
+    @pytest.mark.asyncio
+    async def test_update_user(self, service):
         # Create user first
-        user = service.create_user({
+        user = await service.create_user({
             "email": "update@example.com",
             "password": "pw",
             "full_name": "Original Name",
@@ -60,22 +63,23 @@ class TestUserService:
         })
         
         # Update
-        updated = service.update_user(user.id, {"full_name": "New Name"})
+        updated = await service.update_user(user.id, {"full_name": "New Name"})
         
         assert updated.full_name == "New Name"
         assert updated.email == "update@example.com"
 
-    def test_get_user_by_email(self, service):
-        service.create_user({
+    @pytest.mark.asyncio
+    async def test_get_user_by_email(self, service):
+        await service.create_user({
             "email": "findme@example.com",
             "password": "pw",
             "full_name": "Find Me",
             "role": UserRole.USER
         })
         
-        user = service.get_user_by_email("findme@example.com")
+        user = await service.get_user_by_email("findme@example.com")
         assert user is not None
         assert user.email == "findme@example.com"
         
-        missing = service.get_user_by_email("missing@example.com")
+        missing = await service.get_user_by_email("missing@example.com")
         assert missing is None

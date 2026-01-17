@@ -5,23 +5,35 @@ class MockTelegramRepository:
         self.channels = {}
         self.listeners = {}
 
-    def get_channel_by_username(self, db, username: str):
+    def get_channel_by_telegram_id(self, connection_id: int, telegram_id: int):
         for c in self.channels.values():
-            if c['username'] == username: return c
+            if c.connection_id == connection_id and c.channel_id == telegram_id:
+                return c
         return None
 
-    def register_channel(self, db, channel_data: dict):
-        cid = len(self.channels) + 1
-        channel_data['id'] = cid
-        self.channels[cid] = channel_data
-        return channel_data
+    def get_channels_by_connection(self, connection_id: int):
+        return [c for c in self.channels.values() if c.connection_id == connection_id]
 
-    def get_registered_channels(self, db):
-        return list(self.channels.values())
+    def create_channel(self, channel):
+        self.channels[channel.channel_id] = channel
+        return channel
 
-    # Add other methods as needed by service logic
-    def get_channel_stats(self, db, channel_id):
-        return {'msg_count': 0}
+    def get_channel_by_id(self, channel_id: int):
+        for c in self.channels.values():
+            if getattr(c, 'id', None) == channel_id:
+                return c
+        return None
+
+    def update_channel(self, channel):
+        self.channels[channel.channel_id] = channel
+        return channel
+
+    def delete_channel(self, channel):
+        if channel.channel_id in self.channels:
+            del self.channels[channel.channel_id]
+
+    def get_channel_stats(self, channel_ids: List[int], table_name: str):
+        return {cid: 0 for cid in channel_ids}
 
 class MockNewsRepository:
     def __init__(self):
