@@ -5,7 +5,14 @@ from datetime import datetime
 from typing import Optional
 
 from app.models.user import User
-from app.schemas.auth import LoginRequest, ForgotPasswordResponse, ResetPasswordResponse, TokenResponse 
+from app.schemas.auth import (
+    LoginRequest, 
+    TokenResponse, 
+    ForgotPasswordRequest, 
+    ForgotPasswordResponse, 
+    ResetPasswordRequest, 
+    ResetPasswordResponse
+)
 from app.core.auth.security import verify_password, create_access_token, get_password_hash
 from app.providers.telegram_bot import TelegramBotService
 from app.services.telegram_notification_service import TelegramNotificationService
