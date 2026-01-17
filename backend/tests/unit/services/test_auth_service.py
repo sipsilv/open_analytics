@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 from fastapi import HTTPException
 from app.services.auth_service import AuthService
 from app.models.user import User, UserRole
-from app.api.v1.auth import LoginRequest
+from app.schemas.auth import LoginRequest
 from app.core.auth.security import get_password_hash
 from tests.mocks.mock_user_repository import MockUserRepository
 
