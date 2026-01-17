@@ -1,7 +1,13 @@
 import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/components/providers/AuthProvider'
 import Script from 'next/script'
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'Open Analytics',
@@ -42,7 +48,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="dark">
+      <body className={`dark ${inter.className}`}>
         <AuthProvider>
           {children}
         </AuthProvider>

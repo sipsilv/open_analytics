@@ -63,6 +63,11 @@ app = FastAPI(
     version="1.0.1",
 )
 
+# Gzip Compression - significantly reduces response payload size
+from fastapi.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+
 # CORS middleware - MUST be added before other middleware
 # Use settings for CORS origins to support Docker networking
 app.add_middleware(
