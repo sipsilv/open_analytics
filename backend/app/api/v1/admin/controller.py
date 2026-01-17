@@ -6,13 +6,13 @@ from typing import List, Optional
 from app.core.database import get_db
 from app.core.auth.permissions import get_admin_user, get_super_admin
 from app.models.user import User
-from app.schemas.user import UserCreate, UserResponse, UserUpdate
+from app.schemas.user import UserCreate, UserResponse, UserUpdate, UserStatusUpdate
 from app.schemas.admin import (
     AccessRequestCreate, AccessRequestResponse, FeedbackResponse,
-    FeatureRequestResponse, FeatureRequestUpdate
+    FeatureRequestResponse, FeatureRequestUpdate, AdminMessage, ChangePasswordRequest
 )
 from datetime import datetime, timezone
-from app.services.admin_service import AdminService, AdminMessage, ChangePasswordRequest, UserStatusUpdate
+from app.services.admin_service import AdminService
 
 router = APIRouter()
 

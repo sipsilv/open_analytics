@@ -77,3 +77,11 @@ class FeatureRequestResponse(BaseModel):
 class FeatureRequestUpdate(BaseModel):
     status: Optional[str] = None  # in_review, approved, rejected, implemented
     admin_note: Optional[str] = None
+
+class AdminMessage(BaseModel):
+    message: str
+    send_to_telegram: bool = True
+
+class ChangePasswordRequest(BaseModel):
+    new_password: str
+    confirm_password: str

@@ -73,3 +73,7 @@ class UserResponse(UserBase):
     
     class Config:
         from_attributes = True
+
+class UserStatusUpdate(BaseModel):
+    status: str  # ACTIVE, SUSPENDED, DEACTIVATED
+    reason: Optional[str] = None
