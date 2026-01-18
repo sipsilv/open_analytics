@@ -1,4 +1,4 @@
-name: Backend Tests & Publish Report
+name: CI - Tests, Reports & Docker Deploy
 
 on:
   push:
@@ -9,15 +9,14 @@ on:
 
 permissions:
   contents: read
+  packages: write
   pages: write
   id-token: write
 
-
 jobs:
   test-backend:
-    name: Run Backend Tests & Publish Report
+    name: Run Backend Tests
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,50 +24,203 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
-      - name: Install dependencies
+      - name: Install backend dependencies
         run: |
           cd backend
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest-html pytest-md-report
+          pip install pytest pytest-html pytest-md-report pytest-cov
 
-      - name: Run tests with pytest
+      - name: Run pytest
         run: |
           cd backend
           python -m pytest \
-            --html=index.html \
+            --html=report.html \
             --self-contained-html \
             --md-report \
-            --md-report-output report.md
+            --md-report-output report.md \
+            --cov=. \
+            --cov-report=term
 
-      - name: Add Job Summary
+      - name: Add test summary to GitHub UI
         if: always()
         run: |
           if [ -f backend/report.md ]; then
-            echo "## Backend Test Summary" >> $GITHUB_STEP_SUMMARY
+            echo "## 🧪 Backend Test Summary" >> $GITHUB_STEP_SUMMARY
             cat backend/report.md >> $GITHUB_STEP_SUMMARY
           fi
 
-      - name: Upload Test Artifacts
+      - name: Upload Backend Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Backend Test Report
-          path: |
-            backend/index.html
-            backend/report.md
+          name: backend-test-report
+          path: backend/report.html
 
-      # 🔑 Pages must be prepared AFTER index.html exists
-      - name: Setup Pages
+  test-frontend:
+    name: Run Frontend Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Install Playwright Browsers
+        run: |
+          cd frontend
+          npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        run: |
+          cd frontend
+          npx playwright test
+
+      - name: Upload Frontend Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-report
+          path: frontend/playwright-report/
+
+  deploy-reports:
+    name: Deploy Test Reports to Pages
+    needs: [test-backend, test-frontend]
+    if: always()
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download Backend Report
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-test-report
+          path: reports/backend
+
+      - name: Download Frontend Report
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-test-report
+          path: reports/frontend
+
+      - name: Create index.html
+        run: |
+          cat <<EOF > reports/index.html
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Test Reports - Open Analytics</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 40px; background: #0d1117; color: #c9d1d9; line-height: 1.6; }
+              .container { max-width: 800px; margin: 0 auto; background: #161b22; padding: 30px; border-radius: 8px; border: 1px solid #30363d; }
+              h1 { color: #58a6ff; margin-bottom: 30px; text-align: center; }
+              .card { background: #21262d; padding: 20px; border-radius: 6px; margin-bottom: 20px; transition: transform 0.2s, border-color 0.2s; border: 1px solid #30363d; }
+              .card:hover { transform: translateY(-2px); border-color: #58a6ff; }
+              a { text-decoration: none; color: #58a6ff; font-weight: bold; font-size: 1.2rem; display: flex; align-items: center; }
+              .subtitle { font-size: 0.9rem; color: #8b949e; margin-top: 5px; }
+              .icon { margin-right: 12px; font-size: 1.4rem; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>🧪 Open Analytics Test Reports</h1>
+              <div class="card">
+                <a href="backend/report.html"><span class="icon">📦</span> Backend (Pytest) Report</a>
+                <div class="subtitle">Unit and integration tests with coverage for the FastAPI backend</div>
+              </div>
+              <div class="card">
+                <a href="frontend/index.html"><span class="icon">🖥️</span> Frontend (Playwright) Report</a>
+                <div class="subtitle">End-to-end UI tests for the Next.js frontend</div>
+              </div>
+            </div>
+          </body>
+          </html>
+          EOF
+
+      - name: Configure Pages
         uses: actions/configure-pages@v4
 
-      - name: Upload Pages Artifact
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: backend
+          path: reports/
 
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  build-and-push:
+    name: Build & Push Docker Images
+    needs: [test-backend, test-frontend]
+    runs-on: ubuntu-latest
+    environment: rubik-env
+
+    steps:
+      # 🚀 BUILD STARTED NOTIFICATION
+      - name: Slack Notify Build Started
+        run: |
+          curl -X POST -H "Content-type: application/json" \
+          --data '{
+            "text": "🚀 *Open Analytics Build Started*\n• Branch: `${{ github.ref_name }}`\n• Commit: `${{ github.sha }}`\n• By: `${{ github.actor }}`"
+          }' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
+            -u ${{ github.actor }} --password-stdin
+
+      # 🐳 Backend Image
+      - name: Build & push backend image
+        run: |
+          docker build \
+            -f server/docker/backend.Dockerfile \
+            -t ghcr.io/${{ github.repository_owner }}/openanalytics-backend:latest \
+            .
+          docker push ghcr.io/${{ github.repository_owner }}/openanalytics-backend:latest
+
+      # 🐳 Frontend Image
+      - name: Build & push frontend image
+        run: |
+          docker build \
+            -f server/docker/frontend.Dockerfile \
+            --build-arg NEXT_PUBLIC_API_URL=${{ secrets.BACKEND_API_URL }} \
+            -t ghcr.io/${{ github.repository_owner }}/openanalytics-frontend:latest \
+            .
+          docker push ghcr.io/${{ github.repository_owner }}/openanalytics-frontend:latest
+
+      # ✅ SUCCESS NOTIFICATION
+      - name: Slack Notify Success
+        if: success()
+        run: |
+          curl -X POST -H "Content-type: application/json" \
+          --data '{
+            "text": "✅ *Open Analytics Build Successful*\n• Backend & Frontend pushed to GHCR\n• Branch: `${{ github.ref_name }}`\n• Commit: `${{ github.sha }}`\n• By: `${{ github.actor }}`\n\n🧪 Test Reports Dashboard:\nhttps://sipsilv.github.io/open_analytics/"
+          }' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      # ❌ FAILURE NOTIFICATION
+      - name: Slack Notify Failure
+        if: failure()
+        run: |
+          curl -X POST -H "Content-type: application/json" \
+          --data '{
+            "text": "❌ *Open Analytics Build Failed*\n• Branch: `${{ github.ref_name }}`\n• Commit: `${{ github.sha }}`\n\n🔍 Check GitHub Actions logs."
+          }' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
