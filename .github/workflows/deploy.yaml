@@ -34,6 +34,10 @@ jobs:
           pip install pytest pytest-html pytest-md-report pytest-cov
 
       - name: Run pytest (HTML + Markdown)
+        env:
+          JWT_SECRET_KEY: "test_secret_key_for_ci_visibility_only"
+          JWT_SYSTEM_SECRET_KEY: "system_test_secret_key_for_ci_visibility_only"
+          ENCRYPTION_KEY: "VGhpcyBpcyBhIHRlc3Qga2V5IGZvciBDSQ==" # Basic base64 key for testing
         run: |
           cd backend
           python -m pytest \
@@ -97,6 +101,10 @@ jobs:
       - name: Run Playwright tests
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8000
+          # Secrets needed for backend to start during playwright tests
+          JWT_SECRET_KEY: "test_secret_key_for_ci_visibility_only"
+          JWT_SYSTEM_SECRET_KEY: "system_test_secret_key_for_ci_visibility_only"
+          ENCRYPTION_KEY: "VGhpcyBpcyBhIHRlc3Qga2V5IGZvciBDSQ==" 
         run: |
           cd frontend
           npx playwright test
@@ -177,7 +185,8 @@ jobs:
 
   build-and-push:
     name: Build & Push Docker Images
-    needs: [test-backend, test-frontend]
+    # Removed test-frontend dependency as requested
+    needs: [test-backend]
     runs-on: ubuntu-latest
     environment: rubik-env
 
