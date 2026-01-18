@@ -69,7 +69,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     # Allow all origins for debugging "data not loading" issues
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
