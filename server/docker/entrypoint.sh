@@ -13,9 +13,9 @@ ADMIN_EMAIL=${ADMIN_EMAIL:-}
 ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
 
 # Run database initialization
-# Note: scripts/init/init_auth_database.py seems to be missing
-# Windows start-all.bat says: "Database initialization is handled automatically by the backend on startup"
-echo "[INFO] Starting backend (skipping explicit init script)..."
+# Run database initialization
+echo "[INFO] initializing database (running init_db.py)..."
+python init_db.py
 
 echo "==========================================="
 echo "  STARTING OPEN ANALYTICS BACKEND"
