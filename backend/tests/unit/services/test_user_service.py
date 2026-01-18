@@ -25,6 +25,7 @@ class TestUserService:
     async def test_create_user(self, service):
         user_data = {
             "email": "test@example.com",
+            "username": "testuser",
             "password": "password123", # Service handles hashing
             "full_name": "Test User",
             "is_active": True,
@@ -43,6 +44,7 @@ class TestUserService:
     async def test_create_user_duplicate_email(self, service):
         user_data = {
             "email": "test@example.com",
+            "username": "testuser",
             "password": "password123",
             "full_name": "Test User",
             "is_active": True,
@@ -60,6 +62,7 @@ class TestUserService:
         # Create user first
         user = await service.create_user({
             "email": "update@example.com",
+            "username": "updateuser",
             "password": "pw",
             "full_name": "Original Name",
             "role": UserRole.USER
@@ -75,6 +78,7 @@ class TestUserService:
     async def test_get_user_by_email(self, service):
         await service.create_user({
             "email": "findme@example.com",
+            "username": "findmeuser",
             "password": "pw",
             "full_name": "Find Me",
             "role": UserRole.USER
