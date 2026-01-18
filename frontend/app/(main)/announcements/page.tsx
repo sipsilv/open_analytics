@@ -60,26 +60,26 @@ export default function AnnouncementsPage() {
   const [downloadingAttachment, setDownloadingAttachment] = useState<Set<string>>(new Set())
   const [viewingAttachment, setViewingAttachment] = useState<Set<string>>(new Set())
   const [attachmentErrors, setAttachmentErrors] = useState<Map<string, string>>(new Map())
-  
+
   const MAX_VISIBLE_LINES = 3
   const descriptionRefs = useRef<Map<string, HTMLDivElement>>(new Map())
-  
+
   // Pagination state
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
-  
+
   // Search state (input values)
   const [searchInput, setSearchInput] = useState('')
   const [searchFromDateInput, setSearchFromDateInput] = useState('')
   const [searchToDateInput, setSearchToDateInput] = useState('')
-  
+
   // Active filter state (applied filters)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchFromDate, setSearchFromDate] = useState('')
   const [searchToDate, setSearchToDate] = useState('')
-  
+
   // Normalize date/time to the same format for grouping (round to minute for grouping)
   const normalizeDateTime = (dateStr?: string): string => {
     if (!dateStr) return ''
@@ -107,34 +107,34 @@ export default function AnnouncementsPage() {
         // Keep only the first pageSize groups worth of announcements
         // This ensures pagination stays correct (25 groups visible)
         const updated = [newAnnouncement, ...prev]
-        
+
         // Group the updated list to see how many groups we have
         // We'll limit to pageSize groups worth of items
         const tempGroups = new Map<string, Announcement[]>()
         updated.forEach((ann) => {
           const normalizedDateTime = normalizeDateTime(ann.trade_date)
           const headline = (ann.news_headline || '').trim().toLowerCase()
-          const groupKey = headline 
+          const groupKey = headline
             ? `${normalizedDateTime}|${headline}`
             : `${normalizedDateTime}|id:${ann.id}`
-          
+
           if (!tempGroups.has(groupKey)) {
             tempGroups.set(groupKey, [ann])
           } else {
             tempGroups.get(groupKey)!.push(ann)
           }
         })
-        
+
         // If we have more groups than pageSize, truncate to keep only enough items for pageSize groups
         const sortedGroups = Array.from(tempGroups.values()).sort((a, b) => {
           const dateA = new Date(a[0].trade_date || 0).getTime()
           const dateB = new Date(b[0].trade_date || 0).getTime()
           return dateB - dateA
         })
-        
+
         // Update total count (total announcements, not groups)
         setTotal(prevTotal => prevTotal + 1)
-        
+
         if (sortedGroups.length > pageSize) {
           // Keep only items from the first pageSize groups
           const itemsToKeep: Announcement[] = []
@@ -143,7 +143,7 @@ export default function AnnouncementsPage() {
           }
           return itemsToKeep
         }
-        
+
         return updated
       })
       setLastRefresh(new Date())
@@ -193,7 +193,7 @@ export default function AnnouncementsPage() {
         setOpenLinksMenu(null)
       }
     }
-    
+
     if (openLinksMenu) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -207,7 +207,7 @@ export default function AnnouncementsPage() {
       setError(null)
 
       const params: any = {}
-      
+
       // If we have filters, use backend pagination
       // If no filters, load all announcements and paginate groups client-side
       if (searchQuery || searchFromDate || searchToDate) {
@@ -221,7 +221,7 @@ export default function AnnouncementsPage() {
         params.offset = 0
         // We'll paginate groups on the client side, not announcements
       }
-      
+
       // Add search filters - backend will search entire database
       if (searchQuery && searchQuery.trim()) {
         params.search = searchQuery.trim()
@@ -234,14 +234,14 @@ export default function AnnouncementsPage() {
       }
 
       const response = await announcementsAPI.getAnnouncements(params)
-      
+
       console.log('API Response:', response)
       console.log('API Response type:', typeof response)
       console.log('API Response keys:', Object.keys(response || {}))
       console.log('Announcements array:', response.announcements)
       console.log('Announcements type:', Array.isArray(response.announcements))
       console.log('Total:', response.total)
-      
+
       // Handle different response structures
       let data: Announcement[] = []
       if (response && response.announcements) {
@@ -258,10 +258,10 @@ export default function AnnouncementsPage() {
         console.warn('Unexpected response structure:', response)
         data = []
       }
-      
+
       console.log('Setting announcements data:', data)
       console.log('Data length:', data.length)
-      
+
       if (data.length > 0) {
         console.log('First announcement:', data[0])
         console.log('First announcement type:', typeof data[0])
@@ -271,17 +271,17 @@ export default function AnnouncementsPage() {
       } else {
         console.warn('No announcements in data array, but total might be:', response.total)
       }
-      
+
       // Backend handles all search filtering - no client-side filtering needed
       setAnnouncements(data)
       setTotal(response.total || 0)
-      
+
       // If we have filters, use backend pagination
       // If no filters, we'll paginate groups client-side (setTotalPages will be updated in useEffect)
       if (searchQuery || searchFromDate || searchToDate) {
         setTotalPages(response.total_pages || Math.ceil((response.total || 0) / pageSize) || 1)
       }
-      
+
       setLastRefresh(new Date())
     } catch (err: any) {
       console.error('Error:', err)
@@ -297,11 +297,11 @@ export default function AnnouncementsPage() {
     try {
       // Handle multiple date formats
       let date: Date
-      
+
       if (typeof dateStr === 'string') {
         // Try parsing as ISO string first
         date = new Date(dateStr)
-        
+
         // If invalid, try other formats
         if (isNaN(date.getTime())) {
           // Try parsing with explicit timezone handling
@@ -317,7 +317,7 @@ export default function AnnouncementsPage() {
           }
           date = new Date(normalizedDateStr)
         }
-        
+
         // If still invalid, return the string as-is
         if (isNaN(date.getTime())) {
           console.warn('Failed to parse date:', dateStr)
@@ -330,19 +330,19 @@ export default function AnnouncementsPage() {
           return { date: String(dateStr), time: '' }
         }
       }
-      
+
       const day = String(date.getDate()).padStart(2, '0')
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
       const month = monthNames[date.getMonth()]
       const year = date.getFullYear()
       const datePart = `${day} ${month} ${year}`
-      
+
       const hours = date.getHours()
       const minutes = date.getMinutes()
       const ampm = hours >= 12 ? 'PM' : 'AM'
       const displayHours = hours % 12 || 12
       const timePart = `${String(displayHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${ampm}`
-      
+
       return { date: datePart, time: timePart }
     } catch (error) {
       console.error('Error formatting date:', dateStr, error)
@@ -356,7 +356,7 @@ export default function AnnouncementsPage() {
     const nse = ann.symbol_nse
     // Use script_code for BSE (numeric code), fallback to symbol_bse without _BSE suffix
     const bse = ann.script_code?.toString() || ann.symbol_bse?.replace('_BSE', '')
-    
+
     if (nse && bse) {
       return { nse, bse }
     } else if (nse) {
@@ -386,7 +386,7 @@ export default function AnnouncementsPage() {
 
     // Check if scrollHeight > clientHeight (actual overflow)
     const hasOverflow = element.scrollHeight > element.clientHeight
-    
+
     setNeedsExpansionMap(prev => {
       const newMap = new Map(prev)
       newMap.set(id, hasOverflow)
@@ -424,7 +424,7 @@ export default function AnnouncementsPage() {
       clearTimeout(resizeTimeout)
     }
   }, [announcements, expandedRows])
-  
+
   // Check if announcement has links
   // Note: Attachments are NOT in payload - they must be fetched on-demand
   const hasLinks = (ann: Announcement) => {
@@ -436,7 +436,7 @@ export default function AnnouncementsPage() {
   // Only group if they have the same company name (or similar company names like "bank")
   const groupedAnnouncements = useMemo(() => {
     const groups = new Map<string, GroupedAnnouncement>()
-    
+
     // Helper to normalize company name for grouping
     const normalizeCompanyName = (companyName: string): string => {
       if (!companyName) return ''
@@ -450,43 +450,43 @@ export default function AnnouncementsPage() {
         .trim()
       return cleaned
     }
-    
+
     // Helper to check if two company names are similar enough to group
     const areSimilarCompanies = (name1: string, name2: string): boolean => {
       const norm1 = normalizeCompanyName(name1)
       const norm2 = normalizeCompanyName(name2)
-      
+
       // Exact match
       if (norm1 === norm2) return true
-      
+
       // If both contain same key words (like "bank", "credit", etc.)
       if (norm1 && norm2) {
         const keywords1 = norm1.split(/\s+/).filter(w => w.length >= 4)
         const keywords2 = norm2.split(/\s+/).filter(w => w.length >= 4)
-        
+
         // If they share at least one meaningful keyword, consider similar
         const commonKeywords = keywords1.filter(k => keywords2.includes(k))
         if (commonKeywords.length > 0) {
           return true
         }
       }
-      
+
       return false
     }
-    
+
     announcements.forEach((ann) => {
       const normalizedDateTime = normalizeDateTime(ann.trade_date)
       const headline = (ann.news_headline || '').trim().toLowerCase()
       const companyName = normalizeCompanyName(ann.company_name || '')
-      
+
       // Create group key: date + headline + company name
       // Only group announcements with the same company name (or similar)
       const groupKey = headline && companyName
         ? `${normalizedDateTime}|${headline}|${companyName}`
         : headline
-        ? `${normalizedDateTime}|${headline}`
-        : `${normalizedDateTime}|id:${ann.id}`
-      
+          ? `${normalizedDateTime}|${headline}`
+          : `${normalizedDateTime}|id:${ann.id}`
+
       // Check if there's an existing group with similar company name
       let foundGroup = false
       if (companyName) {
@@ -502,7 +502,7 @@ export default function AnnouncementsPage() {
           }
         }
       }
-      
+
       if (!foundGroup) {
         if (!groups.has(groupKey)) {
           groups.set(groupKey, {
@@ -516,7 +516,7 @@ export default function AnnouncementsPage() {
         }
       }
     })
-    
+
     return Array.from(groups.values()).sort((a, b) => {
       // Sort by date (most recent first)
       const dateA = new Date(a.dateTime).getTime()
@@ -529,14 +529,14 @@ export default function AnnouncementsPage() {
   // Each group counts as 1 row for pagination
   const groupedCount = groupedAnnouncements.length
   const groupedTotalPages = Math.ceil(groupedCount / pageSize)
-  
+
   // Paginate grouped announcements (show only pageSize groups per page)
   const paginatedGroups = useMemo(() => {
     const startIndex = (page - 1) * pageSize
     const endIndex = startIndex + pageSize
     return groupedAnnouncements.slice(startIndex, endIndex)
   }, [groupedAnnouncements, page, pageSize])
-  
+
   // Update total pages based on groups, not individual announcements
   useEffect(() => {
     // Only update if we're not using backend pagination (i.e., showing all announcements)
@@ -557,26 +557,26 @@ export default function AnnouncementsPage() {
       return next
     })
   }
-  
+
   // Handle attachment download (on-demand fetch from external API)
   const handleDownloadAttachment = async (announcementId: string) => {
     if (downloadingAttachment.has(announcementId) || viewingAttachment.has(announcementId)) {
       return // Already processing
     }
-    
+
     // Clear any previous error
     setAttachmentErrors(prev => {
       const newMap = new Map(prev)
       newMap.delete(announcementId)
       return newMap
     })
-    
+
     try {
       setDownloadingAttachment(prev => new Set(prev).add(announcementId))
-      
+
       // Fetch attachment on-demand (DB-first, then external API)
       const blob = await announcementsAPI.getAttachment(announcementId)
-      
+
       // Create download link
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -589,7 +589,7 @@ export default function AnnouncementsPage() {
     } catch (err: any) {
       // Handle different error types with user-friendly messages
       let errorMsg = 'Failed to download attachment'
-      
+
       if (err.response?.status === 404) {
         // File not found - show friendly message
         errorMsg = 'Attachment not available for this announcement'
@@ -607,7 +607,7 @@ export default function AnnouncementsPage() {
       } else if (err.message) {
         errorMsg = err.message
       }
-      
+
       setAttachmentErrors(prev => new Map(prev).set(announcementId, errorMsg))
       console.error('Error downloading attachment:', err)
     } finally {
@@ -618,26 +618,26 @@ export default function AnnouncementsPage() {
       })
     }
   }
-  
+
   // Handle attachment view (open in new tab)
   const handleViewAttachment = async (announcementId: string) => {
     if (downloadingAttachment.has(announcementId) || viewingAttachment.has(announcementId)) {
       return // Already processing
     }
-    
+
     // Clear any previous error
     setAttachmentErrors(prev => {
       const newMap = new Map(prev)
       newMap.delete(announcementId)
       return newMap
     })
-    
+
     try {
       setViewingAttachment(prev => new Set(prev).add(announcementId))
-      
+
       // Fetch attachment on-demand (DB-first, then external API)
       const blob = await announcementsAPI.getAttachment(announcementId)
-      
+
       // Create blob URL and open in new tab
       const url = window.URL.createObjectURL(blob)
       window.open(url, '_blank')
@@ -646,7 +646,7 @@ export default function AnnouncementsPage() {
     } catch (err: any) {
       // Handle different error types with user-friendly messages
       let errorMsg = 'Failed to view attachment'
-      
+
       if (err.response?.status === 404) {
         // File not found - show friendly message
         errorMsg = 'Attachment not available for this announcement'
@@ -664,7 +664,7 @@ export default function AnnouncementsPage() {
       } else if (err.message) {
         errorMsg = err.message
       }
-      
+
       setAttachmentErrors(prev => new Map(prev).set(announcementId, errorMsg))
       console.error('Error viewing attachment:', err)
     } finally {
@@ -685,7 +685,7 @@ export default function AnnouncementsPage() {
       } else {
         newSet.add(id)
       }
-      
+
       // Re-check overflow after state update
       setTimeout(() => {
         if (!wasExpanded) {
@@ -700,7 +700,7 @@ export default function AnnouncementsPage() {
           checkDescriptionOverflow(id, description)
         }
       }, 0)
-      
+
       return newSet
     })
   }
@@ -760,123 +760,123 @@ export default function AnnouncementsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-2xl font-sans font-semibold text-text-primary">
-                Corporate Announcements
-              </h1>
-              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-success/10 rounded-full">
-                <Radio className={`w-3 h-3 text-success ${wsConnected ? 'animate-pulse' : ''}`} />
-                <span className="text-[10px] font-sans text-success font-medium uppercase tracking-wider">
-                  {wsConnected ? 'LIVE' : 'OFFLINE'}
-                </span>
-              </div>
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-2xl font-sans font-semibold text-text-primary">
+              Corporate Announcements
+            </h1>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-success/10 rounded-full">
+              <Radio className={`w-3 h-3 text-success ${wsConnected ? 'animate-pulse' : ''}`} />
+              <span className="text-[10px] font-sans text-success font-medium uppercase tracking-wider">
+                {wsConnected ? 'LIVE' : 'OFFLINE'}
+              </span>
             </div>
-            <p className="text-xs font-sans text-text-secondary">
-              Real-time corporate announcements
-              {lastRefresh && (
-                <span className="ml-2">
-                  • Last updated: {lastRefresh.toLocaleTimeString()}
-                </span>
-              )}
-            </p>
+          </div>
+          <p className="text-xs font-sans text-text-secondary">
+            Real-time corporate announcements
+            {lastRefresh && (
+              <span className="ml-2">
+                • Last updated: {lastRefresh.toLocaleTimeString()}
+              </span>
+            )}
+          </p>
+        </div>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="flex flex-wrap items-center gap-3 p-4 bg-panel border border-border rounded">
+        {/* Search Input */}
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-secondary" />
+          <input
+            type="text"
+            placeholder="Search by headline or symbol"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleSearch()
+              }
+            }}
+            className="w-full pl-8 pr-3 py-2 text-sm border border-border rounded bg-background text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+
+        {/* Search Button */}
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={handleSearch}
+          className="px-4 whitespace-nowrap"
+        >
+          Search
+        </Button>
+
+        {/* Date Range */}
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <input
+              type="date"
+              value={searchFromDateInput}
+              onChange={(e) => setSearchFromDateInput(e.target.value)}
+              className="px-3 py-2 pr-8 text-sm border border-border rounded bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30 [color-scheme:light] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+              style={{
+                WebkitAppearance: 'none',
+                MozAppearance: 'textfield'
+              } as React.CSSProperties}
+              title="From Date"
+              id="from-date-input"
+            />
+            <label
+              htmlFor="from-date-input"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer z-10 pointer-events-auto"
+              onClick={(e: any) => {
+                e.preventDefault()
+                  (document.getElementById('from-date-input') as any)?.showPicker?.() || document.getElementById('from-date-input')?.focus()
+              }}
+            >
+              <Calendar className="w-4 h-4 text-white drop-shadow-md" />
+            </label>
+          </div>
+          <span className="text-text-secondary text-sm">to</span>
+          <div className="relative">
+            <input
+              type="date"
+              value={searchToDateInput}
+              onChange={(e) => setSearchToDateInput(e.target.value)}
+              className="px-3 py-2 pr-8 text-sm border border-border rounded bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30 [color-scheme:light] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+              style={{
+                WebkitAppearance: 'none',
+                MozAppearance: 'textfield'
+              } as React.CSSProperties}
+              title="To Date"
+              id="to-date-input"
+            />
+            <label
+              htmlFor="to-date-input"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer z-10 pointer-events-auto"
+              onClick={(e: any) => {
+                e.preventDefault()
+                  (document.getElementById('to-date-input') as any)?.showPicker?.() || document.getElementById('to-date-input')?.focus()
+              }}
+            >
+              <Calendar className="w-4 h-4 text-white drop-shadow-md" />
+            </label>
           </div>
         </div>
-        
-        {/* Search and Filters */}
-        <div className="flex flex-wrap items-center gap-3 p-4 bg-panel border border-border rounded">
-          {/* Search Input */}
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-secondary" />
-            <input
-              type="text"
-              placeholder="Search by headline or symbol"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleSearch()
-                }
-              }}
-              className="w-full pl-8 pr-3 py-2 text-sm border border-border rounded bg-background text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
 
-          {/* Search Button */}
+        {/* Clear All Button - Always visible when any filter is active */}
+        {(searchQuery || searchFromDate || searchToDate || searchInput || searchFromDateInput || searchToDateInput) && (
           <Button
-            variant="primary"
+            variant="secondary"
             size="sm"
-            onClick={handleSearch}
+            onClick={handleClearAll}
             className="px-4 whitespace-nowrap"
           >
-            Search
+            Clear All
           </Button>
-
-          {/* Date Range */}
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <input
-                type="date"
-                value={searchFromDateInput}
-                onChange={(e) => setSearchFromDateInput(e.target.value)}
-                className="px-3 py-2 pr-8 text-sm border border-border rounded bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30 [color-scheme:light] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-                style={{
-                  WebkitAppearance: 'none',
-                  MozAppearance: 'textfield'
-                } as React.CSSProperties}
-                title="From Date"
-                id="from-date-input"
-              />
-              <label
-                htmlFor="from-date-input"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer z-10 pointer-events-auto"
-                onClick={(e) => {
-                  e.preventDefault()
-                  document.getElementById('from-date-input')?.showPicker?.() || document.getElementById('from-date-input')?.focus()
-                }}
-              >
-                <Calendar className="w-4 h-4 text-white drop-shadow-md" />
-              </label>
-            </div>
-            <span className="text-text-secondary text-sm">to</span>
-            <div className="relative">
-              <input
-                type="date"
-                value={searchToDateInput}
-                onChange={(e) => setSearchToDateInput(e.target.value)}
-                className="px-3 py-2 pr-8 text-sm border border-border rounded bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30 [color-scheme:light] [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-                style={{
-                  WebkitAppearance: 'none',
-                  MozAppearance: 'textfield'
-                } as React.CSSProperties}
-                title="To Date"
-                id="to-date-input"
-              />
-              <label
-                htmlFor="to-date-input"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer z-10 pointer-events-auto"
-                onClick={(e) => {
-                  e.preventDefault()
-                  document.getElementById('to-date-input')?.showPicker?.() || document.getElementById('to-date-input')?.focus()
-                }}
-              >
-                <Calendar className="w-4 h-4 text-white drop-shadow-md" />
-              </label>
-            </div>
-          </div>
-
-          {/* Clear All Button - Always visible when any filter is active */}
-          {(searchQuery || searchFromDate || searchToDate || searchInput || searchFromDateInput || searchToDateInput) && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleClearAll}
-              className="px-4 whitespace-nowrap"
-            >
-              Clear All
-            </Button>
-          )}
-        </div>
+        )}
+      </div>
 
       {/* Announcements Table */}
       <Card compact>
@@ -912,523 +912,523 @@ export default function AnnouncementsPage() {
                 </TableCell>
               </TableRow>
             ) : paginatedGroups.map((group, groupIndex) => {
-                const hasMultipleItems = group.items.length > 1
-                const isGroupExpanded = expandedGroups.has(group.key)
-                const firstAnn = group.items[0]
-                const dateTime = formatDate(group.dateTime)
-                
-                // Helper to render date/time cell with consistent arrow alignment
-                const renderDateTimeCell = (dateTimeValue: ReturnType<typeof formatDate>, showArrow: boolean, isExpanded: boolean, onToggle: () => void) => (
-                  <TableCell className="text-text-secondary align-top py-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 flex items-center justify-center flex-shrink-0">
-                        {showArrow && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              onToggle()
-                            }}
-                            className="p-0.5 hover:bg-panel rounded transition-colors"
-                          >
-                            {isExpanded ? (
-                              <ChevronDown className="w-4 h-4" />
-                            ) : (
-                              <ChevronRightIcon className="w-4 h-4" />
-                            )}
-                          </button>
-                        )}
-                      </div>
-                      <div className="text-xs leading-tight">
-                        <div>{dateTimeValue.date}</div>
-                        {dateTimeValue.time && <div className="text-[10px] mt-0.5">{dateTimeValue.time}</div>}
-                      </div>
-                    </div>
-                  </TableCell>
-                )
-                
-                // Helper to render a single announcement row
-                const renderAnnouncementRow = (ann: Announcement, index: number, isSubRow: boolean = false) => {
-                  const annDateTime = formatDate(ann.trade_date)
-                  const annSymbol = formatSymbol(ann)
-                  const isExpanded = expandedRows.has(ann.id)
-                  const shouldShowExpand = needsExpansionMap.get(ann.id) || false
-                  const headline = ann.news_headline || 'N/A'
-                  const description = ann.news_body || ''
-                  const announcementHasLinks = hasLinks(ann)
-                  const links = ann.links || []
-                  
-                  return (
-                    <TableRow
-                      key={ann.id}
-                      index={index}
-                      className={`hover:bg-panel-hover ${isSubRow ? 'bg-blue-500/12 border-l-[3px] border-l-blue-500/50' : ''}`}
-                    >
-                      {/* Date / Time - Perfect alignment for expanded rows (no extra indentation) */}
-                      {isSubRow ? (
-                        // Sub-rows align exactly with parent rows - no extra padding
-                        renderDateTimeCell(annDateTime, false, false, () => {})
-                      ) : (
-                        renderDateTimeCell(annDateTime, false, false, () => {})
+              const hasMultipleItems = group.items.length > 1
+              const isGroupExpanded = expandedGroups.has(group.key)
+              const firstAnn = group.items[0]
+              const dateTime = formatDate(group.dateTime)
+
+              // Helper to render date/time cell with consistent arrow alignment
+              const renderDateTimeCell = (dateTimeValue: ReturnType<typeof formatDate>, showArrow: boolean, isExpanded: boolean, onToggle: () => void) => (
+                <TableCell className="text-text-secondary align-top py-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 flex items-center justify-center flex-shrink-0">
+                      {showArrow && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onToggle()
+                          }}
+                          className="p-0.5 hover:bg-panel rounded transition-colors"
+                        >
+                          {isExpanded ? (
+                            <ChevronDown className="w-4 h-4" />
+                          ) : (
+                            <ChevronRightIcon className="w-4 h-4" />
+                          )}
+                        </button>
                       )}
-                      
-                      {/* Symbol - Stacked NSE/BSE */}
-                      <TableCell className="align-top py-2">
-                        <div className="text-xs leading-tight">
-                          {annSymbol.nse && <div>NSE: {annSymbol.nse}</div>}
-                          {annSymbol.bse && <div className="mt-0.5">BSE: {annSymbol.bse}</div>}
-                          {!annSymbol.nse && !annSymbol.bse && <div className="text-text-secondary">N/A</div>}
-                        </div>
-                      </TableCell>
-                      
-                      {/* Company Name */}
-                      <TableCell className="align-top py-2">
-                        <div className="text-xs text-text-primary break-words max-w-[150px]">
-                          {ann.company_name || ''}
-                        </div>
-                      </TableCell>
-                      
-                      {/* Headline + Description - Description-only expansion */}
-                      <TableCell className="align-top py-2 max-w-md">
-                        <div className="text-sm">
-                          {/* Headline - Always fully visible */}
-                          <div className="font-semibold break-words mb-1">{headline}</div>
-                          
-                          {/* Description */}
-                          {description ? (
-                            <>
-                              {isExpanded ? (
-                                <>
-                                  <div className="text-xs text-text-secondary whitespace-pre-wrap break-words">
-                                    {description}
-                                  </div>
-                                  {shouldShowExpand && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        toggleExpand(ann.id, description)
-                                      }}
-                                      className="mt-1 text-xs text-primary hover:text-primary-dark flex items-center gap-1"
-                                    >
-                                      <ChevronDown className="w-3 h-3" />
-                                      Collapse
-                                    </button>
-                                  )}
-                                </>
-                              ) : (
-                                <>
-                                  <div
-                                    ref={(el) => {
-                                      if (el) {
-                                        descriptionRefs.current.set(ann.id, el)
-                                        // Check overflow after ref is set
-                                        setTimeout(() => {
-                                          checkDescriptionOverflow(ann.id, description)
-                                        }, 0)
-                                      } else {
-                                        descriptionRefs.current.delete(ann.id)
-                                      }
+                    </div>
+                    <div className="text-xs leading-tight">
+                      <div>{dateTimeValue.date}</div>
+                      {dateTimeValue.time && <div className="text-[10px] mt-0.5">{dateTimeValue.time}</div>}
+                    </div>
+                  </div>
+                </TableCell>
+              )
+
+              // Helper to render a single announcement row
+              const renderAnnouncementRow = (ann: Announcement, index: number, isSubRow: boolean = false) => {
+                const annDateTime = formatDate(ann.trade_date)
+                const annSymbol = formatSymbol(ann)
+                const isExpanded = expandedRows.has(ann.id)
+                const shouldShowExpand = needsExpansionMap.get(ann.id) || false
+                const headline = ann.news_headline || 'N/A'
+                const description = ann.news_body || ''
+                const announcementHasLinks = hasLinks(ann)
+                const links = ann.links || []
+
+                return (
+                  <TableRow
+                    key={ann.id}
+                    index={index}
+                    className={`hover:bg-panel-hover ${isSubRow ? 'bg-blue-500/12 border-l-[3px] border-l-blue-500/50' : ''}`}
+                  >
+                    {/* Date / Time - Perfect alignment for expanded rows (no extra indentation) */}
+                    {isSubRow ? (
+                      // Sub-rows align exactly with parent rows - no extra padding
+                      renderDateTimeCell(annDateTime, false, false, () => { })
+                    ) : (
+                      renderDateTimeCell(annDateTime, false, false, () => { })
+                    )}
+
+                    {/* Symbol - Stacked NSE/BSE */}
+                    <TableCell className="align-top py-2">
+                      <div className="text-xs leading-tight">
+                        {annSymbol.nse && <div>NSE: {annSymbol.nse}</div>}
+                        {annSymbol.bse && <div className="mt-0.5">BSE: {annSymbol.bse}</div>}
+                        {!annSymbol.nse && !annSymbol.bse && <div className="text-text-secondary">N/A</div>}
+                      </div>
+                    </TableCell>
+
+                    {/* Company Name */}
+                    <TableCell className="align-top py-2">
+                      <div className="text-xs text-text-primary break-words max-w-[150px]">
+                        {ann.company_name || ''}
+                      </div>
+                    </TableCell>
+
+                    {/* Headline + Description - Description-only expansion */}
+                    <TableCell className="align-top py-2 max-w-md">
+                      <div className="text-sm">
+                        {/* Headline - Always fully visible */}
+                        <div className="font-semibold break-words mb-1">{headline}</div>
+
+                        {/* Description */}
+                        {description ? (
+                          <>
+                            {isExpanded ? (
+                              <>
+                                <div className="text-xs text-text-secondary whitespace-pre-wrap break-words">
+                                  {description}
+                                </div>
+                                {shouldShowExpand && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      toggleExpand(ann.id, description)
                                     }}
-                                    className="text-xs text-text-secondary whitespace-pre-wrap break-words"
-                                    style={{
-                                      display: '-webkit-box',
-                                      WebkitLineClamp: MAX_VISIBLE_LINES,
-                                      WebkitBoxOrient: 'vertical',
-                                      overflow: 'hidden'
-                                    }}
+                                    className="mt-1 text-xs text-primary hover:text-primary-dark flex items-center gap-1"
                                   >
-                                    {description}
-                                  </div>
-                                  {shouldShowExpand && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        toggleExpand(ann.id, description)
-                                      }}
-                                      className="mt-1 text-xs text-primary hover:text-primary-dark flex items-center gap-1"
+                                    <ChevronDown className="w-3 h-3" />
+                                    Collapse
+                                  </button>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                <div
+                                  ref={(el) => {
+                                    if (el) {
+                                      descriptionRefs.current.set(ann.id, el)
+                                      // Check overflow after ref is set
+                                      setTimeout(() => {
+                                        checkDescriptionOverflow(ann.id, description)
+                                      }, 0)
+                                    } else {
+                                      descriptionRefs.current.delete(ann.id)
+                                    }
+                                  }}
+                                  className="text-xs text-text-secondary whitespace-pre-wrap break-words"
+                                  style={{
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: MAX_VISIBLE_LINES,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden'
+                                  }}
+                                >
+                                  {description}
+                                </div>
+                                {shouldShowExpand && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      toggleExpand(ann.id, description)
+                                    }}
+                                    className="mt-1 text-xs text-primary hover:text-primary-dark flex items-center gap-1"
+                                  >
+                                    <ChevronRightIcon className="w-3 h-3" />
+                                    Expand
+                                  </button>
+                                )}
+                              </>
+                            )}
+                          </>
+                        ) : null}
+                      </div>
+                    </TableCell>
+
+                    {/* Links & Attachments */}
+                    <TableCell className="align-top py-2">
+                      <div className="flex flex-col gap-1">
+                        {/* Links - always show if available */}
+                        {announcementHasLinks ? (
+                          <div className="relative links-menu-container">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setOpenLinksMenu(openLinksMenu === ann.id ? null : ann.id)
+                              }}
+                              className="text-xs text-primary hover:text-primary-dark flex items-center gap-1"
+                            >
+                              Links ({links.filter(l => l.url).length})
+                            </button>
+
+                            {openLinksMenu === ann.id && (
+                              <div
+                                className="absolute right-0 mt-1 bg-panel border border-border rounded shadow-lg z-50 min-w-[200px] max-w-[300px]"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <div className="p-2 max-h-64 overflow-y-auto">
+                                  {links.filter(l => l.url).map((link, idx) => (
+                                    <a
+                                      key={idx}
+                                      href={link.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="block py-1.5 px-2 text-xs text-text-primary hover:bg-panel-hover rounded break-words"
                                     >
-                                      <ChevronRightIcon className="w-3 h-3" />
-                                      Expand
-                                    </button>
-                                  )}
-                                </>
-                              )}
-                            </>
-                          ) : null}
-                        </div>
-                      </TableCell>
-                      
-                      {/* Links & Attachments */}
-                      <TableCell className="align-top py-2">
+                                      {link.title || link.url}
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : null}
+
+                        {/* Attachments - always show, fetch on-demand */}
                         <div className="flex flex-col gap-1">
-                          {/* Links - always show if available */}
-                          {announcementHasLinks ? (
-                            <div className="relative links-menu-container">
+                          {attachmentErrors.has(ann.id) ? (
+                            <div className="text-xs text-red-400 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" />
+                              <span className="max-w-[150px] truncate" title={attachmentErrors.get(ann.id)}>
+                                {attachmentErrors.get(ann.id)}
+                              </span>
+                            </div>
+                          ) : (
+                            <>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  setOpenLinksMenu(openLinksMenu === ann.id ? null : ann.id)
+                                  handleViewAttachment(ann.id)
                                 }}
-                                className="text-xs text-primary hover:text-primary-dark flex items-center gap-1"
+                                disabled={viewingAttachment.has(ann.id) || downloadingAttachment.has(ann.id)}
+                                className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1.5 disabled:opacity-50 transition-colors"
+                                title="View attachment in new tab"
                               >
-                                Links ({links.filter(l => l.url).length})
-                              </button>
-                              
-                              {openLinksMenu === ann.id && (
-                                <div 
-                                  className="absolute right-0 mt-1 bg-panel border border-border rounded shadow-lg z-50 min-w-[200px] max-w-[300px]"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <div className="p-2 max-h-64 overflow-y-auto">
-                                    {links.filter(l => l.url).map((link, idx) => (
-                                      <a
-                                        key={idx}
-                                        href={link.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="block py-1.5 px-2 text-xs text-text-primary hover:bg-panel-hover rounded break-words"
-                                      >
-                                        {link.title || link.url}
-                                      </a>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ) : null}
-                          
-                          {/* Attachments - always show, fetch on-demand */}
-                          <div className="flex flex-col gap-1">
-                            {attachmentErrors.has(ann.id) ? (
-                              <div className="text-xs text-red-400 flex items-center gap-1">
-                                <AlertCircle className="w-3 h-3" />
-                                <span className="max-w-[150px] truncate" title={attachmentErrors.get(ann.id)}>
-                                  {attachmentErrors.get(ann.id)}
-                                </span>
-                              </div>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleViewAttachment(ann.id)
-                                  }}
-                                  disabled={viewingAttachment.has(ann.id) || downloadingAttachment.has(ann.id)}
-                                  className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1.5 disabled:opacity-50 transition-colors"
-                                  title="View attachment in new tab"
-                                >
-                                  {viewingAttachment.has(ann.id) ? (
-                                    <>
-                                      <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                                      Loading...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Eye className="w-3.5 h-3.5 text-blue-400" />
-                                      <span className="text-blue-400">View</span>
-                                    </>
-                                  )}
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleDownloadAttachment(ann.id)
-                                  }}
-                                  disabled={downloadingAttachment.has(ann.id) || viewingAttachment.has(ann.id)}
-                                  className="text-xs text-green-400 hover:text-green-300 flex items-center gap-1.5 disabled:opacity-50 transition-colors"
-                                  title="Download attachment"
-                                >
-                                  {downloadingAttachment.has(ann.id) ? (
-                                    <>
-                                      <div className="w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
-                                      Downloading...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Download className="w-3.5 h-3.5 text-green-400" />
-                                      <span className="text-green-400">Download</span>
-                                    </>
-                                  )}
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
-                      
-                      {/* Type */}
-                      <TableCell className="align-top py-2 text-xs text-text-secondary">
-                        {ann.announcement_type || 'N/A'}
-                      </TableCell>
-                    </TableRow>
-                  )
-                }
-
-                // If only 1 item in group, render it directly with arrow placeholder for alignment
-                if (!hasMultipleItems) {
-                  const singleRowDateTime = formatDate(firstAnn.trade_date)
-                  return (
-                    <TableRow
-                      key={firstAnn.id}
-                      index={groupIndex}
-                      className="hover:bg-panel-hover"
-                    >
-                      {renderDateTimeCell(singleRowDateTime, false, false, () => {})}
-                      {(() => {
-                        const symbol = formatSymbol(firstAnn)
-                        const isExpanded = expandedRows.has(firstAnn.id)
-                        const shouldShowExpand = needsExpansionMap.get(firstAnn.id) || false
-                        const headline = firstAnn.news_headline || 'N/A'
-                        const description = firstAnn.news_body || ''
-                        const announcementHasLinks = hasLinks(firstAnn)
-                        const links = firstAnn.links || []
-                        
-                        return (
-                          <>
-                            {/* Symbol - Stacked NSE/BSE */}
-                            <TableCell className="align-top py-2">
-                              <div className="text-xs leading-tight">
-                                {symbol.nse && <div>NSE: {symbol.nse}</div>}
-                                {symbol.bse && <div className="mt-0.5">BSE: {symbol.bse}</div>}
-                                {!symbol.nse && !symbol.bse && <div className="text-text-secondary">N/A</div>}
-                              </div>
-                            </TableCell>
-                            
-                            {/* Company Name */}
-                            <TableCell className="align-top py-2">
-                              <div className="text-xs text-text-primary break-words max-w-[150px]">
-                                {firstAnn.company_name || ''}
-                              </div>
-                            </TableCell>
-                            
-                            {/* Headline + Description */}
-                            <TableCell className="align-top py-2 max-w-md">
-                              <div className="text-sm">
-                                <div className="font-semibold break-words mb-1">{headline}</div>
-                                {description ? (
+                                {viewingAttachment.has(ann.id) ? (
                                   <>
-                                    {isExpanded ? (
-                                      <>
-                                        <div className="text-xs text-text-secondary whitespace-pre-wrap break-words">
-                                          {description}
-                                        </div>
-                                        {shouldShowExpand && (
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation()
-                                              toggleExpand(firstAnn.id, description)
-                                            }}
-                                            className="mt-1 text-xs text-primary hover:text-primary-dark flex items-center gap-1"
-                                          >
-                                            <ChevronDown className="w-3 h-3" />
-                                            Collapse
-                                          </button>
-                                        )}
-                                      </>
-                                    ) : (
-                                      <>
-                                        <div
-                                          ref={(el) => {
-                                            if (el) {
-                                              descriptionRefs.current.set(firstAnn.id, el)
-                                              setTimeout(() => {
-                                                checkDescriptionOverflow(firstAnn.id, description)
-                                              }, 0)
-                                            } else {
-                                              descriptionRefs.current.delete(firstAnn.id)
-                                            }
-                                          }}
-                                          className="text-xs text-text-secondary whitespace-pre-wrap break-words"
-                                          style={{
-                                            display: '-webkit-box',
-                                            WebkitLineClamp: MAX_VISIBLE_LINES,
-                                            WebkitBoxOrient: 'vertical',
-                                            overflow: 'hidden'
-                                          }}
-                                        >
-                                          {description}
-                                        </div>
-                                        {shouldShowExpand && (
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation()
-                                              toggleExpand(firstAnn.id, description)
-                                            }}
-                                            className="mt-1 text-xs text-primary hover:text-primary-dark flex items-center gap-1"
-                                          >
-                                            <ChevronRightIcon className="w-3 h-3" />
-                                            Expand
-                                          </button>
-                                        )}
-                                      </>
-                                    )}
+                                    <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                                    Loading...
                                   </>
-                                ) : null}
-                              </div>
-                            </TableCell>
-                            
-                            {/* Links & Attachments */}
-                            <TableCell className="align-top py-2">
+                                ) : (
+                                  <>
+                                    <Eye className="w-3.5 h-3.5 text-blue-400" />
+                                    <span className="text-blue-400">View</span>
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDownloadAttachment(ann.id)
+                                }}
+                                disabled={downloadingAttachment.has(ann.id) || viewingAttachment.has(ann.id)}
+                                className="text-xs text-green-400 hover:text-green-300 flex items-center gap-1.5 disabled:opacity-50 transition-colors"
+                                title="Download attachment"
+                              >
+                                {downloadingAttachment.has(ann.id) ? (
+                                  <>
+                                    <div className="w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+                                    Downloading...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Download className="w-3.5 h-3.5 text-green-400" />
+                                    <span className="text-green-400">Download</span>
+                                  </>
+                                )}
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    {/* Type */}
+                    <TableCell className="align-top py-2 text-xs text-text-secondary">
+                      {ann.announcement_type || 'N/A'}
+                    </TableCell>
+                  </TableRow>
+                )
+              }
+
+              // If only 1 item in group, render it directly with arrow placeholder for alignment
+              if (!hasMultipleItems) {
+                const singleRowDateTime = formatDate(firstAnn.trade_date)
+                return (
+                  <TableRow
+                    key={firstAnn.id}
+                    index={groupIndex}
+                    className="hover:bg-panel-hover"
+                  >
+                    {renderDateTimeCell(singleRowDateTime, false, false, () => { })}
+                    {(() => {
+                      const symbol = formatSymbol(firstAnn)
+                      const isExpanded = expandedRows.has(firstAnn.id)
+                      const shouldShowExpand = needsExpansionMap.get(firstAnn.id) || false
+                      const headline = firstAnn.news_headline || 'N/A'
+                      const description = firstAnn.news_body || ''
+                      const announcementHasLinks = hasLinks(firstAnn)
+                      const links = firstAnn.links || []
+
+                      return (
+                        <>
+                          {/* Symbol - Stacked NSE/BSE */}
+                          <TableCell className="align-top py-2">
+                            <div className="text-xs leading-tight">
+                              {symbol.nse && <div>NSE: {symbol.nse}</div>}
+                              {symbol.bse && <div className="mt-0.5">BSE: {symbol.bse}</div>}
+                              {!symbol.nse && !symbol.bse && <div className="text-text-secondary">N/A</div>}
+                            </div>
+                          </TableCell>
+
+                          {/* Company Name */}
+                          <TableCell className="align-top py-2">
+                            <div className="text-xs text-text-primary break-words max-w-[150px]">
+                              {firstAnn.company_name || ''}
+                            </div>
+                          </TableCell>
+
+                          {/* Headline + Description */}
+                          <TableCell className="align-top py-2 max-w-md">
+                            <div className="text-sm">
+                              <div className="font-semibold break-words mb-1">{headline}</div>
+                              {description ? (
+                                <>
+                                  {isExpanded ? (
+                                    <>
+                                      <div className="text-xs text-text-secondary whitespace-pre-wrap break-words">
+                                        {description}
+                                      </div>
+                                      {shouldShowExpand && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            toggleExpand(firstAnn.id, description)
+                                          }}
+                                          className="mt-1 text-xs text-primary hover:text-primary-dark flex items-center gap-1"
+                                        >
+                                          <ChevronDown className="w-3 h-3" />
+                                          Collapse
+                                        </button>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div
+                                        ref={(el) => {
+                                          if (el) {
+                                            descriptionRefs.current.set(firstAnn.id, el)
+                                            setTimeout(() => {
+                                              checkDescriptionOverflow(firstAnn.id, description)
+                                            }, 0)
+                                          } else {
+                                            descriptionRefs.current.delete(firstAnn.id)
+                                          }
+                                        }}
+                                        className="text-xs text-text-secondary whitespace-pre-wrap break-words"
+                                        style={{
+                                          display: '-webkit-box',
+                                          WebkitLineClamp: MAX_VISIBLE_LINES,
+                                          WebkitBoxOrient: 'vertical',
+                                          overflow: 'hidden'
+                                        }}
+                                      >
+                                        {description}
+                                      </div>
+                                      {shouldShowExpand && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            toggleExpand(firstAnn.id, description)
+                                          }}
+                                          className="mt-1 text-xs text-primary hover:text-primary-dark flex items-center gap-1"
+                                        >
+                                          <ChevronRightIcon className="w-3 h-3" />
+                                          Expand
+                                        </button>
+                                      )}
+                                    </>
+                                  )}
+                                </>
+                              ) : null}
+                            </div>
+                          </TableCell>
+
+                          {/* Links & Attachments */}
+                          <TableCell className="align-top py-2">
+                            <div className="flex flex-col gap-1">
+                              {announcementHasLinks ? (
+                                <div className="relative links-menu-container">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setOpenLinksMenu(openLinksMenu === firstAnn.id ? null : firstAnn.id)
+                                    }}
+                                    className="text-xs text-primary hover:text-primary-dark flex items-center gap-1"
+                                  >
+                                    Links ({links.filter(l => l.url).length})
+                                  </button>
+
+                                  {openLinksMenu === firstAnn.id && (
+                                    <div
+                                      className="absolute right-0 mt-1 bg-panel border border-border rounded shadow-lg z-50 min-w-[200px] max-w-[300px]"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <div className="p-2 max-h-64 overflow-y-auto">
+                                        {links.filter(l => l.url).map((link, idx) => (
+                                          <a
+                                            key={idx}
+                                            href={link.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="block py-1.5 px-2 text-xs text-text-primary hover:bg-panel-hover rounded break-words"
+                                          >
+                                            {link.title || link.url}
+                                          </a>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : null}
+
                               <div className="flex flex-col gap-1">
-                                {announcementHasLinks ? (
-                                  <div className="relative links-menu-container">
+                                {attachmentErrors.has(firstAnn.id) ? (
+                                  <div className="text-xs text-red-400 flex items-center gap-1">
+                                    <AlertCircle className="w-3 h-3" />
+                                    <span className="max-w-[150px] truncate" title={attachmentErrors.get(firstAnn.id)}>
+                                      {attachmentErrors.get(firstAnn.id)}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation()
-                                        setOpenLinksMenu(openLinksMenu === firstAnn.id ? null : firstAnn.id)
+                                        handleViewAttachment(firstAnn.id)
                                       }}
-                                      className="text-xs text-primary hover:text-primary-dark flex items-center gap-1"
+                                      disabled={viewingAttachment.has(firstAnn.id) || downloadingAttachment.has(firstAnn.id)}
+                                      className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1.5 disabled:opacity-50 transition-colors"
+                                      title="View attachment in new tab"
                                     >
-                                      Links ({links.filter(l => l.url).length})
+                                      {viewingAttachment.has(firstAnn.id) ? (
+                                        <>
+                                          <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                                          Loading...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Eye className="w-3.5 h-3.5 text-blue-400" />
+                                          <span className="text-blue-400">View</span>
+                                        </>
+                                      )}
                                     </button>
-                                    
-                                    {openLinksMenu === firstAnn.id && (
-                                      <div 
-                                        className="absolute right-0 mt-1 bg-panel border border-border rounded shadow-lg z-50 min-w-[200px] max-w-[300px]"
-                                        onClick={(e) => e.stopPropagation()}
-                                      >
-                                        <div className="p-2 max-h-64 overflow-y-auto">
-                                          {links.filter(l => l.url).map((link, idx) => (
-                                            <a
-                                              key={idx}
-                                              href={link.url}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="block py-1.5 px-2 text-xs text-text-primary hover:bg-panel-hover rounded break-words"
-                                            >
-                                              {link.title || link.url}
-                                            </a>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                ) : null}
-                                
-                                <div className="flex flex-col gap-1">
-                                  {attachmentErrors.has(firstAnn.id) ? (
-                                    <div className="text-xs text-red-400 flex items-center gap-1">
-                                      <AlertCircle className="w-3 h-3" />
-                                      <span className="max-w-[150px] truncate" title={attachmentErrors.get(firstAnn.id)}>
-                                        {attachmentErrors.get(firstAnn.id)}
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          handleViewAttachment(firstAnn.id)
-                                        }}
-                                        disabled={viewingAttachment.has(firstAnn.id) || downloadingAttachment.has(firstAnn.id)}
-                                        className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1.5 disabled:opacity-50 transition-colors"
-                                        title="View attachment in new tab"
-                                      >
-                                        {viewingAttachment.has(firstAnn.id) ? (
-                                          <>
-                                            <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                                            Loading...
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Eye className="w-3.5 h-3.5 text-blue-400" />
-                                            <span className="text-blue-400">View</span>
-                                          </>
-                                        )}
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          handleDownloadAttachment(firstAnn.id)
-                                        }}
-                                        disabled={downloadingAttachment.has(firstAnn.id) || viewingAttachment.has(firstAnn.id)}
-                                        className="text-xs text-green-400 hover:text-green-300 flex items-center gap-1.5 disabled:opacity-50 transition-colors"
-                                        title="Download attachment"
-                                      >
-                                        {downloadingAttachment.has(firstAnn.id) ? (
-                                          <>
-                                            <div className="w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
-                                            Downloading...
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Download className="w-3.5 h-3.5 text-green-400" />
-                                            <span className="text-green-400">Download</span>
-                                          </>
-                                        )}
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleDownloadAttachment(firstAnn.id)
+                                      }}
+                                      disabled={downloadingAttachment.has(firstAnn.id) || viewingAttachment.has(firstAnn.id)}
+                                      className="text-xs text-green-400 hover:text-green-300 flex items-center gap-1.5 disabled:opacity-50 transition-colors"
+                                      title="Download attachment"
+                                    >
+                                      {downloadingAttachment.has(firstAnn.id) ? (
+                                        <>
+                                          <div className="w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+                                          Downloading...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Download className="w-3.5 h-3.5 text-green-400" />
+                                          <span className="text-green-400">Download</span>
+                                        </>
+                                      )}
+                                    </button>
+                                  </>
+                                )}
                               </div>
-                            </TableCell>
-                            
-                            {/* Type */}
-                            <TableCell className="align-top py-2 text-xs text-text-secondary">
-                              {firstAnn.announcement_type || 'N/A'}
-                            </TableCell>
-                          </>
-                        )
-                      })()}
-                    </TableRow>
-                  )
-                }
+                            </div>
+                          </TableCell>
 
-                // Multiple items - render group header with expand/collapse
-                return (
-                  <React.Fragment key={group.key}>
-                    {/* Group Header Row */}
-                    <TableRow
-                      index={groupIndex}
-                      className="hover:bg-panel-hover cursor-pointer"
-                      onClick={() => toggleGroup(group.key)}
-                    >
-                      {/* Date / Time with expander - using helper for consistent alignment */}
-                      {renderDateTimeCell(dateTime, true, isGroupExpanded, () => toggleGroup(group.key))}
-                      
-                      {/* Symbol column - show only count for grouped items with LIVE indicator style */}
-                      <TableCell className="align-top py-2">
-                        <div className="inline-flex items-center justify-center gap-1.5 px-2 py-0.5 bg-success/10 border border-success/30 rounded-full text-xs font-medium text-success whitespace-nowrap">
-                          Group {group.items.length}
-                        </div>
-                      </TableCell>
-                      
-                      {/* Company Name */}
-                      <TableCell className="align-top py-2">
-                        <div className="text-xs text-text-primary break-words max-w-[150px]">
-                          {firstAnn.company_name || ''}
-                        </div>
-                      </TableCell>
-                      
-                      {/* Headline */}
-                      <TableCell className="align-top py-2 max-w-md">
-                        <div className="text-sm">
-                          <div className="font-semibold break-words mb-1">{group.headline}</div>
-                          <div className="text-xs text-text-secondary">
-                            {isGroupExpanded ? 'Click to collapse' : `${group.items.length} similar announcements`}
-                          </div>
-                        </div>
-                      </TableCell>
-                      
-                      {/* Links & Attachments placeholder */}
-                      <TableCell className="align-top py-2">
-                        <div className="text-xs text-text-secondary">
-                          {isGroupExpanded ? '' : 'Expand to view'}
-                        </div>
-                      </TableCell>
-                      
-                      {/* Type */}
-                      <TableCell className="align-top py-2 text-xs text-text-secondary">
-                        {firstAnn.announcement_type || 'N/A'}
-                      </TableCell>
-                    </TableRow>
-                    
-                      {/* Expanded sub-rows */}
-                      {isGroupExpanded && group.items.map((ann, itemIndex) => 
-                        renderAnnouncementRow(ann, (page - 1) * pageSize + groupIndex * 1000 + itemIndex, true)
-                      )}
-                  </React.Fragment>
+                          {/* Type */}
+                          <TableCell className="align-top py-2 text-xs text-text-secondary">
+                            {firstAnn.announcement_type || 'N/A'}
+                          </TableCell>
+                        </>
+                      )
+                    })()}
+                  </TableRow>
                 )
-              })}
+              }
+
+              // Multiple items - render group header with expand/collapse
+              return (
+                <React.Fragment key={group.key}>
+                  {/* Group Header Row */}
+                  <TableRow
+                    index={groupIndex}
+                    className="hover:bg-panel-hover cursor-pointer"
+                    onClick={() => toggleGroup(group.key)}
+                  >
+                    {/* Date / Time with expander - using helper for consistent alignment */}
+                    {renderDateTimeCell(dateTime, true, isGroupExpanded, () => toggleGroup(group.key))}
+
+                    {/* Symbol column - show only count for grouped items with LIVE indicator style */}
+                    <TableCell className="align-top py-2">
+                      <div className="inline-flex items-center justify-center gap-1.5 px-2 py-0.5 bg-success/10 border border-success/30 rounded-full text-xs font-medium text-success whitespace-nowrap">
+                        Group {group.items.length}
+                      </div>
+                    </TableCell>
+
+                    {/* Company Name */}
+                    <TableCell className="align-top py-2">
+                      <div className="text-xs text-text-primary break-words max-w-[150px]">
+                        {firstAnn.company_name || ''}
+                      </div>
+                    </TableCell>
+
+                    {/* Headline */}
+                    <TableCell className="align-top py-2 max-w-md">
+                      <div className="text-sm">
+                        <div className="font-semibold break-words mb-1">{group.headline}</div>
+                        <div className="text-xs text-text-secondary">
+                          {isGroupExpanded ? 'Click to collapse' : `${group.items.length} similar announcements`}
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    {/* Links & Attachments placeholder */}
+                    <TableCell className="align-top py-2">
+                      <div className="text-xs text-text-secondary">
+                        {isGroupExpanded ? '' : 'Expand to view'}
+                      </div>
+                    </TableCell>
+
+                    {/* Type */}
+                    <TableCell className="align-top py-2 text-xs text-text-secondary">
+                      {firstAnn.announcement_type || 'N/A'}
+                    </TableCell>
+                  </TableRow>
+
+                  {/* Expanded sub-rows */}
+                  {isGroupExpanded && group.items.map((ann, itemIndex) =>
+                    renderAnnouncementRow(ann, (page - 1) * pageSize + groupIndex * 1000 + itemIndex, true)
+                  )}
+                </React.Fragment>
+              )
+            })}
           </TableBody>
         </Table>
 
@@ -1511,21 +1511,21 @@ export default function AnnouncementsPage() {
             <div className="text-sm text-text-secondary">
               Showing{' '}
               <span className="font-semibold text-text-primary">
-                {searchQuery || searchFromDate || searchToDate 
+                {searchQuery || searchFromDate || searchToDate
                   ? `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)}`
-                  : groupedCount === 0 
-                    ? '0' 
+                  : groupedCount === 0
+                    ? '0'
                     : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, groupedCount)}`
                 }
               </span>{' '}
               of{' '}
               <span className="font-semibold text-text-primary">
-                {searchQuery || searchFromDate || searchToDate 
-                  ? total.toLocaleString() 
+                {searchQuery || searchFromDate || searchToDate
+                  ? total.toLocaleString()
                   : groupedCount.toLocaleString()
                 }
               </span>{' '}
-              {searchQuery || searchFromDate || searchToDate 
+              {searchQuery || searchFromDate || searchToDate
                 ? 'announcements'
                 : `groups (${total.toLocaleString()} total announcements)`
               }

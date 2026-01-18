@@ -3,16 +3,16 @@
 import { useState, useMemo } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { 
-  LineChart, 
-  Line, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
   ResponsiveContainer,
   ComposedChart
 } from 'recharts'
@@ -47,13 +47,13 @@ const timeRanges = [
 
 const chartTypes = ['Price', 'PE Ratio', 'More']
 
-export function CompanyChart({ 
-  symbol, 
-  companyName, 
-  data = [], 
+export function CompanyChart({
+  symbol,
+  companyName,
+  data = [],
   currentPrice,
   priceChange,
-  priceChangePercent 
+  priceChangePercent
 }: CompanyChartProps) {
   const [selectedRange, setSelectedRange] = useState('1Yr')
   const [selectedChartType, setSelectedChartType] = useState('Price')
@@ -64,13 +64,13 @@ export function CompanyChart({
   // Filter data based on selected time range
   const filteredData = useMemo(() => {
     if (!data || data.length === 0) return []
-    
+
     const range = timeRanges.find(r => r.value === selectedRange)
     if (!range || range.days === Infinity) return data
-    
+
     const cutoffDate = new Date()
     cutoffDate.setDate(cutoffDate.getDate() - range.days)
-    
+
     return data.filter(point => {
       const pointDate = new Date(point.date)
       return pointDate >= cutoffDate
@@ -79,7 +79,7 @@ export function CompanyChart({
 
   // Calculate min/max for Y-axes
   const priceRange = useMemo(() => {
-    if (filteredData.length === 0) return { min: 0, max: 1000 }
+    if (filteredData.length === 0) return { priceMin: 0, priceMax: 1000, volumeMax: 100 }
     const prices = filteredData.map(d => d.price).filter(p => p != null)
     const volumes = filteredData.map(d => d.volume).filter(v => v != null)
     return {
@@ -121,16 +121,14 @@ export function CompanyChart({
                 ₹{currentPrice.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
               </span>
               {priceChangePercent !== undefined && (
-                <span className={`text-sm font-medium ${
-                  priceChangePercent >= 0 ? 'text-success' : 'text-error'
-                }`}>
+                <span className={`text-sm font-medium ${priceChangePercent >= 0 ? 'text-success' : 'text-error'
+                  }`}>
                   {priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(2)}%
                 </span>
               )}
               {priceChange !== undefined && (
-                <span className={`text-sm ${
-                  priceChange >= 0 ? 'text-success' : 'text-error'
-                }`}>
+                <span className={`text-sm ${priceChange >= 0 ? 'text-success' : 'text-error'
+                  }`}>
                   ({priceChange >= 0 ? '+' : ''}₹{priceChange.toFixed(2)})
                 </span>
               )}
@@ -190,13 +188,13 @@ export function CompanyChart({
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={filteredData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1f2a44" />
-              <XAxis 
-                dataKey="date" 
+              <XAxis
+                dataKey="date"
                 tickFormatter={formatDate}
                 stroke="#9ca3af"
                 style={{ fontSize: '12px' }}
               />
-              <YAxis 
+              <YAxis
                 yAxisId="price"
                 orientation="right"
                 domain={[priceRange.priceMin, priceRange.priceMax]}
@@ -205,7 +203,7 @@ export function CompanyChart({
                 style={{ fontSize: '12px' }}
                 label={{ value: 'Price on BSE', angle: -90, position: 'insideRight', style: { textAnchor: 'middle', fill: '#9ca3af' } }}
               />
-              <YAxis 
+              <YAxis
                 yAxisId="volume"
                 orientation="left"
                 domain={[0, priceRange.volumeMax]}
@@ -214,14 +212,14 @@ export function CompanyChart({
                 style={{ fontSize: '12px' }}
                 label={{ value: 'Volume', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#9ca3af' } }}
               />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#121b2f', 
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#121b2f',
                   border: '1px solid #1f2a44',
                   borderRadius: '8px'
                 }}
                 labelStyle={{ color: '#e5e7eb' }}
-                formatter={(value: any, name: string) => {
+                formatter={(value: any, name: any) => {
                   if (name === 'price' || name === 'dma50' || name === 'dma200') {
                     return formatPrice(value)
                   }
@@ -230,29 +228,29 @@ export function CompanyChart({
               />
               <Legend />
               {showVolume && (
-                <Bar 
-                  yAxisId="volume" 
-                  dataKey="volume" 
-                  fill="#9333ea" 
+                <Bar
+                  yAxisId="volume"
+                  dataKey="volume"
+                  fill="#9333ea"
                   opacity={0.3}
                   name="Volume"
                 />
               )}
-              <Line 
-                yAxisId="price" 
-                type="monotone" 
-                dataKey="price" 
-                stroke="#9333ea" 
+              <Line
+                yAxisId="price"
+                type="monotone"
+                dataKey="price"
+                stroke="#9333ea"
                 strokeWidth={2}
                 dot={false}
                 name="Price on BSE"
               />
               {showDMA50 && (
-                <Line 
-                  yAxisId="price" 
-                  type="monotone" 
-                  dataKey="dma50" 
-                  stroke="#3b82f6" 
+                <Line
+                  yAxisId="price"
+                  type="monotone"
+                  dataKey="dma50"
+                  stroke="#3b82f6"
                   strokeWidth={1}
                   strokeDasharray="5 5"
                   dot={false}
@@ -260,11 +258,11 @@ export function CompanyChart({
                 />
               )}
               {showDMA200 && (
-                <Line 
-                  yAxisId="price" 
-                  type="monotone" 
-                  dataKey="dma200" 
-                  stroke="#10b981" 
+                <Line
+                  yAxisId="price"
+                  type="monotone"
+                  dataKey="dma200"
+                  stroke="#10b981"
                   strokeWidth={1}
                   strokeDasharray="5 5"
                   dot={false}
