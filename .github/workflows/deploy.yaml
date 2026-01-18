@@ -13,9 +13,6 @@ permissions:
   pages: write
   id-token: write
 
-################################
-# 1️⃣ TEST JOB + GITHUB PAGES REPORT
-################################
 jobs:
   test-backend:
     name: Run Backend Tests
@@ -68,6 +65,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Python (for Backend WebServer)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
