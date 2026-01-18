@@ -57,6 +57,12 @@ class Settings(BaseSettings):
                 "Use explicit origins like http://localhost:3000"
             )
             # Split by comma and strip whitespace
+        # Always ensure production domains are included, regardless of env var
+        required_origins = ["https://openanalytics.co.in", "https://www.openanalytics.co.in", "https://api.openanalytics.co.in"]
+        for origin in required_origins:
+            if origin not in origins:
+                origins.append(origin)
+                
         return origins
     
     class Config:
