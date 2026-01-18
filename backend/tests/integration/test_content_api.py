@@ -8,7 +8,7 @@ def test_get_announcements(client, admin_token):
     assert response.status_code == 200
     # Should return list/paginated
     data = response.json()
-    assert "items" in data or isinstance(data, list)
+    assert "announcements" in data or isinstance(data, list)
 
 def test_get_news(client, admin_token):
     response = client.get("/api/v1/news", headers={"Authorization": f"Bearer {admin_token}"})

@@ -9,13 +9,16 @@ class TestUserService:
     def service(self):
         repo = MockUserRepository()
         # Pre-seed a super admin for permissions logic if needed
-        repo.create({
-            "email": "admin@example.com",
-            "hashed_password": get_password_hash("admin123"),
-            "full_name": "Super Admin",
-            "role": UserRole.SUPER_ADMIN,
-            "is_active": True
-        })
+        repo.create(None, User(
+            email="admin@example.com",
+            username="admin",
+            mobile="0000000000",
+            hashed_password=get_password_hash("admin123"),
+            name="Super Admin",
+            role=UserRole.SUPER_ADMIN,
+            is_active=True,
+            user_id="admin123"
+        ))
         return UserService(db=None, user_repo=repo)
 
     @pytest.mark.asyncio

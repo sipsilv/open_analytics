@@ -11,7 +11,7 @@ def test_create_connection(client, admin_token):
     # Test creating a connection
     payload = {
         "provider": "TRUEDATA",
-        "connection_name": "Test Connection",
+        "name": "Test Connection",
         "details": {"username": "u", "password": "p"},
         "is_enabled": True
     }
