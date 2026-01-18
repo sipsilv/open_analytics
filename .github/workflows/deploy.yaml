@@ -7,6 +7,12 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+  pages: write
+  id-token: write
+
 jobs:
   test-backend:
     name: Run Backend Tests
@@ -29,14 +35,55 @@ jobs:
       - name: Run tests with pytest
         run: |
           cd backend
-          python -m pytest --html=report.html --self-contained-html
+          # Run pytest with both HTML and Markdown report generation
+          python -m pytest --html=report.html --self-contained-html --md-report --md-report-file report.md
 
-      - name: Upload Test Report
+      - name: Add Job Summary
+        if: always()
+        run: |
+          if [ -f backend/report.md ]; then
+            echo "## Backend Test Summary" >> $GITHUB_STEP_SUMMARY
+            cat backend/report.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Test Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Backend Test Report
-          path: backend/report.html
+          path: |
+            backend/report.html
+            backend/report.md
+
+      - name: Setup Pages
+        if: always()
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages Artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: backend/
+          # Only pick the report.html to be the index if we want it root
+          # But upload-pages-artifact takes a directory. 
+          # We'll rename report.html to index.html for GH Pages
+        
+      - name: Prepare index for Pages
+        if: always()
+        run: cp backend/report.html backend/index.html
+
+  deploy-report:
+    name: Deploy Test Report to Pages
+    needs: test-backend
+    if: always()
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
 ################################
 # 2️⃣ BUILD & PUSH JOB (ONLY IF TESTS PASS)
@@ -46,10 +93,6 @@ jobs:
     needs: [test-backend]
     runs-on: ubuntu-latest
     environment: rubik-env
-
-    permissions:
-      contents: read
-      packages: write
 
     steps:
       # 🚀 BUILD STARTED NOTIFICATION
