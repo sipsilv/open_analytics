@@ -220,6 +220,8 @@ class ScreenerService:
     def process_scraping_async(self, job_id: str, triggered_by: str, connection_id: Optional[int] = None):
         """Background task for scraping"""
         started_at = datetime.now(timezone.utc)
+        if started_at.tzinfo is None:
+            started_at = started_at.replace(tzinfo=timezone.utc)
         start_time = time.time()
         
         try:
