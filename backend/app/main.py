@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.proxy_headers import ProxyHeadersMiddleware
 from datetime import datetime, timezone, timedelta
 import logging
 import logging.config
@@ -66,18 +65,13 @@ app = FastAPI(
 )
 
 # CORS middleware - MUST be added before other middleware
-# Use settings for CORS origins to support Docker networking
 app.add_middleware(
     CORSMiddleware,
-    # Allow all origins for debugging "data not loading" issues
     allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
 )
-
-app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 # Note: CORS middleware should handle CORS headers automatically
 # Exception handlers are only needed if CORS middleware fails to add headers

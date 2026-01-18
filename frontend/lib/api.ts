@@ -8,7 +8,7 @@ if (!API_URL) {
 }
 
 const api = axios.create({
-  baseURL: `${API_URL}/api/v1/`,
+  baseURL: `${API_URL}/api/v1`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -89,16 +89,16 @@ export default api
 // Auth API
 export const authAPI = {
   login: async (identifier: string, password: string, otp?: string) => {
-    const response = await api.post('auth/login/', { identifier, password, otp })
+    const response = await api.post('/auth/login', { identifier, password, otp })
     return response.data
   },
   logout: async () => {
-    await api.post('auth/logout/')
+    await api.post('/auth/logout')
     Cookies.remove('auth_token')
     Cookies.remove('user')
   },
   forgotPassword: async (email: string) => {
-    const response = await api.post('auth/forgot-password/', { email })
+    const response = await api.post('/auth/forgot-password', { email })
     return response.data
   },
   resetPassword: async (identifier: string, otp: string, newPassword: string) => {
@@ -146,19 +146,19 @@ export const authAPI = {
 // User API
 export const userAPI = {
   getCurrentUser: async () => {
-    const response = await api.get('users/me/')
+    const response = await api.get('/users/me')
     return response.data
   },
   updateProfile: async (data: any) => {
-    const response = await api.put('users/me/', data)
+    const response = await api.put('/users/me', data)
     return response.data
   },
   updateTheme: async (theme: 'dark' | 'light') => {
-    const response = await api.put('users/me/', { theme_preference: theme })
+    const response = await api.put('/users/me', { theme_preference: theme })
     return response.data
   },
   changePassword: async (currentPassword: string, newPassword: string, confirmPassword: string) => {
-    const response = await api.post('users/me/change-password/', {
+    const response = await api.post('/users/me/change-password', {
       current_password: currentPassword,
       new_password: newPassword,
       confirm_password: confirmPassword
@@ -166,29 +166,29 @@ export const userAPI = {
     return response.data
   },
   createFeedback: async (subject: string, message: string) => {
-    const response = await api.post('users/feedback/', {
+    const response = await api.post('/users/feedback', {
       subject,
       message
     })
     return response.data
   },
   createFeatureRequest: async (description: string, context?: { page?: string; module?: string; issue_type?: string }) => {
-    const response = await api.post('users/feature-requests/', {
+    const response = await api.post('/users/feature-requests', {
       description,
       context
     })
     return response.data
   },
   getMyFeatureRequests: async () => {
-    const response = await api.get('users/feature-requests/')
+    const response = await api.get('/users/feature-requests')
     return response.data
   },
   pingActivity: async () => {
-    const response = await api.post('users/me/ping/')
+    const response = await api.post('/users/me/ping')
     return response.data
   },
   disconnectTelegram: async () => {
-    const response = await api.delete('telegram/disconnect/')
+    const response = await api.delete('/telegram/disconnect')
     return response.data
   },
 }
@@ -197,182 +197,182 @@ export const userAPI = {
 export const adminAPI = {
   getUsers: async (search?: string) => {
     const params = search ? { search } : {}
-    const response = await api.get('admin/users/', { params })
+    const response = await api.get('/admin/users', { params })
     return response.data
   },
   getUser: async (id: string) => {
-    const response = await api.get(`admin/users/${id}/`)
+    const response = await api.get(`/admin/users/${id}`)
     return response.data
   },
   createUser: async (data: any) => {
-    const response = await api.post('admin/users/', data)
+    const response = await api.post('/admin/users', data)
     return response.data
   },
   updateUser: async (id: string, data: any) => {
-    const response = await api.put(`admin/users/${id}/`, data)
+    const response = await api.put(`/admin/users/${id}`, data)
     return response.data
   },
   changeUserPassword: async (id: string, password: string) => {
-    const response = await api.patch(`admin/users/${id}/change-password/`, { password })
+    const response = await api.patch(`/admin/users/${id}/change-password`, { password })
     return response.data
   },
   deleteUser: async (id: string) => {
-    const response = await api.delete(`admin/users/${id}/`)
+    const response = await api.delete(`/admin/users/${id}`)
     return response.data
   },
   updateUserStatus: async (id: string, status: string, reason?: string) => {
-    const response = await api.patch(`admin/users/${id}/status/`, { status, reason })
+    const response = await api.patch(`/admin/users/${id}/status`, { status, reason })
     return response.data
   },
   sendMessage: (userId: string, message: string) => {
-    const response = api.post(`admin/users/${userId}/message/`, { message })
+    const response = api.post(`/admin/users/${userId}/message`, { message })
     return response.then(res => res.data)
   },
   getMessages: (userId: string, limit?: number) => {
     const params = limit ? { limit } : {}
-    const response = api.get(`admin/users/${userId}/messages/`, { params })
+    const response = api.get(`/admin/users/${userId}/messages`, { params })
     return response.then(res => res.data)
   },
   toggleUserStatus: async (id: string) => {
     // Get current user first to check status, then toggle
     const user = await adminAPI.getUser(id)
     const newStatus = user.is_active ? 'INACTIVE' : 'ACTIVE'
-    const response = await api.patch(`admin/users/${id}/status/`, { status: newStatus })
+    const response = await api.patch(`/admin/users/${id}/status`, { status: newStatus })
     return response.data
   },
   promoteToSuperAdmin: async (id: string) => {
-    const response = await api.patch(`admin/users/${id}/promote-to-super-admin/`)
+    const response = await api.patch(`/admin/users/${id}/promote-to-super-admin`)
     return response.data
   },
   demoteFromSuperAdmin: async (id: string) => {
-    const response = await api.patch(`admin/users/${id}/demote-from-super-admin/`)
+    const response = await api.patch(`/admin/users/${id}/demote-from-super-admin`)
     return response.data
   },
   getRequests: async (status?: string) => {
     const params = status ? { status } : {}
-    const response = await api.get('admin/requests/', { params })
+    const response = await api.get('/admin/requests', { params })
     return response.data
   },
   approveRequest: async (id: string) => {
-    const response = await api.post(`admin/requests/${id}/approve/`)
+    const response = await api.post(`/admin/requests/${id}/approve`)
     return response.data
   },
   rejectRequest: async (id: string, reason?: string) => {
-    const response = await api.post(`admin/requests/${id}/reject/`, reason ? { reason } : {})
+    const response = await api.post(`/admin/requests/${id}/reject`, reason ? { reason } : {})
     return response.data
   },
   getFeedback: async (search?: string, status?: string) => {
     const params: any = {}
     if (search) params.search = search
     if (status) params.status = status
-    const response = await api.get('admin/feedback/', { params })
+    const response = await api.get('/admin/feedback', { params })
     return response.data
   },
   updateFeedbackStatus: async (id: string, status: string) => {
-    const response = await api.patch(`admin/feedback/${id}/`, null, {
+    const response = await api.patch(`/admin/feedback/${id}`, null, {
       params: { status }
     })
     return response.data
   },
   getConnections: async (category?: string) => {
     const params = category ? { category } : {}
-    const response = await api.get('admin/connections/', { params })
+    const response = await api.get('/admin/connections', { params })
     return response.data
   },
   getConnection: async (id: string) => {
-    const response = await api.get(`admin/connections/${id}/`)
+    const response = await api.get(`/admin/connections/${id}`)
     return response.data
   },
   createConnection: async (data: any) => {
-    const response = await api.post('admin/connections/', data)
+    const response = await api.post('/admin/connections', data)
     return response.data
   },
   updateConnection: async (id: string, data: any) => {
-    const response = await api.put(`admin/connections/${id}/`, data)
+    const response = await api.put(`/admin/connections/${id}`, data)
     return response.data
   },
   deleteConnection: async (id: string) => {
-    const response = await api.delete(`admin/connections/${id}/`)
+    const response = await api.delete(`/admin/connections/${id}`)
     return response.data
   },
   testConnection: async (id: string) => {
-    const response = await api.post(`admin/connections/${id}/test/`)
+    const response = await api.post(`/admin/connections/${id}/test`)
     return response.data
   },
   getAiModels: async (provider: string, baseUrl?: string) => {
     const params: any = { provider }
     if (baseUrl) params.base_url = baseUrl
-    const response = await api.get('admin/connections/ai/models/', { params })
+    const response = await api.get('/admin/connections/ai/models', { params })
     return response.data
   },
   getProcessorData: async (type: string) => {
     // Assuming `api` is the correct client to use, similar to other methods.
     // The path `/processors/data/${type}` is inferred from the `getProcessorStats` method's path `/processors/stats`.
-    const response = await api.get(`processors/data/${type}/`)
+    const response = await api.get(`/processors/data/${type}`)
     return response.data
   },
   toggleConnection: async (id: string) => {
-    const response = await api.post(`admin/connections/${id}/toggle/`)
+    const response = await api.post(`/admin/connections/${id}/toggle`)
     return response.data
   },
   generateToken: async (id: string) => {
-    const response = await api.post(`admin/connections/${id}/token/generate/`)
+    const response = await api.post(`/admin/connections/${id}/token/generate`)
     return response.data
   },
   getTokenStatus: async (id: string) => {
-    const response = await api.get(`admin/connections/${id}/token/status/`)
+    const response = await api.get(`/admin/connections/${id}/token/status`)
     return response.data
   },
   refreshToken: async (id: string) => {
-    const response = await api.post(`admin/connections/${id}/token/refresh/`)
+    const response = await api.post(`/admin/connections/${id}/token/refresh`)
     return response.data
   },
   getTrueDataToken: async (connectionId?: number) => {
     const params = connectionId ? { connection_id: connectionId } : {}
-    const response = await api.get('admin/connections/truedata/token/', { params })
+    const response = await api.get('/admin/connections/truedata/token', { params })
     return response.data
   },
   getActiveConnections: async () => {
-    const response = await api.get('admin/connections/active/')
+    const response = await api.get('/admin/connections/active')
     return response.data
   },
   getSymbols: async () => {
-    const response = await api.get('admin/reference-data/symbols/')
+    const response = await api.get('/admin/reference-data/symbols')
     return response.data
   },
   getIndicators: async () => {
-    const response = await api.get('admin/reference-data/indicators/')
+    const response = await api.get('/admin/reference-data/indicators')
     return response.data
   },
   getFeatureRequests: async (status?: string, search?: string) => {
     const params: any = {}
     if (status) params.status = status
     if (search) params.search = search
-    const response = await api.get('admin/feature-requests/', { params })
+    const response = await api.get('/admin/feature-requests', { params })
     return response.data
   },
   getFeatureRequest: async (id: string) => {
-    const response = await api.get(`admin/feature-requests/${id}/`)
+    const response = await api.get(`/admin/feature-requests/${id}`)
     return response.data
   },
   updateFeatureRequest: async (id: string, data: { status?: string; admin_note?: string }) => {
-    const response = await api.put(`admin/feature-requests/${id}/`, data)
+    const response = await api.put(`/admin/feature-requests/${id}`, data)
     return response.data
   },
   getProcessorStats: async () => {
-    const response = await api.get('processors/stats/')
+    const response = await api.get('/processors/stats')
     return response.data
   },
   getAIEnrichmentConfig: async () => {
-    const response = await api.get('admin/ai-enrichment-config/')
+    const response = await api.get('/admin/ai-enrichment-config')
     return response.data
   },
   createAIEnrichmentConfig: async (data: any) => {
-    const response = await api.post('admin/ai-enrichment-config/', data)
+    const response = await api.post('/admin/ai-enrichment-config', data)
     return response.data
   },
   updateAIEnrichmentConfig: async (id: string, data: any) => {
-    const response = await api.put(`admin/ai-enrichment-config/${id}/`, data)
+    const response = await api.put(`/admin/ai-enrichment-config/${id}`, data)
     return response.data
   },
 }
@@ -382,7 +382,7 @@ export const adminAPI = {
 // Telegram API
 export const telegramAPI = {
   requestOtp: async (apiId: string, apiHash: string, phone: string) => {
-    const response = await api.post('telegram/request-otp/', {
+    const response = await api.post('/telegram/request-otp', {
       api_id: parseInt(apiId),
       api_hash: apiHash,
       phone
@@ -390,7 +390,7 @@ export const telegramAPI = {
     return response.data
   },
   verifyOtp: async (apiId: string, apiHash: string, phone: string, code: string, phoneCodeHash: string, sessionString: string, password?: string) => {
-    const response = await api.post('telegram/verify-otp/', {
+    const response = await api.post('/telegram/verify-otp', {
       api_id: parseInt(apiId),
       api_hash: apiHash,
       phone,
@@ -406,39 +406,51 @@ export const telegramAPI = {
 // Telegram Channels API
 export const telegramChannelsAPI = {
   discoverChannels: async (connectionId: number) => {
-    const response = await api.get(`telegram-channels/discover/${connectionId}/`)
+    const response = await api.get(`/telegram-channels/discover/${connectionId}`)
     return response.data
   },
   registerChannels: async (connectionId: number, channels: any[]) => {
-    const response = await api.post(`telegram-channels/${connectionId}/register/`, { channels })
+    const response = await api.post(`/telegram-channels/${connectionId}/register`, { channels })
     return response.data
   },
   getChannels: async (connectionId: number) => {
-    const response = await api.get(`telegram-channels/list/${connectionId}/`)
+    const response = await api.get(`/telegram-channels/list/${connectionId}`)
     return response.data
   },
   toggleChannel: async (channelId: number, isEnabled: boolean) => {
-    const response = await api.patch(`telegram-channels/${channelId}/toggle/`, { is_enabled: isEnabled })
+    const response = await api.patch(`/telegram-channels/${channelId}/toggle`, { is_enabled: isEnabled })
     return response.data
   },
   searchChannels: async (connectionId: number, query: string) => {
-    const response = await api.get(`telegram-channels/search/${connectionId}/`, { params: { q: query } })
+    const response = await api.get(`/telegram-channels/search/${connectionId}`, { params: { q: query } })
     return response.data
   },
   deleteChannel: async (channelId: number) => {
-    const response = await api.delete(`telegram-channels/${channelId}/`)
+    const response = await api.delete(`/telegram-channels/${channelId}`)
     return response.data
   }
 }
 
 // Symbols API
 export const symbolsAPI = {
-  getStats: async () => {
-    const response = await api.get('admin/symbols/stats/')
+  getSymbols: async (params?: { search?: string; limit?: number; offset?: number }) => {
+    const response = await api.get('/admin/symbols', { params })
     return response.data
   },
-  getSymbols: async (params?: { search?: string; exchange?: string; status?: string; expiry?: string; sort_by?: string; page_size?: number; page?: number }) => {
-    const response = await api.get('admin/symbols/', { params })
+  uploadSymbols: async (formData: FormData) => {
+    const response = await api.post('/admin/symbols/upload', formData)
+    return response.data
+  },
+  processSymbols: async () => {
+    const response = await api.post('/admin/symbols/process')
+    return response.data
+  },
+  getProcessStatus: async () => {
+    const response = await api.get('/admin/symbols/process-status')
+    return response.data
+  },
+  deleteSymbol: async (id: number) => {
+    const response = await api.delete(`/admin/symbols/${id}`)
     return response.data
   },
   getUploadLogs: async (limit?: number, page?: number) => {
@@ -524,19 +536,19 @@ export const symbolsAPI = {
     }
   },
   getUploadStatus: async (jobIdOrLogId: string) => {
-    const response = await api.get(`admin/symbols/upload/status/${jobIdOrLogId}/`)
+    const response = await api.get(`/admin/symbols/upload/status/${jobIdOrLogId}`)
     return response.data
   },
   cancelUpload: async (jobIdOrLogId: string) => {
-    const response = await api.post(`admin/symbols/upload/${jobIdOrLogId}/cancel/`)
+    const response = await api.post(`/admin/symbols/upload/${jobIdOrLogId}/cancel`)
     return response.data
   },
   reloadSeriesLookup: async (force: boolean = false) => {
-    const response = await api.post(`admin/symbols/series-lookup/reload/?force=${force}`)
+    const response = await api.post(`/admin/symbols/series-lookup/reload?force=${force}`)
     return response.data
   },
   deleteAllSymbols: async () => {
-    const response = await api.delete('admin/symbols/delete_all/')
+    const response = await api.delete('/admin/symbols/delete_all')
     return response.data
   },
   uploadManual: async (file: File | Blob, scriptId?: number) => {
@@ -598,26 +610,15 @@ export const symbolsAPI = {
     }
 
     // Don't set Content-Type - let browser set it with boundary for FormData
-    const response = await uploadApi.post('admin/symbols/upload/manual/', formData, {
+    const response = await uploadApi.post('/admin/symbols/upload/manual', formData, {
       headers: {
         // Explicitly don't set Content-Type - browser will set multipart/form-data with boundary
       }
     })
     return response.data
   },
-  uploadAuto: async (data: {
-    url: string
-    source_type?: string
-    method?: string
-    headers?: Record<string, string>
-    auth_type?: string
-    auth_value?: string
-    auth_token?: string
-    file_handling_mode?: string
-    file_type?: string
-    script_id?: number
-  }) => {
-    const response = await api.post('admin/symbols/upload/auto/', data)
+  uploadAuto: async (data: any) => {
+    const response = await api.post('/admin/symbols/upload/auto', data)
     return response.data
   },
   confirmUpload: async (previewId: string) => {
@@ -632,14 +633,14 @@ export const symbolsAPI = {
       confirmApi.defaults.headers.common['Authorization'] = `Bearer ${token}`
     }
 
-    const response = await confirmApi.post('admin/symbols/upload/confirm/', {
+    const response = await confirmApi.post('/admin/symbols/upload/confirm', {
       preview_id: previewId
     })
     return response.data
   },
 
   getTemplate: async () => {
-    const response = await api.get('admin/symbols/template/')
+    const response = await api.get('/admin/symbols/template')
     return response.data
   },
   // Health check
@@ -669,20 +670,20 @@ export const symbolsAPI = {
   },
   // V2: Scripts & Bulk
   getScripts: async () => {
-    const response = await api.get('admin/symbols/scripts/')
+    const response = await api.get('/admin/symbols/scripts')
     return response.data
   },
   createScript: async (data: any) => {
-    const response = await api.post('admin/symbols/scripts/', data)
+    const response = await api.post('/admin/symbols/scripts', data)
     return response.data
   },
   updateScript: async (id: number, data: any) => {
-    const response = await api.put(`admin/symbols/scripts/${id}/`, data)
+    const response = await api.put(`/admin/symbols/scripts/${id}`, data)
     return response.data
   },
   deleteScript: async (id: number) => {
     try {
-      const response = await api.delete(`admin/symbols/scripts/${id}/`)
+      const response = await api.delete(`/admin/symbols/scripts/${id}`)
       console.log('Delete script API response:', response.data)
       return response.data
     } catch (error: any) {
@@ -692,86 +693,49 @@ export const symbolsAPI = {
     }
   },
   toggleSymbolStatus: async (id: number, status: string) => {
-    const response = await api.patch('admin/symbols/status/bulk/', { ids: [id], status })
+    const response = await api.patch('/admin/symbols/status/bulk', { ids: [id], status })
     return response.data
   },
   testScript: async (id: number) => {
-    const response = await api.post(`admin/symbols/scripts/${id}/test/`)
+    const response = await api.post(`/admin/symbols/scripts/${id}/test`)
     return response.data
   },
   bulkDelete: async (ids: number[], hardDelete: boolean = false) => {
-    const response = await api.post('admin/symbols/delete/bulk/', { ids, hard_delete: hardDelete })
+    const response = await api.post('/admin/symbols/delete/bulk', { ids, hard_delete: hardDelete })
     return response.data
   },
   // Scheduled Ingestion
   getSchedulers: async () => {
-    try {
-      console.log('[API] Fetching schedulers from:', 'admin/symbols/schedulers/')
-      const response = await api.get('admin/symbols/schedulers/')
-      console.log('[API] Schedulers response:', {
-        status: response.status,
-        has_data: !!response.data,
-        is_array: Array.isArray(response.data),
-        count: Array.isArray(response.data) ? response.data.length : 0,
-        data: response.data
-      })
-      return response.data || []
-    } catch (error: any) {
-      console.error('[API] Failed to fetch schedulers:', {
-        message: error?.message,
-        response: error?.response?.data,
-        status: error?.response?.status,
-        url: error?.config?.url
-      })
-      throw error
-    }
+    const response = await api.get('/admin/symbols/schedulers')
+    return response.data
   },
   getScheduler: async (id: number) => {
-    const response = await api.get(`admin/symbols/schedulers/${id}/`)
+    const response = await api.get(`/admin/symbols/schedulers/${id}`)
     return response.data
   },
   createScheduler: async (data: any) => {
-    const response = await api.post('admin/symbols/schedulers/', data)
+    const response = await api.post('/admin/symbols/schedulers', data)
     return response.data
   },
   updateScheduler: async (id: number, data: any) => {
-    const response = await api.put(`admin/symbols/schedulers/${id}/`, data)
+    const response = await api.put(`/admin/symbols/schedulers/${id}`, data)
     return response.data
   },
   deleteScheduler: async (id: number) => {
-    const response = await api.delete(`admin/symbols/schedulers/${id}/`)
+    const response = await api.delete(`/admin/symbols/schedulers/${id}`)
     return response.data
   },
   triggerScheduler: async (id: number) => {
-    const response = await api.post(`admin/symbols/schedulers/${id}/trigger/`)
+    const response = await api.post(`/admin/symbols/schedulers/${id}/trigger`)
     return response.data
   },
   runSchedulerNow: async (id: number) => {
-    console.log('[API] runSchedulerNow called with id:', id)
-    console.log('[API] Full URL will be:', `${api.defaults.baseURL}admin/symbols/schedulers/${id}/run-now/`)
-    try {
-      const response = await api.post(`admin/symbols/schedulers/${id}/run-now/`)
-      console.log('[API] runSchedulerNow response:', response.data)
-      return response.data
-    } catch (error: any) {
-      console.error('[API] runSchedulerNow ERROR:', error)
-      console.error('[API] Error response:', error.response?.data)
-      console.error('[API] Error status:', error.response?.status)
-      throw error
-    }
+    const response = await api.post(`/admin/symbols/schedulers/${id}/run-now`)
+    return response.data
   },
   testScheduler: async (id: number) => {
-    console.log('[API] testScheduler called with id:', id)
-    try {
-      const response = await api.post(`admin/symbols/schedulers/${id}/test/`)
-      console.log('[API] testScheduler response:', response.data)
-      return response.data
-    } catch (error: any) {
-      console.error('[API] testScheduler ERROR:', error)
-      console.error('[API] Error response:', error.response?.data)
-      console.error('[API] Error status:', error.response?.status)
-      throw error
-    }
+    const response = await api.post(`/admin/symbols/schedulers/${id}/test`)
+    return response.data
   },
   testConnection: async (url: string, sourceType: string, method?: string, headers?: any) => {
     const formData = new FormData()
@@ -779,23 +743,23 @@ export const symbolsAPI = {
     formData.append('source_type', sourceType)
     if (method) formData.append('method', method)
     if (headers) formData.append('headers', JSON.stringify(headers))
-    const response = await api.post('admin/symbols/test-connection/', formData)
+    const response = await api.post('/admin/symbols/test-connection', formData)
     return response.data
   },
   addSource: async (schedulerId: number, data: any) => {
-    const response = await api.post(`admin/symbols/schedulers/${schedulerId}/sources/`, data)
+    const response = await api.post(`/admin/symbols/schedulers/${schedulerId}/sources`, data)
     return response.data
   },
   updateSource: async (schedulerId: number, sourceId: number, data: any) => {
-    const response = await api.put(`admin/symbols/schedulers/${schedulerId}/sources/${sourceId}/`, data)
+    const response = await api.put(`/admin/symbols/schedulers/${schedulerId}/sources/${sourceId}`, data)
     return response.data
   },
   deleteSource: async (schedulerId: number, sourceId: number) => {
-    const response = await api.delete(`admin/symbols/schedulers/${schedulerId}/sources/${sourceId}/`)
+    const response = await api.delete(`/admin/symbols/schedulers/${schedulerId}/sources/${sourceId}`)
     return response.data
   },
   bulkStatus: async (ids: number[], status: string) => {
-    const response = await api.patch('admin/symbols/status/bulk/', { ids, status })
+    const response = await api.patch('/admin/symbols/status/bulk', { ids, status })
     return response.data
   },
 }
@@ -812,36 +776,31 @@ export const announcementsAPI = {
     page?: number
     page_size?: number
   }) => {
-    const response = await api.get('announcements/', { params })
+    const response = await api.get('/announcements', { params })
     return response.data
   },
 
   // Get single announcement
   getAnnouncement: async (id: string) => {
-    const response = await api.get(`announcements/${id}/`)
+    const response = await api.get(`/announcements/${id}`)
     return response.data
   },
 
   // Get TrueData connection
   getTrueDataConnection: async () => {
-    const response = await api.get('announcements/truedata-connection/')
+    const response = await api.get('/announcements/truedata-connection')
     return response.data
   },
 
   // Get database status
   getDatabaseStatus: async () => {
-    const response = await api.get('announcements/db-status/')
+    const response = await api.get('/announcements/db-status')
     return response.data
   },
 
   // Fetch announcements from TrueData
-  fetchAnnouncements: async (connectionId: number, params?: {
-    from_date?: string
-    to_date?: string
-    symbol?: string
-    top_n?: number
-  }) => {
-    const response = await api.post('announcements/fetch/', {
+  fetchAnnouncements: async (connectionId: number, params?: any) => {
+    const response = await api.post('/announcements/fetch', {
       connection_id: connectionId,
       ...params
     })
@@ -851,16 +810,15 @@ export const announcementsAPI = {
   // Get announcement attachment (on-demand fetch from TrueData)
   // Returns blob directly (axios with responseType: 'blob' returns blob in response.data)
   getAttachment: async (id: string) => {
-    const response = await api.get(`announcements/${id}/attachment/`, {
+    const response = await api.get(`/announcements/${id}/attachment`, {
       responseType: 'blob',
-      timeout: 60000 // 60 seconds timeout (backend has retry logic, so this is total time)
     })
-    return response.data // axios returns blob in data when responseType is 'blob'
+    return response.data
   },
 
   // Refresh descriptor metadata
   refreshDescriptors: async (connectionId: number) => {
-    const response = await api.post('announcements/descriptors/refresh/', {
+    const response = await api.post('/announcements/descriptors/refresh', {
       connection_id: connectionId
     })
     return response.data
@@ -870,11 +828,11 @@ export const announcementsAPI = {
 // Screener API
 export const screenerAPI = {
   getScrapingStatus: async (jobId: string) => {
-    const response = await api.get(`admin/screener/scrape/status/${jobId}/`)
+    const response = await api.get(`/admin/screener/scrape/status/${jobId}`)
     return response.data
   },
   getStats: async () => {
-    const response = await api.get('admin/screener/stats/')
+    const response = await api.get('/admin/screener/stats')
     return response.data
   },
   getData: async (params?: {
@@ -884,35 +842,35 @@ export const screenerAPI = {
     limit?: number
     offset?: number
   }) => {
-    const response = await api.get('admin/screener/data/', { params })
+    const response = await api.get('/admin/screener/data', { params })
     return response.data
   },
   getConnections: async () => {
-    const response = await api.get('admin/screener/connections/')
+    const response = await api.get('/admin/screener/connections')
     return response.data
   },
   createConnection: async (connection: any) => {
-    const response = await api.post('admin/screener/connections/', connection)
+    const response = await api.post('/admin/screener/connections', connection)
     return response.data
   },
   startScraping: async (connectionId: number) => {
-    const response = await api.post(`admin/screener/connections/${connectionId}/start/`)
+    const response = await api.post(`/admin/screener/connections/${connectionId}/start`)
     return response.data
   },
   stopScraping: async (connectionId: number) => {
-    const response = await api.post(`admin/screener/connections/${connectionId}/stop/`)
+    const response = await api.post(`/admin/screener/connections/${connectionId}/stop`)
     return response.data
   },
   triggerScraping: async () => {
-    const response = await api.post('admin/screener/scrape/')
+    const response = await api.post('/admin/screener/scrape')
     return response.data
   },
   getConfig: async () => {
-    const response = await api.get('admin/screener/config/')
+    const response = await api.get('/admin/screener/config')
     return response.data
   },
   saveConfig: async (config: any) => {
-    const response = await api.post('admin/screener/config/', config)
+    const response = await api.post('/admin/screener/config', config)
     return response.data
   },
   getLogs: async (params?: {
@@ -922,7 +880,7 @@ export const screenerAPI = {
     limit?: number
     offset?: number
   }) => {
-    const response = await api.get('admin/screener/logs/', { params })
+    const response = await api.get('/admin/screener/logs', { params })
     return response.data
   },
 }
@@ -930,26 +888,26 @@ export const screenerAPI = {
 // Analytics API
 export const analyticsAPI = {
   getDashboard: async () => {
-    const response = await api.get('analytics/dashboard/')
+    const response = await api.get('/analytics/dashboard')
     return response.data
   },
   getReports: async () => {
-    const response = await api.get('analytics/reports/')
+    const response = await api.get('/analytics/reports')
     return response.data
   },
 }
 
 export const newsAPI = {
   getNews: async (params?: { page?: number; page_size?: number; search?: string }) => {
-    const response = await api.get('news/') ?? { data: { news: [], total: 0 } };
+    const response = await api.get('/news', { params })
     return response.data
   },
   getStatus: async () => {
-    const response = await api.get('news/status/')
+    const response = await api.get('/news/status')
     return response.data
   },
   toggleStatus: async (enabled: boolean) => {
-    const response = await api.post('news/toggle/', null, { params: { enabled } })
+    const response = await api.post('/news/toggle', null, { params: { enabled } })
     return response.data
   }
 }
