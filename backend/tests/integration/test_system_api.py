@@ -12,7 +12,7 @@ def test_create_connection(client, admin_token):
     payload = {
         "provider": "TRUEDATA",
         "name": "Test Connection",
-        "connection_type": "market_data",
+        "connection_type": "MARKET_DATA",
         "details": {"username": "u", "password": "p"},
         "is_enabled": True
     }

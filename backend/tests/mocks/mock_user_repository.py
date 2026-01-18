@@ -14,6 +14,24 @@ class MockUserRepository(UserRepository):
                 return user
         return None
 
+    def get_by_username(self, db: Session, username: str) -> Optional[User]:
+        for user in self.users.values():
+            if user.username == username:
+                return user
+        return None
+
+    def get_by_user_id(self, db: Session, user_id: str) -> Optional[User]:
+        for user in self.users.values():
+            if user.user_id == user_id:
+                return user
+        return None
+
+    def get_by_mobile(self, db: Session, mobile: str) -> Optional[User]:
+        for user in self.users.values():
+            if user.mobile == mobile:
+                return user
+        return None
+
     def get_by_id(self, db: Session, user_id: int) -> Optional[User]:
         return self.users.get(user_id)
 
