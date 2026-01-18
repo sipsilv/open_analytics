@@ -62,6 +62,41 @@ def init_database():
         traceback.print_exc()
         return False
 
+    # Create initial admin user
+    try:
+        from sqlalchemy.orm import Session
+        from app.core.auth.security import get_password_hash
+        
+        print("\n[INFO] Checking for admin user...")
+        with Session(engine) as session:
+            admin_email = os.getenv("ADMIN_EMAIL", "admin@openanalytics.in")
+            # Check if admin exists
+            existing_user = session.query(User).filter(User.email == admin_email).first()
+            
+            if not existing_user:
+                print(f"[INFO] Creating default admin user: {admin_email}")
+                admin_password = os.getenv("ADMIN_PASSWORD", "admin123")
+                
+                admin_user = User(
+                    email=admin_email,
+                    hashed_password=get_password_hash(admin_password),
+                    name=os.getenv("ADMIN_USERNAME", "Admin User"),
+                    role="admin",
+                    is_active=True,
+                    account_status="active"
+                )
+                session.add(admin_user)
+                session.commit()
+                print("[OK] Admin user created successfully")
+            else:
+                print("[INFO] Admin user already exists")
+                
+    except Exception as e:
+        print(f"[ERROR] Failed to create admin user: {e}")
+        # Don't fail the whole init just for this
+        
+    return True
+
 if __name__ == "__main__":
     success = init_database()
     sys.exit(0 if success else 1)
