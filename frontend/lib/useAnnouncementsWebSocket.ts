@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import Cookies from 'js-cookie'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 // Convert HTTP URL to WebSocket URL
 const getWebSocketUrl = (): string => {
@@ -61,7 +61,7 @@ export function useAnnouncementsWebSocket(
   const isConnectingRef = useRef(false)
   const maxReconnectAttempts = 10
   const reconnectDelay = 3000 // 3 seconds
-  
+
   // Use ref for callback to avoid dependency issues
   const onNewAnnouncementRef = useRef(onNewAnnouncement)
   onNewAnnouncementRef.current = onNewAnnouncement
@@ -71,7 +71,7 @@ export function useAnnouncementsWebSocket(
     if (isConnectingRef.current) {
       return
     }
-    
+
     // Don't connect if already connected or no auth token
     const token = Cookies.get('auth_token')
     if (!token || wsRef.current?.readyState === WebSocket.OPEN) {
@@ -95,7 +95,7 @@ export function useAnnouncementsWebSocket(
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
-          
+
           // Handle new announcement
           if (data.type === 'announcement' || data.event === 'new_announcement') {
             const announcement = data.data || data
@@ -172,7 +172,7 @@ export function useAnnouncementsWebSocket(
     const interval = setInterval(() => {
       const token = Cookies.get('auth_token')
       const wsState = wsRef.current?.readyState
-      
+
       // Connect if we have token but no connection
       if (token && !wsRef.current && !isConnectingRef.current) {
         connect()
@@ -189,7 +189,7 @@ export function useAnnouncementsWebSocket(
         }
       }
     }, 5000) // Check every 5 seconds
-    
+
     return () => clearInterval(interval)
   }, [connect, disconnect])
 
