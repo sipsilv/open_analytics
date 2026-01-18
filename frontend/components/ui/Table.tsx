@@ -54,8 +54,8 @@ export function TableRow({
     <tr
       {...props}
       className={`${index !== undefined && index % 2 === 0
-          ? 'bg-[#fafafa] dark:bg-[#0e1628]/30'
-          : 'bg-[#121b2f]'
+        ? 'bg-[#fafafa] dark:bg-[#0e1628]/30'
+        : 'bg-[#121b2f]'
         } ${hover ? 'hover:bg-[#f1f5f9] dark:hover:bg-[#182447]/40 transition-colors duration-200' : ''
         } ${className}`}
     >

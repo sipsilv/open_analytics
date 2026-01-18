@@ -33,8 +33,8 @@ export function Tabs({ value, onValueChange, children }: TabsProps) {
                         <button
                             key={tab.props.value}
                             className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 -mb-[2px] whitespace-nowrap ${isActive
-                                    ? 'border-primary text-primary'
-                                    : 'border-transparent text-text-secondary hover:text-text-primary hover:border-text-secondary'
+                                ? 'border-primary text-primary'
+                                : 'border-transparent text-text-secondary hover:text-text-primary hover:border-text-secondary'
                                 }`}
                             onClick={() => onValueChange(tab.props.value)}
                         >
