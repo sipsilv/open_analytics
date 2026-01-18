@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     # This is critical on Windows where batch scripts can introduce trailing spaces
     DATA_DIR: str = os.path.normpath(os.getenv("DATA_DIR", os.path.join(PROJECT_ROOT, "data")).strip())
     
+    # Testing flag
+    TESTING: bool = os.getenv("TESTING", "false").lower() == "true"
+    
     # Database (legacy - now using connection manager)
     DATABASE_URL: str = f"sqlite:///{os.path.join(DATA_DIR, 'auth/sqlite/auth.db')}"
     DUCKDB_PATH: str = os.path.join(DATA_DIR, "analytics/duckdb")

@@ -524,11 +524,14 @@ async def startup_event():
             print(f"  Telegram Bot Poll : ERROR - {str(e)}")
         
         # Start Worker Manager (Listeners, Extractors, Processors)
-        try:
-            from app.providers.worker_manager import worker_manager
-            worker_manager.start_all()
-        except Exception as e:
-            print(f"  Worker Manager    : ERROR - {str(e)}")
+        if not settings.TESTING:
+            try:
+                from app.providers.worker_manager import worker_manager
+                worker_manager.start_all()
+            except Exception as e:
+                print(f"  Worker Manager    : ERROR - {str(e)}")
+        else:
+            print(f"  Worker Manager    : SKIPPED - In testing mode")
 
         print("="*70)
         

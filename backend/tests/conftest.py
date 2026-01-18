@@ -3,11 +3,12 @@ import pytest
 
 # Set default environment variables for testing to avoid Pydantic validation errors
 # These must be set BEFORE importing app modules that initialize Settings
-os.environ.setdefault("JWT_SECRET_KEY", "test_default_secret_key_for_testing_only")
-os.environ.setdefault("JWT_SYSTEM_SECRET_KEY", "test_default_system_secret_key_for_testing_only")
+os.environ["JWT_SECRET_KEY"] = "test_default_secret_key_for_testing_only"
+os.environ["JWT_SYSTEM_SECRET_KEY"] = "test_default_system_secret_key_for_testing_only"
 # Valid Fernet key (32 bytes base64url encoded)
-os.environ.setdefault("ENCRYPTION_KEY", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-os.environ.setdefault("DATA_DIR", "test_data") # Use local test_data dir to avoid polluting realsempty string issue
+os.environ["ENCRYPTION_KEY"] = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+os.environ["DATA_DIR"] = "test_data" # Force local test_data dir
+os.environ["TESTING"] = "true" # Force testing flag
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
