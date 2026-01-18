@@ -105,7 +105,7 @@ async def get_connections(
         ))
     return result
 
-@router.post("/", response_model=ConnectionResponse)
+@router.post("", response_model=ConnectionResponse)
 async def create_connection(
     connection_data: ConnectionCreate,
     service: ConnectionService = Depends(get_service),

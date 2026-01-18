@@ -513,3 +513,28 @@ class TelegramBotService:
         except Exception as e:
             logger.error(f"Polling error: {e}")
             return []
+
+def get_bot_username_from_db(db: Session) -> Optional[str]:
+    """Helper to get bot username from DB connection without full service init"""
+    try:
+        from app.models.connection import Connection, ConnectionType
+        from app.core.auth.security import decrypt_data
+        import json
+        
+        conn = db.query(Connection).filter(
+            Connection.connection_type == ConnectionType.TELEGRAM_BOT,
+            Connection.is_enabled == True
+        ).first()
+        
+        if not conn or not conn.credentials:
+            return None
+        
+        decrypted = decrypt_data(conn.credentials)
+        if decrypted.strip().startswith("{"):
+            details = json.loads(decrypted)
+            return details.get("bot_username")
+        
+        return None
+    except Exception as e:
+        logger.error(f"Error fetching bot username from DB: {e}")
+        return None
