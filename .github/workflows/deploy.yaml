@@ -29,7 +29,14 @@ jobs:
       - name: Run tests with pytest
         run: |
           cd backend
-          python -m pytest
+          python -m pytest --html=report.html --self-contained-html
+
+      - name: Upload Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Backend Test Report
+          path: backend/report.html
 
 ################################
 # 2️⃣ BUILD & PUSH JOB (ONLY IF TESTS PASS)
