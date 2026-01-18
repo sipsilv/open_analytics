@@ -36,7 +36,7 @@ jobs:
         run: |
           cd backend
           # Run pytest with both HTML and Markdown report generation
-          python -m pytest --html=report.html --self-contained-html --md-report --md-report-file report.md
+          python -m pytest --html=report.html --self-contained-html --md-report --md-report-output report.md
 
       - name: Add Job Summary
         if: always()
