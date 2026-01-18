@@ -13,6 +13,9 @@ permissions:
   pages: write
   id-token: write
 
+################################
+# 1️⃣ TEST JOB + GITHUB PAGES REPORT
+################################
 jobs:
   test-backend:
     name: Run Backend Tests
@@ -33,7 +36,7 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-html pytest-md-report pytest-cov
 
-      - name: Run pytest
+      - name: Run pytest (HTML + Markdown)
         run: |
           cd backend
           python -m pytest \
@@ -158,7 +161,7 @@ jobs:
         with:
           path: reports/
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy test report to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
 
