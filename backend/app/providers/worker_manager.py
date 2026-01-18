@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 from app.services.telegram_raw_listener.listener import TelegramListener
 from app.services.telegram_raw_listener.config_loader import load_telegram_config
 from app.services.telegram_raw_listener.db import init_db as init_listener_db, run_cleanup as run_listener_cleanup
@@ -49,7 +50,7 @@ async def run_extraction_service():
         logger.error(f"[Extractor] DB Init failed: {e}")
 
     logger.info("[Extractor] Started loop.")
-    while True:
+    while not worker_manager.shutdown_event.is_set():
         try:
             # Run blocking DB operation in thread
             count = await asyncio.to_thread(process_extraction_batch)
@@ -59,6 +60,7 @@ async def run_extraction_service():
                 logger.info(f"[Extractor] Processed {count} items.")
                 await asyncio.sleep(0.5)
         except Exception as e:
+            if worker_manager.shutdown_event.is_set(): break
             logger.error(f"[Extractor] Error: {e}")
             await asyncio.sleep(2)
 
@@ -71,7 +73,7 @@ async def run_dedup_service():
         logger.error(f"[Dedup] DB Init failed: {e}")
 
     logger.info("[Dedup] Started loop.")
-    while True:
+    while not worker_manager.shutdown_event.is_set():
         try:
             count = await asyncio.to_thread(process_dedup_batch)
             if count == 0:
@@ -80,6 +82,7 @@ async def run_dedup_service():
                 logger.info(f"[Dedup] Processed {count} items.")
                 await asyncio.sleep(0.5)
         except Exception as e:
+            if worker_manager.shutdown_event.is_set(): break
             logger.error(f"[Dedup] Error: {e}")
             await asyncio.sleep(2)
 
@@ -92,7 +95,7 @@ async def run_scoring_service():
         logger.error(f"[Scorer] DB Init failed: {e}")
 
     logger.info("[Scorer] Started loop.")
-    while True:
+    while not worker_manager.shutdown_event.is_set():
         try:
             count = await asyncio.to_thread(process_scoring_batch)
             if count == 0:
@@ -101,6 +104,7 @@ async def run_scoring_service():
                 logger.info(f"[Scorer] Processed {count} items.")
                 await asyncio.sleep(0.5)
         except Exception as e:
+            if worker_manager.shutdown_event.is_set(): break
             logger.error(f"[Scorer] Error: {e}")
             await asyncio.sleep(2)
 
@@ -113,7 +117,7 @@ async def run_ai_enrichment_service():
         logger.error(f"[AI Enrichment] DB Init failed: {e}")
 
     logger.info("[AI Enrichment] Started loop.")
-    while True:
+    while not worker_manager.shutdown_event.is_set():
         try:
             count = await asyncio.to_thread(process_ai_batch)
             if count == 0:
@@ -122,6 +126,7 @@ async def run_ai_enrichment_service():
                 logger.info(f"[AI Enrichment] Enriched {count} items.")
                 await asyncio.sleep(1)
         except Exception as e:
+            if worker_manager.shutdown_event.is_set(): break
             logger.error(f"[AI Enrichment] Error: {e}")
             await asyncio.sleep(5)
 
@@ -138,9 +143,11 @@ async def run_cleanup_task():
 class WorkerManager:
     def __init__(self):
         self.tasks = []
+        self.shutdown_event = threading.Event()
 
     def start_all(self):
         """Starts all worker tasks."""
+        self.shutdown_event.clear()
         logger.info("Starting all background workers...")
         
         # 1. Listener
@@ -164,6 +171,7 @@ class WorkerManager:
     def stop_all(self):
         """Stops all worker tasks."""
         logger.info("Stopping all background workers...")
+        self.shutdown_event.set()
         for task in self.tasks:
             task.cancel()
         self.tasks = []

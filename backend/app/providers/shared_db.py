@@ -58,6 +58,8 @@ class SharedDatabase:
                             self.raw_conn = duckdb.connect(RAW_DB_PATH, read_only=True)
                             return self.raw_conn
                         except Exception as ro_err:
+                            import time
+                            time.sleep(1)
                             logger.error(f"Failed to open Raw DB in Read-Only mode: {ro_err}")
                             raise ro_err
                     
@@ -105,6 +107,8 @@ class SharedDatabase:
                             self.listing_conn = duckdb.connect(LISTING_DB_PATH, read_only=True)
                             return self.listing_conn
                         except Exception as ro_err:
+                            import time
+                            time.sleep(1)
                             logger.error(f"Failed to open Listing DB in Read-Only mode: {ro_err}")
                             raise ro_err
 
@@ -151,6 +155,8 @@ class SharedDatabase:
                             self.ai_conn = duckdb.connect(AI_DB_PATH, read_only=True)
                             return self.ai_conn
                         except Exception as ro_err:
+                            import time
+                            time.sleep(1)
                             logger.error(f"Failed to open AI DB in Read-Only mode: {ro_err}")
                             raise ro_err
                     
@@ -197,6 +203,8 @@ class SharedDatabase:
                             self.scoring_conn = duckdb.connect(SCORING_DB_PATH, read_only=True)
                             return self.scoring_conn
                         except Exception as ro_err:
+                            import time
+                            time.sleep(1)
                             logger.error(f"Failed to open Scoring DB in Read-Only mode: {ro_err}")
                             raise ro_err
 
@@ -245,6 +253,8 @@ class SharedDatabase:
                             self.final_conn = duckdb.connect(FINAL_DB_PATH, read_only=True)
                             return self.final_conn
                         except Exception as ro_err:
+                            import time
+                            time.sleep(1)
                             logger.error(f"Failed to open Final DB in Read-Only mode: {ro_err}")
                             raise ro_err
 
