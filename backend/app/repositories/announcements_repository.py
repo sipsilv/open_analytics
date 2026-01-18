@@ -22,10 +22,21 @@ class AnnouncementsRepository:
     def get_connection(self):
         """Get DuckDB connection"""
         try:
-            conn = duckdb.connect(self.db_path, config={'allow_unsigned_extensions': True})
+            conn = duckdb.connect(self.db_path, config={'allow_unsigned_extensions': True}, read_only=False)
             conn.execute("PRAGMA enable_progress_bar=false")
             return conn
         except Exception as e:
+            err_msg = str(e).lower()
+            if "permission denied" in err_msg or "lock" in err_msg or "resource temporarily unavailable" in err_msg:
+                logger.warning(f"Announcements DB is locked or permission denied. Falling back to READ-ONLY mode.")
+                try:
+                    conn = duckdb.connect(self.db_path, config={'allow_unsigned_extensions': True}, read_only=True)
+                    conn.execute("PRAGMA enable_progress_bar=false")
+                    return conn
+                except Exception as ro_err:
+                    logger.error(f"Failed to open Announcements DB in Read-Only mode: {ro_err}")
+                    raise ro_err
+            
             logger.error(f"Error connecting to announcements database: {e}")
             # Retry initialization
             self._initialized = False
@@ -119,7 +130,7 @@ class AnnouncementsRepository:
         finally:
             conn.close()
 
-    def get_announcements(self, from_date=None, to_date=None, symbol=None, search=None, limit=None, offset=0) -> Tuple[List[Dict], int]:
+    def get_announcements(self, from_date=None, to_date=None, symbol=None, search=None, limit=None, offset=0, **kwargs) -> Tuple[List[Dict], int]:
         conn = self.get_connection()
         try:
             where = ["1=1"]

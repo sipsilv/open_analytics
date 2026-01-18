@@ -52,7 +52,7 @@ class SharedDatabase:
                 except Exception as e:
                     err_msg = str(e)
                     # Check for Lock Error (Concurrent access)
-                    if "lock" in err_msg.lower() or "resource temporarily unavailable" in err_msg.lower():
+                    if "lock" in err_msg.lower() or "resource temporarily unavailable" in err_msg.lower() or "permission denied" in err_msg.lower():
                         logger.warning(f"Raw DB is locked. Falling back to READ-ONLY mode.")
                         try:
                             self.raw_conn = duckdb.connect(RAW_DB_PATH, read_only=True)
@@ -99,7 +99,7 @@ class SharedDatabase:
                     self.listing_conn.execute("PRAGMA checkpoint_threshold='10MB'")
                 except Exception as e:
                     err_msg = str(e)
-                    if "lock" in err_msg.lower() or "resource temporarily unavailable" in err_msg.lower():
+                    if "lock" in err_msg.lower() or "resource temporarily unavailable" in err_msg.lower() or "permission denied" in err_msg.lower():
                         logger.warning(f"Listing DB is locked. Falling back to READ-ONLY mode.")
                         try:
                             self.listing_conn = duckdb.connect(LISTING_DB_PATH, read_only=True)
@@ -145,7 +145,7 @@ class SharedDatabase:
                     self.ai_conn = duckdb.connect(AI_DB_PATH, read_only=False)
                 except Exception as e:
                     err_msg = str(e)
-                    if "lock" in err_msg.lower() or "resource temporarily unavailable" in err_msg.lower():
+                    if "lock" in err_msg.lower() or "resource temporarily unavailable" in err_msg.lower() or "permission denied" in err_msg.lower():
                         logger.warning(f"AI DB is locked. Falling back to READ-ONLY mode.")
                         try:
                             self.ai_conn = duckdb.connect(AI_DB_PATH, read_only=True)
@@ -191,7 +191,7 @@ class SharedDatabase:
                     self.scoring_conn = duckdb.connect(SCORING_DB_PATH, read_only=False)
                 except Exception as e:
                     err_msg = str(e)
-                    if "lock" in err_msg.lower() or "resource temporarily unavailable" in err_msg.lower():
+                    if "lock" in err_msg.lower() or "resource temporarily unavailable" in err_msg.lower() or "permission denied" in err_msg.lower():
                         logger.warning(f"Scoring DB is locked. Falling back to READ-ONLY mode.")
                         try:
                             self.scoring_conn = duckdb.connect(SCORING_DB_PATH, read_only=True)
@@ -239,7 +239,7 @@ class SharedDatabase:
                 except Exception as e:
                     err_msg = str(e)
                     # Check for Lock Error (Concurrent access)
-                    if "lock" in err_msg.lower() or "resource temporarily unavailable" in err_msg.lower():
+                    if "lock" in err_msg.lower() or "resource temporarily unavailable" in err_msg.lower() or "permission denied" in err_msg.lower():
                         logger.warning(f"Final DB is locked by another process. Falling back to READ-ONLY mode.")
                         try:
                             self.final_conn = duckdb.connect(FINAL_DB_PATH, read_only=True)
