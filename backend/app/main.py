@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.proxy_headers import ProxyHeadersMiddleware
 from datetime import datetime, timezone, timedelta
 import logging
 import logging.config
@@ -75,6 +76,8 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 # Note: CORS middleware should handle CORS headers automatically
 # Exception handlers are only needed if CORS middleware fails to add headers
