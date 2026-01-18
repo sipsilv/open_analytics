@@ -7,9 +7,9 @@ WORKDIR /app
 
 # Install system dependencies (Debian uses apt, NOT apk)
 RUN apt-get update && apt-get install -y \
-    wget \
-    libc6 \
- && rm -rf /var/lib/apt/lists/*
+  wget \
+  libc6 \
+  && rm -rf /var/lib/apt/lists/*
 
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
@@ -41,14 +41,17 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Install wget for healthcheck (Debian)
 RUN apt-get update && apt-get install -y \
-    wget \
- && rm -rf /var/lib/apt/lists/*
+  wget \
+  && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs \
- && adduser --system --uid 1001 nextjs
+  && adduser --system --uid 1001 nextjs
 
 # Standalone output
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
