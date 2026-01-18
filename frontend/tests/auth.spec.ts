@@ -89,7 +89,7 @@ test.describe('Authentication', () => {
     // Wait for form fields to be visible
     const identifierInput = page.getByLabel(/Email \/ Mobile \/ User ID/i);
     await identifierInput.waitFor({ state: 'visible', timeout: 10000 });
-    await identifierInput.fill('admin@rubikview.com');
+    await identifierInput.fill('admin@openanalytics.co.in');
 
     const passwordInput = page.getByLabel(/Password/i);
     await passwordInput.waitFor({ state: 'visible', timeout: 10000 });

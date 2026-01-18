@@ -18,7 +18,7 @@ export default defineConfig({
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
   /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 10 : undefined,
+  workers: process.env.CI ? 2 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['html'],
@@ -64,8 +64,8 @@ export default defineConfig({
     },
     {
       command: process.env.CI
-        ? 'cd ../backend && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000'
-        : 'cd ../backend && venv\\Scripts\\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000',
+        ? 'cd ../backend && python init_db.py && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000'
+        : 'cd ../backend && venv\\Scripts\\python.exe init_db.py && venv\\Scripts\\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000',
       url: 'http://localhost:8000/health',
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
