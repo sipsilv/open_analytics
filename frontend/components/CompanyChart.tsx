@@ -219,7 +219,7 @@ export function CompanyChart({
                   borderRadius: '8px'
                 }}
                 labelStyle={{ color: '#e5e7eb' }}
-                formatter={(value: any, name: string) => {
+                formatter={(value: any, name: any) => {
                   if (name === 'price' || name === 'dma50' || name === 'dma200') {
                     return formatPrice(value)
                   }
