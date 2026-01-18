@@ -54,7 +54,7 @@ def init_database():
         print("\n" + "=" * 60)
         print("  DATABASE INITIALIZATION COMPLETE")
         print("=" * 60)
-        return True
+        # return True  <-- REMOVED to allow admin creation logic to run
         
     except Exception as e:
         print(f"[ERROR] Failed to create tables: {e}")
@@ -69,7 +69,7 @@ def init_database():
         
         print("\n[INFO] Checking for admin user...")
         with Session(engine) as session:
-            admin_email = os.getenv("ADMIN_EMAIL", "admin@openanalytics.in")
+            admin_email = os.getenv("ADMIN_EMAIL", "admin@openanalytics.co.in")
             # Check if admin exists
             existing_user = session.query(User).filter(User.email == admin_email).first()
             
