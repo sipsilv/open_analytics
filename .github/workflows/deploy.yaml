@@ -9,7 +9,8 @@ on:
 
 ################################
 # 2️⃣ BUILD & PUSH JOB (ONLY IF TESTS PASS)
-################################
+################################\
+jobs:
   build:
     name: Build & Push Docker Images
     runs-on: ubuntu-latest
