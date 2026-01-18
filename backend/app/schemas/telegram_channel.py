@@ -1,5 +1,5 @@
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class ChannelDiscoveryResponse(BaseModel):
     id: int # Telegram ID
@@ -25,8 +25,7 @@ class ChannelResponse(BaseModel):
     status: str
     today_count: Optional[int] = 0  # New field for stats
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ToggleChannelRequest(BaseModel):
     is_enabled: bool

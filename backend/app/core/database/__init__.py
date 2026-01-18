@@ -2,8 +2,7 @@
 Database module - dynamic multi-database support
 """
 from typing import Optional, Generator
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import declarative_base, Session
 from .connection_manager import ConnectionManager
 from .router import DatabaseRouter
 from app.core.config import settings

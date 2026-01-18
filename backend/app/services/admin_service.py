@@ -229,7 +229,7 @@ class AdminService:
         user.is_active = (new_status == "ACTIVE")
         if new_status != "ACTIVE":
              user.last_active_at = None
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now(timezone.utc)
         self.db.commit()
         self.db.refresh(user)
         
@@ -266,7 +266,7 @@ class AdminService:
              raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
         
         user.hashed_password = get_password_hash(password_data.password)
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now(timezone.utc)
         self.db.commit()
         self.db.refresh(user)
         return user
@@ -353,7 +353,7 @@ class AdminService:
              
         user.role = "super_admin"
         user.is_active = True
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now(timezone.utc)
         self.db.commit()
         self.db.refresh(user)
         return user
@@ -371,7 +371,7 @@ class AdminService:
              raise HTTPException(status_code=400, detail="User is not a super_admin")
              
         user.role = "admin"
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now(timezone.utc)
         self.db.commit()
         self.db.refresh(user)
         return user
@@ -487,7 +487,7 @@ class AdminService:
              
              request.status = "approved"
              request.reviewed_by = admin.id
-             request.reviewed_at = datetime.utcnow()
+             request.reviewed_at = datetime.now(timezone.utc)
              
              self.db.commit()
              self.db.refresh(new_user)
@@ -523,7 +523,7 @@ class AdminService:
              
         request.status = "rejected"
         request.reviewed_by = admin.id
-        request.reviewed_at = datetime.utcnow()
+        request.reviewed_at = datetime.now(timezone.utc)
         self.db.commit()
         self.db.refresh(request)
         return {"message": "Request rejected", "request": request}
@@ -566,7 +566,7 @@ class AdminService:
              raise HTTPException(status_code=400, detail="Invalid status")
              
         feedback.status = status_str
-        feedback.updated_at = datetime.utcnow()
+        feedback.updated_at = datetime.now(timezone.utc)
         self.db.commit()
         self.db.refresh(feedback)
         
@@ -646,13 +646,13 @@ class AdminService:
             request.status = status_val
             if status_val in ["approved", "rejected", "implemented"]:
                 request.reviewed_by = admin.id
-                request.reviewed_at = datetime.utcnow()
+                request.reviewed_at = datetime.now(timezone.utc)
         
         admin_note = update_data.get("admin_note")
         if admin_note is not None:
              request.admin_note = admin_note
              
-        request.updated_at = datetime.utcnow()
+        request.updated_at = datetime.now(timezone.utc)
         self.db.commit()
         self.db.refresh(request)
         

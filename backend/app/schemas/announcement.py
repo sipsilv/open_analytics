@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 
 class LinkModel(BaseModel):
@@ -28,8 +28,7 @@ class AnnouncementResponse(BaseModel):
     updated_at: Optional[str] = None
     links: Optional[List[LinkModel]] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AnnouncementListResponse(BaseModel):

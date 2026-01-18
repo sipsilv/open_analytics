@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from fastapi import HTTPException, status
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from app.models.user import User
@@ -164,8 +164,8 @@ class AuthService:
                 self.db.commit()
             
             # Update last seen and last active
-            user.last_seen = datetime.utcnow()
-            user.last_active_at = datetime.utcnow()
+            user.last_seen = datetime.now(timezone.utc)
+            user.last_active_at = datetime.now(timezone.utc)
             
             # Set dark theme as default if theme_preference is not set
             if not user.theme_preference:
@@ -199,8 +199,8 @@ class AuthService:
                 )
         
         # Update last seen and last active
-        user.last_seen = datetime.utcnow()
-        user.last_active_at = datetime.utcnow()
+        user.last_seen = datetime.now(timezone.utc)
+        user.last_active_at = datetime.now(timezone.utc)
         if not user.theme_preference:
             user.theme_preference = "dark"
         
@@ -225,7 +225,7 @@ class AuthService:
         )
 
     def logout(self, user: User):
-        user.last_seen = datetime.utcnow()
+        user.last_seen = datetime.now(timezone.utc)
         self.db.commit()
 
     async def forgot_password(self, request: ForgotPasswordRequest) -> ForgotPasswordResponse:
@@ -290,7 +290,7 @@ class AuthService:
         
         # Update password
         user.hashed_password = get_password_hash(request.new_password)
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now(timezone.utc)
         self.db.commit()
         
         # Send confirmation to Telegram

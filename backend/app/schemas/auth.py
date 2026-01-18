@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, EmailStr, Field, model_validator, ConfigDict
 from typing import Optional, Any
 
 class LoginRequest(BaseModel):
@@ -34,13 +34,13 @@ class TokenResponse(BaseModel):
 class ForgotPasswordRequest(BaseModel):
     email: str = Field(..., description="Can be email, mobile number, or user ID")
     
-    class Config:
-        # Allow both 'email' and 'identifier' field names
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "email": "user@example.com or 1234567890 or 123"
             }
         }
+    )
 
 class ForgotPasswordResponse(BaseModel):
     message: str

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import date, datetime
 
@@ -27,8 +27,7 @@ class SymbolResponse(SymbolBase):
     updated_at: Optional[datetime] = None
     last_updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class PaginatedSymbolResponse(BaseModel):
     items: List[SymbolResponse]
@@ -64,8 +63,7 @@ class ScriptResponse(ScriptBase):
     updated_at: Optional[datetime] = None
     last_used_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class AutoUploadRequest(BaseModel):
     url: str
@@ -122,8 +120,7 @@ class SchedulerResponse(BaseModel):
     created_by: Optional[int] = None
     last_run_status: Optional[str] = None  # Status from upload logs (SUCCESS, FAILED, etc.)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BulkDeleteRequest(BaseModel):

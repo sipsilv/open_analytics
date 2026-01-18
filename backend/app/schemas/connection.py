@@ -1,4 +1,4 @@
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, ConfigDict, root_validator
 from typing import Optional, Dict, Any
 from datetime import datetime
 from app.models.connection import ConnectionType, ConnectionStatus, ConnectionHealth, ConnectionEnvironment
@@ -12,8 +12,7 @@ class ConnectionBase(BaseModel):
     is_enabled: bool = False
     details: Optional[Dict[str, Any]] = None  # Flexible dictionary for form fields
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 class ConnectionCreate(ConnectionBase):
     pass
@@ -47,5 +46,4 @@ class ConnectionResponse(BaseModel):
     # We DO NOT return full details/credentials here for security
     # We will return public configs only if needed, or masked
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

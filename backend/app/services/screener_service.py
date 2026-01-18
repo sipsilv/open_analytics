@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 import traceback
+import io
 
 from app.repositories.screener_repository import ScreenerRepository
 
@@ -102,7 +103,7 @@ class ScreenerService:
 
     def parse_peer_table(self, soup: BeautifulSoup) -> Optional[pd.DataFrame]:
         try:
-            tables = pd.read_html(str(soup))
+            tables = pd.read_html(io.StringIO(str(soup)))
             for df in tables:
                 cols = " ".join([str(c) for c in df.columns])
                 if "CMP Rs." in cols and "P/E" in cols: return df
@@ -115,7 +116,7 @@ class ScreenerService:
             if not h: return None
             table = h.find_next("table")
             if not table: return None
-            dfs = pd.read_html(str(table))
+            dfs = pd.read_html(io.StringIO(str(table)))
             return dfs[0] if dfs else None
         except: return None
 

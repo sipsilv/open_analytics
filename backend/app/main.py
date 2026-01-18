@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timezone, timedelta
 import logging
@@ -58,10 +59,23 @@ logging.getLogger().addFilter(WebSocketLogFilter())
 # This filter only suppresses WebSocket connection logs (keeps HTTP requests and all other logs).
 # Normal application logs, HTTP request logs, errors, and startup messages are all preserved.
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan event handler for FastAPI"""
+    # Startup
+    await configure_logging()
+    await startup_event()
+    
+    yield
+    
+    # Shutdown
+    await shutdown_event()
+
 app = FastAPI(
     title="Open Analytics API",
     description="Enterprise Analytics Platform API (v1)",
     version="1.0.1",
+    lifespan=lifespan,
 )
 
 # CORS middleware - MUST be added before other middleware
@@ -77,7 +91,6 @@ app.add_middleware(
 # Exception handlers are only needed if CORS middleware fails to add headers
 
 # Configure logging at startup - runs before any requests
-@app.on_event("startup")
 async def configure_logging():
     """Configure logging to suppress only WebSocket connection logs - runs early in startup"""
     # Apply WebSocket filter to all relevant loggers (keeps HTTP and other logs)
@@ -96,7 +109,6 @@ async def configure_logging():
             logger.addFilter(WebSocketLogFilter())
 
 # Initialize database connections on startup
-@app.on_event("startup")
 async def startup_event():
     """Initialize database connections on startup"""
     try:
@@ -546,7 +558,6 @@ async def startup_event():
         print(f"[ERROR] Startup error: {e}")
 
 # Cleanup on shutdown
-@app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup resources on shutdown"""
     try:
@@ -661,13 +672,13 @@ async def health_check():
             "database": db_status,
             "api_version": "v1",
             "script_endpoints": script_routes,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
     except Exception as e:
         return {
             "status": "unhealthy",
             "error": str(e),
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
 @app.get("/")

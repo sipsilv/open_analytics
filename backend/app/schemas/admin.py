@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
 from datetime import datetime
 
@@ -25,8 +25,7 @@ class AccessRequestResponse(BaseModel):
     reviewed_by: Optional[int] = None
     reviewed_at: Optional[datetime] = None
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class FeedbackResponse(BaseModel):
     id: int
@@ -37,8 +36,7 @@ class FeedbackResponse(BaseModel):
     status: str
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Feature Request Schemas
 class FeatureRequestContext(BaseModel):
@@ -71,8 +69,7 @@ class FeatureRequestResponse(BaseModel):
     created_at: datetime
     updated_at: Optional[datetime] = None
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class FeatureRequestUpdate(BaseModel):
     status: Optional[str] = None  # in_review, approved, rejected, implemented

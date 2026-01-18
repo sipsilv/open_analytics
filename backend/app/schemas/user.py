@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator, ConfigDict
 from typing import Optional
 from datetime import datetime
 
@@ -71,8 +71,7 @@ class UserResponse(UserBase):
     telegram_chat_id: Optional[str] = None  # Telegram Chat ID for notifications
     two_factor_enabled: bool = False  # 2FA status
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UserStatusUpdate(BaseModel):
     status: str  # ACTIVE, SUSPENDED, DEACTIVATED

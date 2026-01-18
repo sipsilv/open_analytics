@@ -16,13 +16,6 @@ class WebSocketManager:
         # Map of WebSocket -> user_id
         self.connection_users: Dict[WebSocket, int] = {}
         self._loop = None
-        try:
-            import asyncio
-            # In Python 3.7+ we should ideally use get_running_loop but 
-            # this is called during global module initialization, so we use get_event_loop
-            self._loop = asyncio.get_event_loop()
-        except Exception:
-            pass
     
     async def connect(self, websocket: WebSocket, user_id: int):
         """Register a new WebSocket connection for a user"""
@@ -190,11 +183,11 @@ class WebSocketManager:
             # Use the stored loop if available
             loop = self._loop
             
-            # Fallback to event loop if we can get it
+            # Fallback to running loop if we can get it
             if not loop:
                 try:
-                    loop = asyncio.get_event_loop()
-                except:
+                    loop = asyncio.get_running_loop()
+                except RuntimeError:
                     pass
             
             if loop and loop.is_running():

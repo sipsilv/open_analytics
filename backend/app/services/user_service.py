@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, BackgroundTasks
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Any
 
 from app.models.user import User
@@ -34,7 +34,7 @@ class UserService:
         return self.user_repo.get_by_email(self.db, email)
 
     def update_last_active(self, user: User) -> User:
-        user.last_active_at = datetime.utcnow()
+        user.last_active_at = datetime.now(timezone.utc)
         return self.user_repo.update(self.db, user)
 
     async def update_profile(self, user: User, user_update: UserUpdate) -> User:
@@ -146,7 +146,7 @@ class UserService:
             except Exception as e:
                 print(f"Failed to send profile update alert: {e}")
 
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now(timezone.utc)
         return self.user_repo.update(self.db, user)
 
     def _generate_user_id(self, mobile: str) -> str:
@@ -229,7 +229,7 @@ class UserService:
             if hasattr(user, key) and value is not None:
                 setattr(user, key, value)
         
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now(timezone.utc)
         return self.user_repo.update(self.db, user)
 
     async def change_password(self, user: User, password_data: PasswordChange):
@@ -249,7 +249,7 @@ class UserService:
         
         # Update password
         user.hashed_password = get_password_hash(password_data.new_password)
-        user.updated_at = datetime.utcnow()
+        user.updated_at = datetime.now(timezone.utc)
         self.user_repo.update(self.db, user)
         
         # TELEGRAM ALERT

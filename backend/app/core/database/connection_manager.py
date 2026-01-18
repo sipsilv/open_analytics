@@ -5,7 +5,7 @@ import json
 import os
 import sys
 from typing import Dict, Any, Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from app.core.database.base import DatabaseClient
 from app.core.database.sqlite_client import SQLiteClient
 from app.core.database.duckdb_client import DuckDBClient
@@ -117,7 +117,7 @@ class ConnectionManager:
                 "is_active": True,
                 "status": "active",
                 "last_tested": None,
-                "created_at": datetime.utcnow().isoformat()
+                "created_at": datetime.now(timezone.utc).isoformat()
             }
             # Don't save during initialization to avoid file I/O during import
             # Will be saved on first actual use
@@ -139,7 +139,7 @@ class ConnectionManager:
                 "is_active": True,
                 "status": "active",
                 "last_tested": None,
-                "created_at": datetime.utcnow().isoformat()
+                "created_at": datetime.now(timezone.utc).isoformat()
             }
             # Don't save during initialization to avoid file I/O during import
         
@@ -317,7 +317,7 @@ class ConnectionManager:
         client.disconnect()
         
         # Update last tested time
-        connection["last_tested"] = datetime.utcnow().isoformat()
+        connection["last_tested"] = datetime.now(timezone.utc).isoformat()
         connection["status"] = "active" if result else "error"
         self.save_connections()
         
@@ -327,7 +327,7 @@ class ConnectionManager:
         """Add a new connection"""
         connection_id = connection.get("id") or f"{connection.get('type')}_{connection.get('category')}_{len(self.connections)}"
         connection["id"] = connection_id
-        connection["created_at"] = datetime.utcnow().isoformat()
+        connection["created_at"] = datetime.now(timezone.utc).isoformat()
         connection["status"] = "inactive"
         self.connections[connection_id] = connection
         self.save_connections()
@@ -339,7 +339,7 @@ class ConnectionManager:
             return False
         
         self.connections[connection_id].update(updates)
-        self.connections[connection_id]["updated_at"] = datetime.utcnow().isoformat()
+        self.connections[connection_id]["updated_at"] = datetime.now(timezone.utc).isoformat()
         
         # If this is the active connection, reconnect
         for category, active_id in self.active_connections.items():

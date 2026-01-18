@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.user import User
 from app.core.auth.security import decode_access_token
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 security = HTTPBearer()
 
@@ -51,7 +51,7 @@ def get_current_user(
     
     if is_super_admin:
         # Throttle permission logs to avoid spam on every API call
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         should_log = True
         if user.username in _last_permission_log:
             time_since_log = now - _last_permission_log[user.username]
@@ -72,7 +72,7 @@ def get_current_user(
             user.role = "super_admin"
         
         # Update last_active_at (throttled: only if last update was > 1 minute ago)
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         should_update = True
         if user.last_active_at:
             time_since_update = now - user.last_active_at
@@ -95,7 +95,7 @@ def get_current_user(
         )
     
     # Update last_active_at for authenticated API calls (throttled: only if last update was > 1 minute ago)
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     should_update = True
     if user.last_active_at:
         time_since_update = now - user.last_active_at
@@ -157,7 +157,7 @@ def get_current_user_from_token(token: str, db: Session) -> User:
     
     if is_super_admin:
         # Throttle permission logs to avoid spam
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         should_log = True
         if user.username in _last_permission_log:
             time_since_log = now - _last_permission_log[user.username]
@@ -178,7 +178,7 @@ def get_current_user_from_token(token: str, db: Session) -> User:
             user.role = "super_admin"
         
         # Update last_active_at (throttled: only if last update was > 1 minute ago)
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         should_update = True
         if user.last_active_at:
             time_since_update = now - user.last_active_at
@@ -201,7 +201,7 @@ def get_current_user_from_token(token: str, db: Session) -> User:
         )
     
     # Update last_active_at for authenticated API calls (throttled: only if last update was > 1 minute ago)
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     should_update = True
     if user.last_active_at:
         time_since_update = now - user.last_active_at
