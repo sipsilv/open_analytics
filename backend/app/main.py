@@ -110,7 +110,7 @@ async def startup_event():
         import os
         import sys
         
-        print("[DEBUG] Startup: Checkpoint 1 - Imports done")
+
 
         # ============================================
         # SINGLE INSTANCE CHECK
@@ -157,18 +157,18 @@ async def startup_event():
         # ============================================
         # DATABASE CONNECTION STATUS
         # ============================================
-        print("[DEBUG] Startup: Checkpoint 2 - Starting DB Checks")
+
         print("\n" + "="*70)
         print(" DATABASE CONNECTION STATUS")
         print("="*70)
         
         # Test Auth database with table count
-        print("[DEBUG] Startup: Checkpoint 3 - Getting Auth DB")
+
         auth_client = router.get_auth_db()
         auth_table_count = 0
         if auth_client:
             try:
-                print("[DEBUG] Startup: Checkpoint 4 - Checking Auth DB Health")
+
                 health = auth_client.health_check()
                 # Try to get table count
                 try:
@@ -185,7 +185,7 @@ async def startup_event():
         else:
             print("  Auth DB           : FAILED - No connection available")
         
-        print("[DEBUG] Startup: Checkpoint 5 - Testing Analytics DB")
+
         # Test Analytics database
         analytics_client = router.get_analytics_db()
         if analytics_client:
@@ -196,7 +196,7 @@ async def startup_event():
         else:
             print("  Analytics DB      : NOT CONFIGURED")
         
-        print("[DEBUG] Startup: Checkpoint 6 - Testing Screener DB")
+
         # Test Screener database with table count
         screener_table_count = 0
         try:
@@ -537,7 +537,7 @@ async def startup_event():
         
         # Final startup message
         print("\n" + "="*70)
-        print("[DEBUG] Startup: Checkpoint 7 - All Checks Complete, Ready to Serve")
+
         print(" OPEN ANALYTICS API - READY")
         print(f" Started at: {now_ist.strftime('%Y-%m-%d %H:%M:%S')} IST")
         print("="*70 + "\n")

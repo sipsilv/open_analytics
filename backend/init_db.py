@@ -66,6 +66,7 @@ def init_database():
     try:
         from sqlalchemy.orm import Session
         from app.core.auth.security import get_password_hash
+        import uuid
         
         print("\n[INFO] Checking for admin user...")
         with Session(engine) as session:
@@ -78,7 +79,10 @@ def init_database():
                 admin_password = os.getenv("ADMIN_PASSWORD", "admin123")
                 
                 admin_user = User(
+                    user_id=str(uuid.uuid4()),
                     email=admin_email,
+                    username="admin",
+                    mobile="0000000000",  # Dummy mobile required by schema
                     hashed_password=get_password_hash(admin_password),
                     name=os.getenv("ADMIN_USERNAME", "Admin User"),
                     role="admin",
