@@ -22,5 +22,7 @@ def test_get_symbols_admin(client, admin_token):
         headers={"Authorization": f"Bearer {admin_token}"}
     )
     assert response.status_code == 200
-    # Should get list (empty or mock data if any)
-    assert isinstance(response.json(), list)
+    data = response.json()
+    assert isinstance(data, dict)
+    assert "items" in data
+    assert isinstance(data["items"], list)

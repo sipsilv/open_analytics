@@ -37,7 +37,7 @@ class TestAuthService:
             is_active=False
         ))
         
-        service = AuthService(db=None) # DB session mocked
+        service = AuthService(db=MagicMock()) # DB session mocked
         service.user_repo = repo # Inject mock repo
         service._create_token_response = MagicMock(return_value={"access_token": "token"}) # Mock token gen
         return service

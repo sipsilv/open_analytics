@@ -596,7 +596,6 @@ async def shutdown_event():
         # Remove PID file
         try:
             import os
-            from app.core.config import settings
             # Normalize DATA_DIR to handle mixed path separators
             pid_file = os.path.join(os.path.normpath(settings.DATA_DIR), "backend.pid")
             if os.path.exists(pid_file):

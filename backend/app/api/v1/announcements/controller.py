@@ -29,7 +29,7 @@ from app.schemas.announcement import (
 )
 
 
-@router.get("/", response_model=AnnouncementListResponse)
+@router.get("", response_model=AnnouncementListResponse)
 async def get_announcements(
     from_date: Optional[str] = Query(None, description="From date (YYYY-MM-DD)"),
     to_date: Optional[str] = Query(None, description="To date (YYYY-MM-DD)"),

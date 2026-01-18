@@ -14,6 +14,14 @@ logger = logging.getLogger(__name__)
 def get_symbols_service() -> SymbolsService:
     return SymbolsService()
 
+def get_db_connection():
+    from app.repositories.symbols_repository import SymbolsRepository
+    return SymbolsRepository().get_db_connection()
+
+def get_symbols_db_path():
+    from app.repositories.symbols_repository import SymbolsRepository
+    return SymbolsRepository().get_symbols_db_path()
+
 # --- Upload Endpoints ---
 
 @router.post("/upload/manual", response_model=PreviewResponse)
@@ -101,7 +109,7 @@ async def get_upload_logs(
 
 # --- Symbol Management Endpoints ---
 
-@router.get("/", response_model=PaginatedSymbolResponse)
+@router.get("", response_model=PaginatedSymbolResponse)
 async def get_symbols(
     search: Optional[str] = None,
     exchange: Optional[str] = None,

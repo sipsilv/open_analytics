@@ -13,7 +13,7 @@ def get_news_backlog(service: NewsService = Depends(get_news_service)):
     """
     return service.get_backlog()
 
-@router.get("/")
+@router.get("")
 def get_news(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Records per page"),

@@ -28,10 +28,10 @@ def get_repo(db: Session = Depends(get_db)) -> ConnectionRepository:
 
 # Re-pasting the full file content to ensure nothing is lost.
 
-@router.get("/", response_model=List[ConnectionResponse])
+@router.get("", response_model=List[ConnectionResponse])
 async def get_connections(
     category: Optional[str] = None,
-    include_manager: bool = True,
+    include_manager: bool = Query(False),
     service: ConnectionService = Depends(get_service),
     repo: ConnectionRepository = Depends(get_repo),
     current_user: User = Depends(get_admin_user)

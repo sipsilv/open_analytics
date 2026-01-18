@@ -39,7 +39,7 @@ class MockNewsRepository:
     def __init__(self):
         self.news = []
 
-    def get_news(self, conn, limit=10, offset=0):
+    def get_news(self, limit=10, offset=0, search=None):
         return self.news[offset:offset+limit], len(self.news)
     
     def insert_news(self, conn, news_item):

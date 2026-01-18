@@ -51,6 +51,20 @@ async def get_scraping_status(
         raise HTTPException(status_code=404, detail="Job not found")
     return status
 
+@router.get("/status")
+async def get_screener_status(
+    current_user: User = Depends(get_admin_user),
+    service: ScreenerService = Depends(get_screener_service)
+):
+    """Get overall screener status and last run info"""
+    stats = service.get_stats()
+    is_running = any(t.is_alive() for t in service._active_threads.values())
+    return {
+        "is_running": is_running,
+        "last_run": stats.get("last_run"),
+        "total_records": stats.get("total_records")
+    }
+
 @router.get("/scrape/history")
 async def get_scraping_history(
     limit: int = 20,

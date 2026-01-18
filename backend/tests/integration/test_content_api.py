@@ -10,11 +10,12 @@ def test_get_announcements(client, admin_token):
     data = response.json()
     assert "items" in data or isinstance(data, list)
 
-def test_get_news(client):
-    response = client.get("/api/v1/news")
+def test_get_news(client, admin_token):
+    response = client.get("/api/v1/news", headers={"Authorization": f"Bearer {admin_token}"})
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list) or "items" in data
+    assert isinstance(data, dict)  # NewsService returns a dict with news, total, etc.
+    assert "news" in data or "items" in data
 
 def test_telegram_channel_list(client, admin_token):
     response = client.get("/api/v1/telegram/channels", headers={"Authorization": f"Bearer {admin_token}"})
