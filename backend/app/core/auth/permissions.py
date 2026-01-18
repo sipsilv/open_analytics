@@ -13,6 +13,11 @@ security = HTTPBearer()
 _last_permission_log = {}
 PERMISSION_LOG_THROTTLE_SECONDS = 60  # Only log once per minute per user
 
+def _ensure_aware(dt: Optional[datetime]) -> Optional[datetime]:
+    if dt and dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
@@ -75,7 +80,8 @@ def get_current_user(
         now = datetime.now(timezone.utc)
         should_update = True
         if user.last_active_at:
-            time_since_update = now - user.last_active_at
+            last_active = _ensure_aware(user.last_active_at)
+            time_since_update = now - last_active
             if time_since_update < timedelta(minutes=1):
                 should_update = False
         
@@ -98,7 +104,8 @@ def get_current_user(
     now = datetime.now(timezone.utc)
     should_update = True
     if user.last_active_at:
-        time_since_update = now - user.last_active_at
+        last_active = _ensure_aware(user.last_active_at)
+        time_since_update = now - last_active
         if time_since_update < timedelta(minutes=1):
             should_update = False
     
@@ -181,7 +188,8 @@ def get_current_user_from_token(token: str, db: Session) -> User:
         now = datetime.now(timezone.utc)
         should_update = True
         if user.last_active_at:
-            time_since_update = now - user.last_active_at
+            last_active = _ensure_aware(user.last_active_at)
+            time_since_update = now - last_active
             if time_since_update < timedelta(minutes=1):
                 should_update = False
         
@@ -204,7 +212,8 @@ def get_current_user_from_token(token: str, db: Session) -> User:
     now = datetime.now(timezone.utc)
     should_update = True
     if user.last_active_at:
-        time_since_update = now - user.last_active_at
+        last_active = _ensure_aware(user.last_active_at)
+        time_since_update = now - last_active
         if time_since_update < timedelta(minutes=1):
             should_update = False
     
