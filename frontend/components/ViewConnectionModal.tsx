@@ -50,7 +50,7 @@ export function ViewConnectionModal({ isOpen, onClose, connection }: ViewConnect
             })
             // Update local status if returned
             if (res.status) {
-                setLocalConnection(prev => ({ ...prev, status: res.status }))
+                setLocalConnection((prev: any) => ({ ...prev, status: res.status }))
             }
         } catch (e: any) {
             setTestResult({
