@@ -104,6 +104,7 @@ export default function LoginPage() {
             {!showOtp ? (
               <>
                 <Input
+                  id="identifier"
                   label="Email / Mobile / User ID"
                   type="text"
                   value={identifier}
@@ -115,6 +116,7 @@ export default function LoginPage() {
                 />
 
                 <Input
+                  id="password"
                   label="Password"
                   type="password"
                   value={password}
@@ -132,6 +134,7 @@ export default function LoginPage() {
                 </div>
 
                 <Input
+                  id="otp"
                   label="Telegram Verification Code"
                   type="text"
                   value={otp}

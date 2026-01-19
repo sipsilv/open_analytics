@@ -43,23 +43,28 @@ class TestAuthService:
         return service
 
     @pytest.mark.asyncio
-    async def test_login_success(self, service):
+    async def test_login_success(self, service, test_logger):
+        test_logger.info("UNIT: Login Success - Starting")
         req = LoginRequest(identifier="user@example.com", password="password123")
         token = await service.login(req)
         assert token is not None
+        test_logger.info("UNIT: Login Success - Token generated successfully")
 
     @pytest.mark.asyncio
-    async def test_login_invalid_password(self, service):
+    async def test_login_invalid_password(self, service, test_logger):
+        test_logger.info("UNIT: Login Invalid Password - Starting")
         req = LoginRequest(identifier="user@example.com", password="wrongpassword")
         with pytest.raises(HTTPException) as exc:
             await service.login(req)
         assert exc.value.status_code == 401
+        test_logger.info("UNIT: Login Invalid Password - Verified 401 Exception")
             
     # Re-writing mocks to handle async properly if needed
     # Check if verify_password is mocked? No, it uses real hashing which is fine for unit tests.
 
 @pytest.mark.asyncio
-async def test_login_async_flow():
+async def test_login_async_flow(test_logger):
+    test_logger.info("UNIT: Login Async Flow - Starting")
     # Helper to prevent creating class-based async issues if pytest-asyncio not fully config
     repo = MockUserRepository()
     repo.create(None, User(
@@ -75,20 +80,25 @@ async def test_login_async_flow():
     service._create_token_response = MagicMock(return_value={"access_token": "token"})
 
     # 1. Success
+    test_logger.info("UNIT: Testing success case...")
     await service.login(LoginRequest(identifier="async@example.com", password="pass"))
     
     # 2. Invalid Pwd
+    test_logger.info("UNIT: Testing invalid password...")
     with pytest.raises(HTTPException) as exc:
         await service.login(LoginRequest(identifier="async@example.com", password="wrong"))
     assert exc.value.status_code == 401
     
     # 3. User Not Found
+    test_logger.info("UNIT: Testing user not found...")
     with pytest.raises(HTTPException) as exc:
         await service.login(LoginRequest(identifier="missing@example.com", password="pass"))
     assert exc.value.status_code == 401
+    test_logger.info("UNIT: Login Async Flow - All cases verified")
 
 @pytest.mark.asyncio
-async def test_login_super_admin_bypass():
+async def test_login_super_admin_bypass(test_logger):
+    test_logger.info("UNIT: Login Super Admin Bypass - Starting")
     repo = MockUserRepository()
     password = get_password_hash("adminpass")
     repo.create(None, User(
@@ -105,14 +115,17 @@ async def test_login_super_admin_bypass():
     service._create_token_response = MagicMock(return_value={"access_token": "admin_token"})
     
     # Super admin login should SUCCEED and Auto-Activate
+    test_logger.info("UNIT: Attempting super admin login...")
     await service.login(LoginRequest(identifier="admin@example.com", password="adminpass"))
     
     user = repo.get_by_email(None, "admin@example.com")
     assert user.is_active is True # Should be activated
     assert db_mock.commit.called # Should commit changes
+    test_logger.info("UNIT: Verified auto-activation and commit")
 
 @pytest.mark.asyncio
-async def test_login_blocked_user():
+async def test_login_blocked_user(test_logger):
+    test_logger.info("UNIT: Login Blocked User - Starting")
     repo = MockUserRepository()
     repo.create(None, User(
         email="blocked@example.com",
@@ -128,3 +141,4 @@ async def test_login_blocked_user():
     with pytest.raises(HTTPException) as exc:
         await service.login(LoginRequest(identifier="blocked@example.com", password="pass"))
     assert exc.value.status_code == 403
+    test_logger.info("UNIT: Login Blocked User - Verified 403 Forbidden")

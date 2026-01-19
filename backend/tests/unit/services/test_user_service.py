@@ -22,7 +22,8 @@ class TestUserService:
         return UserService(db=None, user_repo=repo)
 
     @pytest.mark.asyncio
-    async def test_create_user(self, service):
+    async def test_create_user(self, service, test_logger):
+        test_logger.info("UNIT: Create User - Starting")
         user_data = {
             "email": "test@example.com",
             "username": "testuser",
@@ -39,9 +40,11 @@ class TestUserService:
         assert user.id is not None
         # Ensure password was hashed
         assert user.hashed_password != "password123"
+        test_logger.info("UNIT: Create User - Verified user creation and password hashing")
 
     @pytest.mark.asyncio
-    async def test_create_user_duplicate_email(self, service):
+    async def test_create_user_duplicate_email(self, service, test_logger):
+        test_logger.info("UNIT: Create User Duplicate Email - Starting")
         user_data = {
             "email": "test@example.com",
             "username": "testuser",
@@ -56,9 +59,11 @@ class TestUserService:
         with pytest.raises(Exception) as exc:
             await service.create_user(user_data)
         assert "Email already registered" in str(exc.value)
+        test_logger.info("UNIT: Create User Duplicate Email - Verified duplicate detection")
 
     @pytest.mark.asyncio
-    async def test_update_user(self, service):
+    async def test_update_user(self, service, test_logger):
+        test_logger.info("UNIT: Update User - Starting")
         # Create user first
         user = await service.create_user({
             "email": "update@example.com",
@@ -73,9 +78,11 @@ class TestUserService:
         
         assert updated.full_name == "New Name"
         assert updated.email == "update@example.com"
+        test_logger.info("UNIT: Update User - Verified full_name update")
 
     @pytest.mark.asyncio
-    async def test_get_user_by_email(self, service):
+    async def test_get_user_by_email(self, service, test_logger):
+        test_logger.info("UNIT: Get User By Email - Starting")
         await service.create_user({
             "email": "findme@example.com",
             "username": "findmeuser",
@@ -87,6 +94,8 @@ class TestUserService:
         user = await service.get_user_by_email("findme@example.com")
         assert user is not None
         assert user.email == "findme@example.com"
+        test_logger.info("UNIT: Get User By Email - Verified user found")
         
         missing = await service.get_user_by_email("missing@example.com")
         assert missing is None
+        test_logger.info("UNIT: Get User By Email - Verified missing user returns None")

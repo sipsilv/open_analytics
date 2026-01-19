@@ -14,6 +14,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+import logging
+
+# Configure Logging for Tests
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 from app.main import app
 from app.core.database import Base, get_db
@@ -95,3 +100,21 @@ def admin_token(client):
 def user_token(client):
     response = client.post("/api/v1/auth/login", json={"identifier": "user@example.com", "password": "user123"})
     return response.json()["access_token"]
+
+import itertools
+
+# Global counter for tests
+_test_counter = itertools.count(1)
+
+class NumberedLoggerAdapter(logging.LoggerAdapter):
+    def process(self, msg, kwargs):
+        return f"[Test #{self.extra['test_number']}] {msg}", kwargs
+
+@pytest.fixture(scope="function")
+def test_logger():
+    """Per-test logger with auto-incrementing number"""
+    test_number = next(_test_counter)
+    logger = logging.getLogger("pytest")
+    adapter = NumberedLoggerAdapter(logger, {"test_number": test_number})
+    return adapter
+

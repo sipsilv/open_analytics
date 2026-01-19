@@ -12,13 +12,16 @@ class TestTelegramService:
         service = TelegramService(db_mock, repository=repo)
         return service
 
-    def test_register_channel_new(self, service):
+    def test_register_channel_new(self, service, test_logger):
+        test_logger.info("UNIT: Register Channel New - Starting")
         # Test registering a new channel
         res = service.register_channel("test_channel", "Test Channel")
         assert res['username'] == "test_channel"
         assert res['id'] is not None
+        test_logger.info("UNIT: Register Channel New - Verified channel creation")
 
-    def test_register_channel_duplicate(self, service):
+    def test_register_channel_duplicate(self, service, test_logger):
+        test_logger.info("UNIT: Register Channel Duplicate - Starting")
         # Register once
         service.register_channel("dup_channel", "Dup")
         
@@ -29,9 +32,12 @@ class TestTelegramService:
         assert res['username'] == "dup_channel"
         # Should be same ID if logic handles dedupe
         # (Assuming service uses get_channel_by_username check)
+        test_logger.info("UNIT: Register Channel Duplicate - Verified idempotent behavior")
 
-    def test_get_channels_metrics(self, service):
+    def test_get_channels_metrics(self, service, test_logger):
+        test_logger.info("UNIT: Get Channels Metrics - Starting")
         service.register_channel("c1", "C1", connection_id=1)
         stats = service.get_registered_channels_with_stats(connection_id=1)
         assert len(stats) == 1
         assert stats[0]['username'] == "c1"
+        test_logger.info("UNIT: Get Channels Metrics - Verified stats retrieval")

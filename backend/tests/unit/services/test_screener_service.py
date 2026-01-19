@@ -15,6 +15,7 @@ class TestScreenerService:
         return service
 
     def test_clean_numeric_value(self, service):
+        # Utility function, logging might be noisy, keeping clean or minimal
         assert service.clean_numeric_value("1,000.50") == 1000.50
         assert service.clean_numeric_value("50 %") == 50.0
         assert service.clean_numeric_value("₹ 100") == 100.0
@@ -22,7 +23,8 @@ class TestScreenerService:
         assert service.clean_numeric_value("Invalid") is None
 
     @patch("app.services.screener_service.requests.Session")
-    def test_fetch_soup_success(self, mock_session, service):
+    def test_fetch_soup_success(self, mock_session, service, test_logger):
+        test_logger.info("UNIT: Fetch Soup - Starting")
         mock_resp = MagicMock()
         mock_resp.text = "<html><title>Test | Screener</title></html>"
         mock_resp.status_code = 200
@@ -33,8 +35,10 @@ class TestScreenerService:
         
         soup = service.fetch_soup("http://test.com")
         assert soup.title.text == "Test | Screener"
+        test_logger.info("UNIT: Fetch Soup - Verified soup title extraction")
 
-    def test_start_scraping_job_creation(self, service):
+    def test_start_scraping_job_creation(self, service, test_logger):
+        test_logger.info("UNIT: Start Scraping Job - Starting")
         # We Mock the repository's get_active_symbols to return valid symbols
         # process_scraping_async calls get_active_symbols
         # We want to test that start_scraping spawns a thread and updates cache
@@ -47,21 +51,26 @@ class TestScreenerService:
             assert service._active_threads[job_id].is_alive
             # Wait for thread (mocked process usually runs instantly if not patched, 
             # here we patched the target so thread runs the mock)
+        test_logger.info("UNIT: Start Scraping Job - Verified thread spawning")
         
-    def test_get_status_from_cache(self, service):
+    def test_get_status_from_cache(self, service, test_logger):
+        test_logger.info("UNIT: Get Status from Cache - Starting")
         job_id = "job_cache"
         service._scraping_status_cache[job_id] = {"status": "PROCESSING", "percentage": 50}
         
         status = service.get_status(job_id)
         assert status["status"] == "PROCESSING"
         assert status["percentage"] == 50
+        test_logger.info("UNIT: Get Status from Cache - Verified status retrieval")
     
-    def test_parse_company_name(self, service):
+    def test_parse_company_name(self, service, test_logger):
+        test_logger.info("UNIT: Parse Company Name - Starting")
         from bs4 import BeautifulSoup
         html = "<html><title>Reliance Industries Ltd share price</title><h1>Reliance Industries</h1></html>"
         soup = BeautifulSoup(html, "html.parser")
         name = service.parse_company_name(soup)
         assert name == "Reliance Industries Ltd"
+        test_logger.info(f"UNIT: Parse Company Name - Parsed: {name}")
 
     # More complex logic dealing with _process_scraping_async involves many calls 
     # to repo.write_detailed_log etc.
@@ -69,7 +78,8 @@ class TestScreenerService:
     # we can try to test the actual logic if we mock the network part.
 
     @patch("app.services.screener_service.requests.Session")
-    def test_scraping_flow_logic(self, mock_session, service):
+    def test_scraping_flow_logic(self, mock_session, service, test_logger):
+        test_logger.info("UNIT: Scraping Flow Logic - Starting")
         # Setup specific HTML return
         html_content = """
         <html>
@@ -110,4 +120,5 @@ class TestScreenerService:
         
         assert tcs_mcap is not None
         assert tcs_mcap['value'] == 1000000.0
+        test_logger.info("UNIT: Scraping Flow Logic - Verified metric extraction (TCS Market Cap)")
 

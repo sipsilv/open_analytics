@@ -22,16 +22,20 @@ class TestAnnouncementsService:
         
         return service
 
-    def test_insert_and_retrieve(self, service):
+    def test_insert_and_retrieve(self, service, test_logger):
+        test_logger.info("UNIT: Insert and Retrieve Announcement - Starting")
         data = {"id": "1", "title": "Div Declaration", "symbol": "TCS"}
         service.insert_announcement(data)
         
         items, total = service.get_announcements()
         assert total == 1
         assert items[0]['symbol'] == "TCS"
+        test_logger.info("UNIT: Insert and Retrieve Announcement - Verified inserted item retrieval")
         
-    def test_get_by_id(self, service):
+    def test_get_by_id(self, service, test_logger):
+        test_logger.info("UNIT: Get Announcement By ID - Starting")
         service.insert_announcement({"id": "100", "title": "X"})
         item = service.get_announcement_by_id("100")
         assert item is not None
         assert item['title'] == "X"
+        test_logger.info("UNIT: Get Announcement By ID - Verified item title")

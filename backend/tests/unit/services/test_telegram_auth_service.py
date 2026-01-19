@@ -11,7 +11,8 @@ class TestTelegramAuthService:
         # Usually internal logic validates telegram login widgets
         return service
 
-    def test_verify_telegram_auth(self, service):
+    def test_verify_telegram_auth(self, service, test_logger):
+        test_logger.info("UNIT: Verify Telegram Auth - Starting")
         # Telegram auth verification involves hash checking
         # We can test the logic with a known hash if the algo is standard (HMAC-SHA256)
         # Or mock the verification function if it relies on external libs.
@@ -19,4 +20,5 @@ class TestTelegramAuthService:
         # Validating simple failure case
         with pytest.raises(Exception):
             service.verify_telegram_login({"id": "123", "hash": "badhash"})
+        test_logger.info("UNIT: Verify Telegram Auth - Verified exception on bad hash")
 

@@ -15,7 +15,8 @@ class TestSymbolsService:
         # Or we mock the repo attribute entirely with MagicMock if we only test logic that doesn't hit DB deeply yet.
         return service
 
-    def test_apply_transformation_script_basic(self, service):
+    def test_apply_transformation_script_basic(self, service, test_logger):
+        test_logger.info("UNIT: Apply Transformation Script (Basic) - Starting")
         df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
         script = """
 final_df = df.copy()
@@ -24,8 +25,10 @@ final_df['C'] = final_df['A'] + final_df['B']
         result = service.apply_transformation_script(df, script)
         assert "C" in result.columns
         assert result.iloc[0]["C"] == 4
+        test_logger.info("UNIT: Apply Transformation Script (Basic) - Verified column addition")
 
-    def test_process_manual_upload_preview_csv(self, service):
+    def test_process_manual_upload_preview_csv(self, service, test_logger):
+        test_logger.info("UNIT: Process Manual Upload Preview - Starting")
         # Create dummy CSV
         csv_content = b"symbol,exchange\nTCS,NSE\nINFY,NSE"
         user_info = {"id": 1, "username": "tester"}
@@ -43,8 +46,10 @@ final_df['C'] = final_df['A'] + final_df['B']
         preview_id = result["preview_id"]
         assert preview_id in service._preview_cache
         assert service._preview_cache[preview_id]["new_rows"] == 2
+        test_logger.info("UNIT: Process Manual Upload Preview - Verified preview cache and row count")
 
-    def test_apply_transformation_validation_error(self, service):
+    def test_apply_transformation_validation_error(self, service, test_logger):
+        test_logger.info("UNIT: Apply Transformation Validation Error - Starting")
         df = pd.DataFrame({"A": [1]})
         script = "x = 1" # No final_df or df modification returned (if logic checks locals)
         
@@ -53,4 +58,5 @@ final_df['C'] = final_df['A'] + final_df['B']
         with pytest.raises(ValueError) as exc:
             service.apply_transformation_script(df, script)
         assert "Transformation script must create" in str(exc.value)
+        test_logger.info("UNIT: Apply Transformation Validation Error - Verified ValueError on invalid script")
 
