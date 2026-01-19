@@ -12,7 +12,7 @@ test.describe('Admin - Accounts Management', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('should display accounts page', async ({ page }) => {
+  test('[TC-ADMIN-ACC-001] should display accounts page', async ({ page }) => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000); // Wait for data to load
@@ -33,7 +33,7 @@ test.describe('Admin - Accounts Management', () => {
     await expect(page.locator('th:has-text("Status")')).toBeVisible({ timeout: 10000 });
   });
 
-  test('should open create user modal', async ({ page }) => {
+  test('[TC-ADMIN-ACC-002] should open create user modal', async ({ page }) => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
 
@@ -60,7 +60,7 @@ test.describe('Admin - Accounts Management', () => {
     await expect(page.getByRole('heading', { name: /Create User/i })).not.toBeVisible({ timeout: 5000 });
   });
 
-  test('should search for users', async ({ page }) => {
+  test('[TC-ADMIN-ACC-003] should search for users', async ({ page }) => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
@@ -78,7 +78,7 @@ test.describe('Admin - Accounts Management', () => {
     }
   });
 
-  test('should view user details', async ({ page }) => {
+  test('[TC-ADMIN-ACC-004] should view user details', async ({ page }) => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);

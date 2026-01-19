@@ -12,7 +12,7 @@ test.describe('Admin - Request & Feedback', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('should display requests page', async ({ page }) => {
+  test('[TC-ADMIN-REQ-001] should display requests page', async ({ page }) => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
 
@@ -24,7 +24,7 @@ test.describe('Admin - Request & Feedback', () => {
     await expect(pendingButton).toBeVisible({ timeout: 10000 });
   });
 
-  test('should filter requests by status', async ({ page }) => {
+  test('[TC-ADMIN-REQ-002] should filter requests by status', async ({ page }) => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
 
@@ -46,7 +46,7 @@ test.describe('Admin - Request & Feedback', () => {
     await page.waitForTimeout(500);
   });
 
-  test('should view request details', async ({ page }) => {
+  test('[TC-ADMIN-REQ-003] should view request details', async ({ page }) => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000); // Wait for data to load

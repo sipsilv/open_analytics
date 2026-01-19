@@ -8,7 +8,7 @@ test.describe('Announcements', () => {
         await page.waitForLoadState('networkidle');
     });
 
-    test('should display corporate announcements page', async ({ page }) => {
+    test('[TC-ANNOUNCE-001] should display corporate announcements page', async ({ page }) => {
         await expect(page.getByRole('heading', { name: /Corporate Announcements/i })).toBeVisible({ timeout: 10000 });
 
         // Check for status badge
@@ -21,7 +21,7 @@ test.describe('Announcements', () => {
         await expect(page.locator('table')).toBeVisible();
     });
 
-    test('should search announcements', async ({ page }) => {
+    test('[TC-ANNOUNCE-002] should search announcements', async ({ page }) => {
         const searchInput = page.getByPlaceholder(/Search by headline or symbol/i);
         await searchInput.fill('DIVIDEND');
         await page.getByRole('button', { name: /Search/i }).click();
@@ -33,7 +33,7 @@ test.describe('Announcements', () => {
         await expect(page.locator('table')).toBeVisible();
     });
 
-    test('should filter by date', async ({ page }) => {
+    test('[TC-ANNOUNCE-003] should filter by date', async ({ page }) => {
         // There are two date inputs. They don't have IDs or labels in the code snippet I saw, 
         // but they are inside the filter div.
         // Let's use type="date"

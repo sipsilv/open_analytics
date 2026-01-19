@@ -10,7 +10,7 @@ test.describe('Authentication', () => {
     await page.goto('/login');
   });
 
-  test('should display login page correctly', async ({ page }) => {
+  test('[TC-AUTH-001] should display login page correctly', async ({ page }) => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
 
@@ -32,7 +32,7 @@ test.describe('Authentication', () => {
     await expect(page.getByRole('button', { name: /Contact admin/i })).toBeVisible({ timeout: 10000 });
   });
 
-  test('should login successfully with admin credentials', async ({ page }) => {
+  test('[TC-AUTH-002] should login successfully with admin credentials', async ({ page }) => {
     // Wait for page to be fully loaded
     await page.waitForSelector('text=OPEN ANALYTICS', { timeout: 10000 });
 
@@ -57,7 +57,7 @@ test.describe('Authentication', () => {
     await expect(page.getByText('OPEN ANALYTICS')).toBeVisible({ timeout: 10000 });
   });
 
-  test('should show error for invalid credentials', async ({ page }) => {
+  test('[TC-AUTH-003] should show error for invalid credentials', async ({ page }) => {
     // Wait for page to be fully loaded
     await page.waitForSelector('text=OPEN ANALYTICS', { timeout: 10000 });
 
@@ -83,7 +83,7 @@ test.describe('Authentication', () => {
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test('should login with email', async ({ page }) => {
+  test('[TC-AUTH-004] should login with email', async ({ page }) => {
     // Wait for page to be fully loaded
     await page.waitForSelector('text=OPEN ANALYTICS', { timeout: 10000 });
 
@@ -103,7 +103,7 @@ test.describe('Authentication', () => {
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
   });
 
-  test('should require both fields', async ({ page }) => {
+  test('[TC-AUTH-005] should require both fields', async ({ page }) => {
     // Wait for page to be fully loaded
     await page.waitForSelector('text=OPEN ANALYTICS', { timeout: 10000 });
 
@@ -117,7 +117,7 @@ test.describe('Authentication', () => {
     await expect(identifierInput).toBeFocused({ timeout: 5000 });
   });
 
-  test('should open contact admin modal', async ({ page }) => {
+  test('[TC-AUTH-006] should open contact admin modal', async ({ page }) => {
     const requestAccessButton = page.getByRole('button', { name: /Contact admin/i });
     await requestAccessButton.waitFor({ state: 'visible', timeout: 10000 });
     await requestAccessButton.click();

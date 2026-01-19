@@ -9,7 +9,7 @@ test.describe('Admin - Feature Request Status Logic', () => {
         await page.waitForLoadState('networkidle');
     });
 
-    test('should match status and progress logic', async ({ page }) => {
+    test('[TC-ADMIN-FEAT-001] should match status and progress logic', async ({ page }) => {
         // Wait for table to load
         // Use more specific selector to avoid ambiguity with other h1s or multiple matches
         await expect(page.locator('h1.text-2xl')).toContainText('Feature Request & Feedback');

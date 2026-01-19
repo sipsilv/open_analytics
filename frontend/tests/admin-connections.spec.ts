@@ -12,7 +12,7 @@ test.describe('Admin - Connections', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('should display connections page', async ({ page }) => {
+  test('[TC-ADMIN-CONN-001] should display connections page', async ({ page }) => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
@@ -24,7 +24,7 @@ test.describe('Admin - Connections', () => {
     await expect(page.getByRole('button', { name: /View Database Connections/i })).toBeVisible({ timeout: 10000 });
   });
 
-  test('should open create connection modal', async ({ page }) => {
+  test('[TC-ADMIN-CONN-002] should open create connection modal', async ({ page }) => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
 
@@ -57,7 +57,7 @@ test.describe('Admin - Connections', () => {
     await expect(modalHeading).not.toBeVisible({ timeout: 10000 });
   });
 
-  test('should filter connections by category', async ({ page }) => {
+  test('[TC-ADMIN-CONN-003] should filter connections by category', async ({ page }) => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);

@@ -7,7 +7,7 @@ test.describe('Access Request (Public)', () => {
     await page.waitForSelector('text=OPEN ANALYTICS');
   });
 
-  test('should submit access request', async ({ page }) => {
+  test('[TC-ACCESS-001] should submit access request', async ({ page }) => {
     // Open contact admin modal - wait for button to be visible and clickable
     const requestAccessButton = page.locator('button:has-text("Contact admin")').first();
     await requestAccessButton.waitFor({ state: 'visible', timeout: 10000 });
@@ -41,7 +41,7 @@ test.describe('Access Request (Public)', () => {
     }
   });
 
-  test('should validate required fields', async ({ page }) => {
+  test('[TC-ACCESS-002] should validate required fields', async ({ page }) => {
     // Open modal
     const requestAccessButton = page.locator('button:has-text("Contact admin")').first();
     await requestAccessButton.waitFor({ state: 'visible', timeout: 10000 });
@@ -57,7 +57,7 @@ test.describe('Access Request (Public)', () => {
     await expect(nameInput).toBeFocused();
   });
 
-  test('should allow optional email field', async ({ page }) => {
+  test('[TC-ACCESS-003] should allow optional email field', async ({ page }) => {
     // Open modal
     const requestAccessButton = page.locator('button:has-text("Contact admin")').first();
     await requestAccessButton.waitFor({ state: 'visible', timeout: 10000 });

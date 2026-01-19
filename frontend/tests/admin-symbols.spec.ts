@@ -8,7 +8,7 @@ test.describe('Admin - Symbols Master', () => {
         await page.waitForLoadState('networkidle');
     });
 
-    test('should display symbols master page', async ({ page }) => {
+    test('[TC-ADMIN-SYM-001] should display symbols master page', async ({ page }) => {
         await expect(page.getByRole('heading', { name: /Symbols Master/i })).toBeVisible({ timeout: 10000 });
 
         // Check for core action buttons
@@ -17,7 +17,7 @@ test.describe('Admin - Symbols Master', () => {
         await expect(page.getByRole('button', { name: /Reload Series/i }).first()).toBeVisible();
     });
 
-    test('should open upload symbols modal', async ({ page }) => {
+    test('[TC-ADMIN-SYM-002] should open upload symbols modal', async ({ page }) => {
         await page.getByRole('button', { name: /Upload Symbols/i }).first().click();
         const modalHeading = page.locator('#upload-symbols-modal-heading');
         await expect(modalHeading).toBeVisible({ timeout: 10000 });
@@ -31,7 +31,7 @@ test.describe('Admin - Symbols Master', () => {
         await expect(modalHeading).not.toBeVisible();
     });
 
-    test('should open status modal', async ({ page }) => {
+    test('[TC-ADMIN-SYM-003] should open status modal', async ({ page }) => {
         await page.getByRole('button', { name: /Status/i }).first().click();
         const statusHeading = page.locator('#upload-status-modal-heading');
         await expect(statusHeading).toBeVisible({ timeout: 10000 });
@@ -43,7 +43,7 @@ test.describe('Admin - Symbols Master', () => {
         await expect(statusHeading).not.toBeVisible();
     });
 
-    test('should search and filter symbols', async ({ page }) => {
+    test('[TC-ADMIN-SYM-004] should search and filter symbols', async ({ page }) => {
         const searchInput = page.getByPlaceholder(/Search symbols/i);
         await searchInput.fill('RELIANCE');
         await page.getByRole('button', { name: /Search/i }).click();

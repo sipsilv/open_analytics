@@ -7,7 +7,7 @@ test.describe('Dashboard', () => {
     await loginAsAdmin(page);
   });
 
-  test('should display dashboard after login', async ({ page }) => {
+  test('[TC-DASH-001] should display dashboard after login', async ({ page }) => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
 
@@ -21,7 +21,7 @@ test.describe('Dashboard', () => {
     await expect(page.getByRole('link', { name: /Settings/i })).toBeVisible({ timeout: 10000 });
   });
 
-  test('should navigate to different pages', async ({ page }) => {
+  test('[TC-DASH-002] should navigate to different pages', async ({ page }) => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
 
@@ -50,7 +50,7 @@ test.describe('Dashboard', () => {
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
   });
 
-  test('should toggle sidebar', async ({ page }) => {
+  test('[TC-DASH-003] should toggle sidebar', async ({ page }) => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
 
@@ -75,7 +75,7 @@ test.describe('Dashboard', () => {
     await expect(sidebar).toHaveClass(/w-64/, { timeout: 5000 });
   });
 
-  test('should logout successfully', async ({ page }) => {
+  test('[TC-DASH-004] should logout successfully', async ({ page }) => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
 

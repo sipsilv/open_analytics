@@ -10,12 +10,12 @@ test.describe('User Feedback & Feature Requests', () => {
         await page.waitForLoadState('networkidle');
     });
 
-    test('should display unified feedback page', async ({ page }) => {
+    test('[TC-USER-FEED-001] should display unified feedback page', async ({ page }) => {
         await expect(page.getByRole('heading', { name: /Feature Requests & Feedback/i }).first()).toBeVisible({ timeout: 10000 });
         await expect(page.getByRole('button', { name: /Submit New/i })).toBeVisible();
     });
 
-    test('should submit a feature request', async ({ page }) => {
+    test('[TC-USER-FEED-002] should submit a feature request', async ({ page }) => {
         await page.getByRole('button', { name: /Submit New/i }).click();
 
         // Wait for modal using explicit ID
@@ -37,7 +37,7 @@ test.describe('User Feedback & Feature Requests', () => {
         await expect(page.getByText(/Feature Request Submitted/i)).toBeVisible({ timeout: 10000 });
     });
 
-    test('should search and filter feedback', async ({ page }) => {
+    test('[TC-USER-FEED-003] should search and filter feedback', async ({ page }) => {
         const searchInput = page.getByPlaceholder(/Search by description/i);
         await searchInput.fill('test');
         await page.getByRole('button', { name: /Search/i }).click();
