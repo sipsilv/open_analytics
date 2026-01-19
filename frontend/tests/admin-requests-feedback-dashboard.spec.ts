@@ -9,8 +9,8 @@ test.describe('Admin - Requests & Feedback Dashboard', () => {
     });
 
     test('[TC-REQ-DASH-001] should display dashboard with both cards', async ({ page }) => {
-        // Verify page title
-        await expect(page.locator('h1')).toContainText('Request and Feedback');
+        // Verify page title - use first() to avoid multiple h1 matches
+        await expect(page.locator('h1').first()).toContainText('Request and Feedback');
 
         // Verify both cards are visible
         const accessRequestCard = page.locator('text=Access Request').first();
