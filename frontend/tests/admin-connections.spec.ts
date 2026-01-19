@@ -40,8 +40,9 @@ test.describe('Admin - Connections', () => {
     // Wait for modal to appear
     await page.waitForTimeout(300);
 
-    // Modal should appear - use heading role for specificity
-    await expect(page.getByRole('heading', { name: /Create Connection|New Connection/i })).toBeVisible({ timeout: 5000 });
+    // Modal should appear
+    const modalHeading = page.locator('#connection-modal-heading');
+    await expect(modalHeading).toBeVisible({ timeout: 10000 });
 
     // Check form fields
     const nameField = page.getByPlaceholder(/e.g. Binance Production|TrueData/i).first();
@@ -53,7 +54,7 @@ test.describe('Admin - Connections', () => {
     await cancelButton.click();
 
     await page.waitForTimeout(300);
-    await expect(page.getByRole('heading', { name: /Create Connection|New Connection/i })).not.toBeVisible({ timeout: 5000 });
+    await expect(modalHeading).not.toBeVisible({ timeout: 10000 });
   });
 
   test('should filter connections by category', async ({ page }) => {

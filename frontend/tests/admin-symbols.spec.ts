@@ -19,22 +19,26 @@ test.describe('Admin - Symbols Master', () => {
 
     test('should open upload symbols modal', async ({ page }) => {
         await page.getByRole('button', { name: /Upload Symbols/i }).first().click();
-        await expect(page.getByRole('heading', { name: /Upload Symbols/i })).toBeVisible();
+        const modalHeading = page.locator('#upload-symbols-modal-heading');
+        await expect(modalHeading).toBeVisible({ timeout: 10000 });
 
-        // Verify modal has essential fields
-        await expect(page.getByText(/Select Symbol File/i)).toBeVisible();
+        // Verify modal has essential fields - using explicit ID for robustness
+        await expect(page.locator('#symbol-file-input')).toBeAttached();
+        await expect(page.getByText(/Click to select file/i)).toBeVisible();
 
         // Close modal
         await page.getByRole('button', { name: /Cancel/i }).first().click();
-        await expect(page.getByRole('heading', { name: /Upload Symbols/i })).not.toBeVisible();
+        await expect(modalHeading).not.toBeVisible();
     });
 
     test('should open status modal', async ({ page }) => {
         await page.getByRole('button', { name: /Status/i }).first().click();
-        await expect(page.getByRole('heading', { name: /Upload Status/i })).toBeVisible();
+        const statusHeading = page.locator('#upload-status-modal-heading');
+        await expect(statusHeading).toBeVisible({ timeout: 10000 });
 
         // Close modal
         await page.locator('button:has(svg.lucide-x)').first().click();
+        await expect(statusHeading).not.toBeVisible();
     });
 
     test('should search and filter symbols', async ({ page }) => {

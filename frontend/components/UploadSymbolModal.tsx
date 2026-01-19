@@ -450,7 +450,7 @@ final_df = df`)
     const handleEditScheduler = (scheduler: any) => {
         // Switch to auto tab if not already there
         setActiveTab('auto')
-        
+
         setSelectedScheduler(scheduler)
         setSchedulerName(scheduler.name)
         setSchedulerDescription(scheduler.description || '')
@@ -519,7 +519,7 @@ final_df = df`)
         }
         setQueryParams([]) // Query params not stored in backend yet
         setAutoError('') // Clear any errors
-        
+
         // Scroll to the scheduler configuration form after a brief delay to allow state updates
         setTimeout(() => {
             const formElement = document.querySelector('[data-scheduler-form]')
@@ -646,7 +646,7 @@ final_df = df`)
                         const year = now.getFullYear()
                         const month = now.getMonth()
                         const day = now.getDate()
-                        
+
                         // First, get the current date and time in the target timezone
                         const nowInTimezone = new Intl.DateTimeFormat('en-US', {
                             timeZone: timezone,
@@ -658,20 +658,20 @@ final_df = df`)
                             second: '2-digit',
                             hour12: false
                         }).formatToParts(now)
-                        
+
                         const currentTZYear = parseInt(nowInTimezone.find(p => p.type === 'year')?.value || '0')
                         const currentTZMonth = parseInt(nowInTimezone.find(p => p.type === 'month')?.value || '0') - 1
                         const currentTZDay = parseInt(nowInTimezone.find(p => p.type === 'day')?.value || '0')
                         const currentTZHour = parseInt(nowInTimezone.find(p => p.type === 'hour')?.value || '0')
                         const currentTZMinute = parseInt(nowInTimezone.find(p => p.type === 'minute')?.value || '0')
-                        
+
                         // Compare: has the entered time passed today in the target timezone?
                         const enteredTimeMinutes = hours * 60 + minutes
                         const currentTimeMinutes = currentTZHour * 60 + currentTZMinute
                         // Only move to next day if entered time is LESS than current time (has definitely passed)
                         // If entered time >= current time, use today
                         const timeHasPassedToday = enteredTimeMinutes < currentTimeMinutes
-                        
+
                         console.log(`[Schedule Update] ===== TIME COMPARISON =====`)
                         console.log(`[Schedule Update] Timezone: ${timezone}`)
                         console.log(`[Schedule Update] Current date in ${timezone}: ${currentTZYear}-${String(currentTZMonth + 1).padStart(2, '0')}-${String(currentTZDay).padStart(2, '0')}`)
@@ -680,12 +680,12 @@ final_df = df`)
                         console.log(`[Schedule Update] Entered minutes: ${enteredTimeMinutes}, Current minutes: ${currentTimeMinutes}`)
                         console.log(`[Schedule Update] Comparison: ${enteredTimeMinutes} < ${currentTimeMinutes} = ${timeHasPassedToday}`)
                         console.log(`[Schedule Update] Time has passed today: ${timeHasPassedToday}`)
-                        
+
                         // Determine which date to use (today in timezone or next occurrence)
                         let targetYear = currentTZYear
                         let targetMonth = currentTZMonth
                         let targetDay = currentTZDay
-                        
+
                         if (timeHasPassedToday) {
                             console.log(`[Schedule Update] Time has passed, calculating next occurrence`)
                             // Time has passed, calculate next occurrence
@@ -724,19 +724,19 @@ final_df = df`)
                         } else {
                             console.log(`[Schedule Update] ✅ Time hasn't passed, using TODAY: ${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`)
                         }
-                        
+
                         console.log(`[Schedule Update] Target date for conversion: ${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(targetDay).padStart(2, '0')} at ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${timezone}`)
-                        
+
                         // Now convert the target date/time in the timezone to UTC
                         let startDate: Date = new Date(Date.UTC(targetYear, targetMonth, targetDay, hours, minutes, 0)) // Default initialization
-                        
+
                         if (timezone === 'UTC') {
                             // For UTC, create date directly in UTC
                             startDate = new Date(Date.UTC(targetYear, targetMonth, targetDay, hours, minutes, 0))
                         } else {
                             // Convert timezone date/time to UTC
                             // Use a direct method: test all possible UTC times to find exact match
-                            
+
                             const formatter = new Intl.DateTimeFormat('en-US', {
                                 timeZone: timezone,
                                 year: 'numeric',
@@ -746,37 +746,37 @@ final_df = df`)
                                 minute: '2-digit',
                                 hour12: false
                             })
-                            
+
                             // We need to find the UTC time that, when formatted in the target timezone, gives us our target date/time
                             // Test all possible UTC times (hours and minutes) to find exact match
-                            
+
                             let found = false
-                            
+
                             // Test UTC times on the target date and adjacent days (to handle timezone boundaries)
                             for (let dayOffset = -2; dayOffset <= 2 && !found; dayOffset++) {
                                 const testDate = new Date(targetYear, targetMonth, targetDay + dayOffset)
                                 const testYear = testDate.getFullYear()
                                 const testMonth = testDate.getMonth()
                                 const testDay = testDate.getDate()
-                                
+
                                 // Test each UTC hour
                                 for (let utcHour = 0; utcHour < 24 && !found; utcHour++) {
                                     // Test each UTC minute (0-59)
                                     for (let utcMin = 0; utcMin < 60 && !found; utcMin++) {
                                         const testUTC = new Date(Date.UTC(testYear, testMonth, testDay, utcHour, utcMin, 0))
                                         const tzParts = formatter.formatToParts(testUTC)
-                                        
+
                                         const tzYear = parseInt(tzParts.find(p => p.type === 'year')?.value || '0')
                                         const tzMonth = parseInt(tzParts.find(p => p.type === 'month')?.value || '0')
                                         const tzDay = parseInt(tzParts.find(p => p.type === 'day')?.value || '0')
                                         const tzHour = parseInt(tzParts.find(p => p.type === 'hour')?.value || '0')
                                         const tzMin = parseInt(tzParts.find(p => p.type === 'minute')?.value || '0')
-                                        
+
                                         // Check if date and time match exactly
-                                        if (tzYear === targetYear && 
-                                            tzMonth === targetMonth + 1 && 
+                                        if (tzYear === targetYear &&
+                                            tzMonth === targetMonth + 1 &&
                                             tzDay === targetDay &&
-                                            tzHour === hours && 
+                                            tzHour === hours &&
                                             tzMin === minutes) {
                                             startDate = testUTC
                                             found = true
@@ -786,32 +786,32 @@ final_df = df`)
                                     }
                                 }
                             }
-                            
+
                             // If still no exact match found, use a more direct calculation method
                             if (!found) {
                                 console.warn(`[Schedule Update] ⚠️ No exact match found, using direct calculation`)
                                 // Calculate UTC time more directly by using the timezone offset
                                 // Create a date at the target time in UTC, then adjust based on timezone offset
-                                
+
                                 // Get timezone offset by testing a known UTC time
                                 const testUTC = new Date(Date.UTC(targetYear, targetMonth, targetDay, 12, 0, 0))
                                 const tzParts = formatter.formatToParts(testUTC)
                                 const tzNoonHour = parseInt(tzParts.find(p => p.type === 'hour')?.value || '12')
                                 const tzNoonMin = parseInt(tzParts.find(p => p.type === 'minute')?.value || '0')
-                                
+
                                 // Calculate offset: UTC 12:00 becomes what time in timezone?
                                 const offsetHours = 12 - tzNoonHour
                                 const offsetMinutes = 0 - tzNoonMin
-                                
+
                                 // Apply offset to get UTC time
                                 const utcHour = hours - offsetHours
                                 const utcMin = minutes - offsetMinutes
-                                
+
                                 // Handle minute overflow/underflow
                                 let finalUtcHour = utcHour
                                 let finalUtcMin = utcMin
                                 let finalDay = targetDay
-                                
+
                                 if (finalUtcMin < 0) {
                                     finalUtcMin += 60
                                     finalUtcHour -= 1
@@ -819,7 +819,7 @@ final_df = df`)
                                     finalUtcMin -= 60
                                     finalUtcHour += 1
                                 }
-                                
+
                                 if (finalUtcHour < 0) {
                                     finalUtcHour += 24
                                     finalDay -= 1
@@ -827,19 +827,19 @@ final_df = df`)
                                     finalUtcHour -= 24
                                     finalDay += 1
                                 }
-                                
+
                                 startDate = new Date(Date.UTC(targetYear, targetMonth, finalDay, finalUtcHour, finalUtcMin, 0))
                                 console.log(`[Schedule Update] Using direct calculation: ${startDate.toISOString()}`)
                             }
                         }
-                        
+
                         const nowUTC = new Date()
                         const timeDiffMinutes = (startDate.getTime() - nowUTC.getTime()) / (1000 * 60)
                         console.log(`[Schedule Update] ===== UTC CONVERSION RESULT =====`)
                         console.log(`[Schedule Update] Calculated UTC time: ${startDate.toISOString()}`)
                         console.log(`[Schedule Update] Current UTC time: ${nowUTC.toISOString()}`)
                         console.log(`[Schedule Update] Time difference (minutes): ${timeDiffMinutes.toFixed(2)}`)
-                        
+
                         // Verify the date in the target timezone matches what we expect
                         const verifyFormatter = new Intl.DateTimeFormat('en-US', {
                             timeZone: timezone,
@@ -861,10 +861,10 @@ final_df = df`)
                         if (verifyYear !== targetYear || verifyMonth !== targetMonth + 1 || verifyDay !== targetDay || verifyHour !== hours || verifyMin !== minutes) {
                             console.warn(`[Schedule Update] ⚠️ WARNING: Date/time mismatch! This might cause scheduling for the wrong day.`)
                         }
-                        
+
                         // Format as ISO string (UTC)
                         nextRunAt = startDate.toISOString()
-                        
+
                         // Debug logging
                         console.log(`[Schedule Update] Start time: ${hours}:${String(minutes).padStart(2, '0')} ${timezone}`)
                         console.log(`[Schedule Update] Interval: ${intervalValue} ${intervalUnit}`)
@@ -889,13 +889,13 @@ final_df = df`)
                 is_active: selectedScheduler.is_active,
                 sources: [sourceData]
             }
-            
+
             // If start_time is provided, set next_run_at to that time
             if (nextRunAt) {
                 payload.next_run_at = nextRunAt
                 console.log(`[Schedule Update] Sending next_run_at to backend: ${nextRunAt}`)
             }
-            
+
             await symbolsAPI.updateScheduler(selectedScheduler.id, payload)
 
             // Update sources separately
@@ -1145,7 +1145,7 @@ final_df = df`)
 
                 // Normalize status to string (in case it's an enum or number)
                 const statusStr = String(status.status || '').toUpperCase()
-                
+
                 // Stop polling if we get PENDING status with job_id "0" after a few attempts
                 // This indicates we're polling with a placeholder that will never complete
                 if ((statusStr === 'PENDING' || statusStr === 'NOT_FOUND') && (jobId === 0 || String(jobIdOrLogId).trim() === '0')) {
@@ -1157,7 +1157,7 @@ final_df = df`)
                         return
                     }
                 }
-                
+
                 const uploadedCount = status.uploaded_rows || (status.inserted_rows || 0) + (status.updated_rows || 0)
                 const processedCount = status.processed || status.record_count || 0
                 const insertedCount = status.inserted_rows || 0
@@ -1181,20 +1181,20 @@ final_df = df`)
                 })
 
                 // Check if status indicates completion (any terminal status)
-                const isCompleted = statusStr === 'SUCCESS' || 
-                                   statusStr === 'COMPLETED_WITH_WARNINGS' || 
-                                   statusStr === 'PARTIAL' || 
-                                   statusStr === 'FAILED' ||
-                                   statusStr === 'CANCELLED' ||
-                                   statusStr === 'CRASHED' ||
-                                   statusStr === 'INTERRUPTED' ||
-                                   statusStr === 'STOPPED'
-                
+                const isCompleted = statusStr === 'SUCCESS' ||
+                    statusStr === 'COMPLETED_WITH_WARNINGS' ||
+                    statusStr === 'PARTIAL' ||
+                    statusStr === 'FAILED' ||
+                    statusStr === 'CANCELLED' ||
+                    statusStr === 'CRASHED' ||
+                    statusStr === 'INTERRUPTED' ||
+                    statusStr === 'STOPPED'
+
                 // Only mark as complete if status is any terminal/completion status
                 if (isCompleted) {
                     // Mark as completed to stop all further polling
                     isPollingCompletedRef.current = true
-                    
+
                     // Clear any scheduled polling immediately
                     if (pollingTimeoutRef.current) {
                         clearTimeout(pollingTimeoutRef.current)
@@ -1218,10 +1218,10 @@ final_df = df`)
                         ? `Successfully uploaded ${processedCount} symbols. ${finalErrorCount} errors occurred.`
                         : `Successfully uploaded ${processedCount} symbols.`
 
-                    console.log('Upload completed - final status:', { 
-                        status: statusStr, 
-                        processed: processedCount, 
-                        total: totalRows, 
+                    console.log('Upload completed - final status:', {
+                        status: statusStr,
+                        processed: processedCount,
+                        total: totalRows,
                         errors: finalErrorCount,
                         inserted: insertedCount,
                         updated: updatedCount,
@@ -1329,7 +1329,7 @@ final_df = df`)
             } catch (e: any) {
                 // Mark as completed to stop all further polling
                 isPollingCompletedRef.current = true
-                
+
                 // Clear any scheduled polling
                 if (pollingTimeoutRef.current) {
                     clearTimeout(pollingTimeoutRef.current)
@@ -1387,12 +1387,12 @@ final_df = df`)
             // Use job_id if available, otherwise fallback to log_id
             const jobIdOrLogId = res.job_id || res.log_id
             // Validate job_id - must be a valid non-zero value
-            const isValidJobId = jobIdOrLogId && 
-                jobIdOrLogId !== '0' && 
-                jobIdOrLogId !== 0 && 
+            const isValidJobId = jobIdOrLogId &&
+                jobIdOrLogId !== '0' &&
+                jobIdOrLogId !== 0 &&
                 String(jobIdOrLogId).trim() !== '0' &&
                 String(jobIdOrLogId).trim() !== ''
-            
+
             if (isValidJobId) {
                 // Determine total rows from message or preview
                 const totalRows = preview?.total_rows || preview?.totalRows || 0
@@ -1400,7 +1400,7 @@ final_df = df`)
 
                 // Start polling for upload status - will call onSuccess once when complete
                 pollUploadStatus(jobIdOrLogId, totalRows)
-                
+
                 // Show notification that upload is in progress
                 setShowBackgroundUploadPopup(true)
                 // Close modal immediately - upload runs in background
@@ -1573,12 +1573,12 @@ final_df = df`)
 
             const jobIdOrLogId = res.job_id || res.log_id
             // Validate job_id - must be a valid non-zero value
-            const isValidJobId = jobIdOrLogId && 
-                jobIdOrLogId !== '0' && 
-                jobIdOrLogId !== 0 && 
+            const isValidJobId = jobIdOrLogId &&
+                jobIdOrLogId !== '0' &&
+                jobIdOrLogId !== 0 &&
                 String(jobIdOrLogId).trim() !== '0' &&
                 String(jobIdOrLogId).trim() !== ''
-            
+
             if (isValidJobId) {
                 // Determine total rows from auto preview
                 const totalRows = autoPreview?.total_rows || autoPreview?.totalRows || 0
@@ -1586,7 +1586,7 @@ final_df = df`)
 
                 // Start polling for upload status - will call onSuccess once when complete
                 pollUploadStatus(jobIdOrLogId, totalRows)
-                
+
                 // Show notification that upload is in progress
                 setShowBackgroundUploadPopup(true)
                 // Close modal immediately - upload runs in background
@@ -1934,7 +1934,7 @@ final_df = df`)
 
     const confirmDeleteScript = async () => {
         if (!scriptToDelete) return
-        
+
         try {
             setScriptError('')
             setShowDeleteConfirm(false)
@@ -2072,1329 +2072,1329 @@ final_df = df`)
 
     return (
         <>
-        {isOpen && (
-        <div 
-            className="fixed inset-0 z-[9999] flex items-center justify-center"
-            style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                width: '100vw',
-                height: '100dvh',
-                minHeight: '100vh',
-                margin: 0,
-                padding: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                opacity: isVisible ? undefined : 0,
-                animation: isVisible ? 'backdropFadeIn 0.3s ease-out' : 'none',
-            }}
-            onClick={(e) => {
-                // Close modal when clicking backdrop
-                if (e.target === e.currentTarget) {
-                    handleClose()
-                }
-            }}
-        >
-            <div 
-                className="relative"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div 
-                    className="bg-[#121b2f] border border-[#1f2a44] rounded-lg shadow-xl w-full max-w-6xl mx-4 max-h-[90vh] relative modal-content" 
-                    style={{ 
-                        minWidth: '800px', 
-                        maxWidth: 'calc(100vw - 2rem)',
-                        opacity: isVisible ? undefined : 0,
-                        transform: isVisible ? undefined : 'scale(0.95)',
-                        animation: isVisible ? 'modalFadeIn 0.3s ease-out' : 'none',
-                    }}
-                >
-                {/* Close Button - Positioned outside modal at top-right, aligned with modal top */}
-                <button 
-                    onClick={handleClose} 
-                    className="absolute top-0 -right-12 w-8 h-8 p-0 bg-transparent hover:bg-red-600 rounded text-red-600 hover:text-white transition-colors z-[10001] flex items-center justify-center"
-                    title="Close"
+            {isOpen && (
+                <div
+                    className="fixed inset-0 z-[9999] flex items-center justify-center"
                     style={{
-                        animation: isVisible ? 'modalFadeIn 0.3s ease-out' : 'none',
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        width: '100vw',
+                        height: '100dvh',
+                        minHeight: '100vh',
+                        margin: 0,
+                        padding: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        opacity: isVisible ? undefined : 0,
+                        animation: isVisible ? 'backdropFadeIn 0.3s ease-out' : 'none',
+                    }}
+                    onClick={(e) => {
+                        // Close modal when clicking backdrop
+                        if (e.target === e.currentTarget) {
+                            handleClose()
+                        }
                     }}
                 >
-                    <X className="w-5 h-5" />
-                </button>
-                <div className="p-6 max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-sans font-semibold text-[#e5e7eb]">
-                        Upload Symbols
-                    </h2>
-                </div>
-
-                {((activeTab === 'manual' && step === 'success') || (activeTab === 'auto' && autoStep === 'success')) ? (
-                    <div className="text-center py-10 space-y-4">
-                        <div className="text-5xl">✅</div>
-                        <h3 className="text-xl font-bold text-success">Upload Successful</h3>
-                        <p className="text-text-secondary">{activeTab === 'manual' ? resultMsg : autoResultMsg}</p>
-                        <p className="text-xs text-text-secondary mt-2">The symbols have been saved to the database and are now visible in the symbols list.</p>
-                        <div className="pt-6">
-                            <Button onClick={() => { handleClose(); }}>Done</Button>
-                        </div>
-                    </div>
-                ) : (
-                    <>
-                        <div className="flex gap-4 border-b border-[#1f2a44] mb-6">
+                    <div
+                        className="relative"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div
+                            className="bg-[#121b2f] border border-[#1f2a44] rounded-lg shadow-xl w-full max-w-6xl mx-4 max-h-[90vh] relative modal-content"
+                            style={{
+                                minWidth: '800px',
+                                maxWidth: 'calc(100vw - 2rem)',
+                                opacity: isVisible ? undefined : 0,
+                                transform: isVisible ? undefined : 'scale(0.95)',
+                                animation: isVisible ? 'modalFadeIn 0.3s ease-out' : 'none',
+                            }}
+                        >
+                            {/* Close Button - Positioned outside modal at top-right, aligned with modal top */}
                             <button
-                                className={`pb-2 px-1 text-sm font-medium transition-colors ${activeTab === 'manual' ? 'text-primary border-b-2 border-primary' : 'text-text-secondary hover:text-text-primary'}`}
-                                onClick={() => setActiveTab('manual')}
-                            >
-                                Manual Upload
-                            </button>
-                            <button
-                                className={`pb-2 px-1 text-sm font-medium transition-colors ${activeTab === 'auto' ? 'text-primary border-b-2 border-primary' : 'text-text-secondary hover:text-text-primary'}`}
-                                onClick={() => {
-                                    setActiveTab('auto')
-                                    loadSchedulers() // Load schedulers when tab is opened
-                                    loadScripts() // Load scripts when tab is opened
+                                onClick={handleClose}
+                                className="absolute top-0 -right-12 w-8 h-8 p-0 bg-transparent hover:bg-red-600 rounded text-red-600 hover:text-white transition-colors z-[10001] flex items-center justify-center"
+                                title="Close"
+                                style={{
+                                    animation: isVisible ? 'modalFadeIn 0.3s ease-out' : 'none',
                                 }}
                             >
-                                Auto Schedule
+                                <X className="w-5 h-5" />
                             </button>
-                        </div>
+                            <div className="p-6 max-h-[90vh] overflow-y-auto">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h2 id="upload-symbols-modal-heading" className="text-xl font-sans font-semibold text-[#e5e7eb]">
+                                        Upload Symbols
+                                    </h2>
+                                </div>
 
-                        {activeTab === 'manual' && (
-                            <>
-                                {step === 'upload' && (
-                                    <div className="space-y-6">
-                                        <div className="border-2 border-dashed border-[#1f2a44] rounded-lg p-10 text-center hover:border-primary/50 transition-colors">
-                                            <Input
-                                                type="file"
-                                                accept=".csv,.xlsx"
-                                                onChange={handleFileChange}
-                                                className="hidden"
-                                                id="file-upload"
-                                            />
-                                            <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center gap-2">
-                                                <span className="text-4xl">📄</span>
-                                                <span className="text-text-primary font-medium">Click to select file</span>
-                                                <span className="text-text-secondary text-sm">Supported: CSV, Excel</span>
-                                                {file && <span className="text-primary font-bold mt-2">{file.name}</span>}
-                                            </label>
-                                        </div>
-
-                                        {/* Transformation Script Toggle */}
-                                        <div className="flex items-center gap-3 p-3 bg-[#0a1020] rounded border border-[#1f2a44]">
-                                            <input
-                                                type="checkbox"
-                                                id="enable-transformation"
-                                                checked={enableTransformation}
-                                                onChange={(e) => {
-                                                    setEnableTransformation(e.target.checked)
-                                                    if (!e.target.checked) {
-                                                        setSelectedScriptId('')
-                                                        setEditingScriptId(null)
-                                                    }
-                                                }}
-                                                className="w-4 h-4 text-primary bg-[#0a1020] border-[#1f2a44] rounded focus:ring-primary"
-                                            />
-                                            <label htmlFor="enable-transformation" className="text-sm text-text-primary cursor-pointer">
-                                                Enable Transformation Script
-                                            </label>
-                                        </div>
-
-                                        {/* Transformation Script Panel (only if toggle is ON) */}
-                                        {enableTransformation && (
-                                            <div className="space-y-4 p-4 bg-[#0a1020] rounded border border-[#1f2a44]">
-                                                <div className="flex items-center justify-between">
-                                                    <h3 className="text-sm font-semibold text-text-primary">Transformation Script</h3>
-                                                    <div className="flex gap-2">
-                                                        <select
-                                                            className="bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-1.5 text-xs text-text-primary focus:outline-none focus:border-primary"
-                                                            value={selectedScriptId}
-                                                            onChange={(e) => handleSelectScript(e.target.value)}
-                                                        >
-                                                            <option value="">New Script</option>
-                                                            {scripts.map(s => (
-                                                                <option key={s.id} value={s.id.toString()}>{s.name} (v{s.version})</option>
-                                                            ))}
-                                                        </select>
-                                                        {selectedScriptId && (
-                                                            <>
-                                                                <Button
-                                                                    type="button"
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    onClick={(e) => {
-                                                                        e.preventDefault()
-                                                                        e.stopPropagation()
-                                                                        console.log('[DELETE BUTTON] Clicked, selectedScriptId:', selectedScriptId)
-                                                                        const scriptId = parseInt(selectedScriptId)
-                                                                        console.log('[DELETE BUTTON] Parsed scriptId:', scriptId)
-                                                                        if (!isNaN(scriptId) && scriptId > 0) {
-                                                                            console.log('[DELETE BUTTON] Calling handleDeleteScript with:', scriptId)
-                                                                            handleDeleteScript(scriptId)
-                                                                        } else {
-                                                                            console.error('[DELETE BUTTON] Invalid scriptId:', scriptId, 'from selectedScriptId:', selectedScriptId)
-                                                                        }
-                                                                    }}
-                                                                    className="text-xs text-danger hover:text-danger"
-                                                                    title="Delete script"
-                                                                >
-                                                                    <Trash2 className="w-3 h-3 mr-1" />
-                                                                    Delete
-                                                                </Button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <div>
-                                                        <label className="text-xs text-text-secondary mb-1 block">Script Name</label>
-                                                        <Input
-                                                            value={scriptName}
-                                                            onChange={(e) => setScriptName(e.target.value)}
-                                                            placeholder="e.g. NSE Normalizer"
-                                                            className="text-sm"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-xs text-text-secondary mb-1 block">Description (Optional)</label>
-                                                        <Input
-                                                            value={scriptDescription}
-                                                            onChange={(e) => setScriptDescription(e.target.value)}
-                                                            placeholder="Optional description"
-                                                            className="text-sm"
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex flex-col">
-                                                    <label className="text-xs text-text-secondary mb-1">Python Code</label>
-                                                    <textarea
-                                                        className="flex-1 min-h-[300px] bg-[#0a1020] border border-[#1f2a44] rounded p-4 font-mono text-sm text-gray-300 focus:outline-none focus:border-primary resize-none"
-                                                        value={scriptContent}
-                                                        onChange={(e) => setScriptContent(e.target.value)}
-                                                        spellCheck={false}
-                                                        placeholder="# Input: df (pandas DataFrame)&#10;# Output: final_df (pandas DataFrame)&#10;&#10;import pandas as pd&#10;&#10;df['symbol'] = df['symbol'].str.upper()&#10;final_df = df"
-                                                    />
-                                                </div>
-
-                                                {!backendHealthy && (
-                                                    <div className="p-2 bg-yellow-500/10 border border-yellow-500/20 rounded mb-2">
-                                                        <p className="text-yellow-500 text-xs">
-                                                            ⚠️ Backend server is not reachable. Script saving is disabled. Please ensure the backend is running.
-                                                        </p>
-                                                    </div>
-                                                )}
-
-                                                {scriptError && (
-                                                    <div className="p-2 bg-red-500/10 border border-red-500/20 rounded mb-2">
-                                                        <p className="text-error text-xs">{scriptError}</p>
-                                                    </div>
-                                                )}
-
-                                                <div className="flex gap-2 justify-end">
-                                                    <Button
-                                                        variant="secondary"
-                                                        size="sm"
-                                                        onClick={handleSaveAsNewScript}
-                                                        disabled={!scriptName.trim() || savingScript || !backendHealthy}
-                                                        title={!backendHealthy ? 'Backend server is not reachable' : ''}
-                                                    >
-                                                        {savingScript ? 'Saving...' : 'Save As New'}
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        onClick={handleSaveScript}
-                                                        disabled={!scriptName.trim() || savingScript || !backendHealthy}
-                                                        title={!backendHealthy ? 'Backend server is not reachable' : ''}
-                                                    >
-                                                        {savingScript ? 'Saving...' : editingScriptId ? 'Update Script' : 'Save Script'}
-                                                    </Button>
-                                                </div>
-                                                
-                                                {/* Edit Current Script Section - appears when a script is selected */}
-                                                {selectedScriptId && editingScriptId && (
-                                                    <div className="mt-4 pt-4 border-t border-[#1f2a44]">
-                                                        <div className="flex items-center justify-between mb-2">
-                                                            <span className="text-xs text-text-secondary">Editing: {scriptName}</span>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={(e) => {
-                                                                    e.preventDefault()
-                                                                    e.stopPropagation()
-                                                                    handleSelectScript(selectedScriptId) // Reload script
-                                                                }}
-                                                                className="text-xs text-info hover:text-info"
-                                                                title="Reload script from database"
-                                                            >
-                                                                <RefreshCw className="w-3 h-3 mr-1" />
-                                                                Reload
-                                                            </Button>
-                                                        </div>
-                                                        <p className="text-xs text-text-secondary mb-2">
-                                                            Make changes above and click "Update Script" to save changes to the current script.
-                                                        </p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        <div className="flex justify-between items-center pt-4 border-t border-[#1f2a44]">
-                                            <Button variant="ghost" size="sm" onClick={handleDownloadTemplate}>
-                                                ⬇ Download Template
-                                            </Button>
-                                            <div className="flex gap-2">
-                                                <Button variant="secondary" onClick={handleClose}>Cancel</Button>
-                                                <Button onClick={() => handleManualUpload()} disabled={!file || loading}>
-                                                    {loading ? 'Analyzing...' : 'Preview Upload'}
-                                                </Button>
-                                            </div>
+                                {((activeTab === 'manual' && step === 'success') || (activeTab === 'auto' && autoStep === 'success')) ? (
+                                    <div className="text-center py-10 space-y-4">
+                                        <div className="text-5xl">✅</div>
+                                        <h3 className="text-xl font-bold text-success">Upload Successful</h3>
+                                        <p className="text-text-secondary">{activeTab === 'manual' ? resultMsg : autoResultMsg}</p>
+                                        <p className="text-xs text-text-secondary mt-2">The symbols have been saved to the database and are now visible in the symbols list.</p>
+                                        <div className="pt-6">
+                                            <Button onClick={() => { handleClose(); }}>Done</Button>
                                         </div>
                                     </div>
-                                )}
-
-                                {step === 'preview' && preview && (
-                                    <div className="space-y-4">
-                                        {/* Processing Status Indicator - Show at top when processing */}
-                                        {isProcessing && (
-                                            <div className="bg-primary/10 border-2 border-primary/50 rounded-lg p-5 shadow-lg">
-                                                <div className="flex items-center gap-3 mb-3">
-                                                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                                                    <span className="text-base font-bold text-primary">Uploading Symbols...</span>
-                                                </div>
-
-                                            </div>
-                                        )}
-
-                                        <div className="flex justify-between items-center bg-secondary/10 p-3 rounded">
-                                            <div>
-                                                <p className="text-sm text-text-secondary">File: <span className="text-text-primary font-bold">{file?.name}</span></p>
-                                                <p className="text-sm text-text-secondary">Rows: <span className="text-text-primary font-bold">{preview.total_rows || preview.totalRows || 0}</span></p>
-                                            </div>
-                                        </div>
-
-                                        {preview.headers && Array.isArray(preview.headers) && preview.headers.length > 0 && preview.rows && Array.isArray(preview.rows) && preview.rows.length > 0 ? (
-                                            <div className="overflow-x-auto border border-[#1f2a44] rounded">
-                                                <Table>
-                                                    <TableHeader>
-                                                        {preview.headers.map((h: string) => (
-                                                            <TableHeaderCell key={h}>{h}</TableHeaderCell>
-                                                        ))}
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {preview.rows.map((row: any, i: number) => (
-                                                            <TableRow key={i}>
-                                                                {preview.headers.map((h: string) => (
-                                                                    <TableCell key={h} className="whitespace-nowrap">
-                                                                        {row[h] !== null && row[h] !== undefined ? String(row[h]) : ''}
-                                                                    </TableCell>
-                                                                ))}
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                            </div>
-                                        ) : (
-                                            <div className="border border-[#1f2a44] rounded p-8 text-center">
-                                                <p className="text-text-secondary">No preview data available</p>
-                                                <p className="text-xs text-text-secondary mt-2">
-                                                    Headers: {preview.headers ? (Array.isArray(preview.headers) ? preview.headers.length : 'invalid') : 'missing'}
-                                                    <br />
-                                                    Rows: {preview.rows ? (Array.isArray(preview.rows) ? preview.rows.length : 'invalid') : 'missing'}
-                                                </p>
-                                            </div>
-                                        )}
-
-                                        <div className="flex justify-end gap-2 pt-4 border-t border-[#1f2a44]">
-                                            <Button variant="secondary" onClick={() => setStep('upload')} disabled={isProcessing}>Back</Button>
-                                            {fileRef.current && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={async (e) => {
-                                                        e.preventDefault()
-                                                        const storedFile = fileRef.current
-                                                        if (storedFile && storedFile instanceof File) {
-                                                            setFile(storedFile)
-                                                            if (scriptIdRef.current !== undefined) {
-                                                                setSelectedScriptId(scriptIdRef.current.toString())
-                                                            }
-                                                            // Re-upload to get a fresh preview_id
-                                                            await handleManualUpload(storedFile)
-                                                            // After re-upload, the preview step will show again
-                                                            // User can then immediately click "Confirm Upload"
-                                                        } else {
-                                                            setError('File reference lost. Please select the file again.')
-                                                        }
-                                                    }}
-                                                    disabled={loading || isProcessing}
-                                                    title="Re-upload the file to get a fresh preview session"
-                                                >
-                                                    Re-upload
-                                                </Button>
-                                            )}
-                                            <Button
-                                                onClick={handleManualConfirm}
-                                                disabled={loading || isProcessing || !preview?.preview_id}
-                                                title={!preview?.preview_id ? 'Preview session expired. Please upload again.' : ''}
+                                ) : (
+                                    <>
+                                        <div className="flex gap-4 border-b border-[#1f2a44] mb-6">
+                                            <button
+                                                className={`pb-2 px-1 text-sm font-medium transition-colors ${activeTab === 'manual' ? 'text-primary border-b-2 border-primary' : 'text-text-secondary hover:text-text-primary'}`}
+                                                onClick={() => setActiveTab('manual')}
                                             >
-                                                {loading || isProcessing ? 'Processing...' : 'Confirm Upload'}
-                                            </Button>
+                                                Manual Upload
+                                            </button>
+                                            <button
+                                                className={`pb-2 px-1 text-sm font-medium transition-colors ${activeTab === 'auto' ? 'text-primary border-b-2 border-primary' : 'text-text-secondary hover:text-text-primary'}`}
+                                                onClick={() => {
+                                                    setActiveTab('auto')
+                                                    loadSchedulers() // Load schedulers when tab is opened
+                                                    loadScripts() // Load scripts when tab is opened
+                                                }}
+                                            >
+                                                Auto Schedule
+                                            </button>
                                         </div>
-                                        {preview && !isProcessing && (
-                                            <p className="text-xs text-text-secondary text-center mt-2">
-                                                Ready to upload {preview.total_rows || preview.totalRows || 0} symbols. Click "Confirm Upload" to save to database.
-                                                {fileRef.current && (
-                                                    <span className="block mt-1 text-warning">
-                                                        ⚠️ If you see a "Preview session expired" error, click "Re-upload" to refresh, then immediately click "Confirm Upload".
-                                                    </span>
-                                                )}
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-                            </>
-                        )}
 
-                        {activeTab === 'auto' && (
-                            <div className="space-y-6">
-                                {/* Auto Upload Form - Matches Manual Upload Structure */}
-                                <div className="space-y-6">
-                                    {/* Source Configuration Section - Matches Manual Upload File Selection */}
-                                    <div className="border-2 border-dashed border-[#1f2a44] rounded-lg p-6 hover:border-primary/50 transition-colors">
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-2 mb-4">
-                                                <span className="text-2xl">🔗</span>
-                                                <h3 className="text-sm font-semibold text-text-primary">Source Configuration</h3>
-                                            </div>
-
-                                            {/* Source Type Selector */}
-                                            <div>
-                                                <label className="text-xs text-text-secondary mb-1 block">Source Type *</label>
-                                                <select
-                                                    className="w-full bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
-                                                    value={schedulerSources[0]?.source_type || 'DOWNLOADABLE_URL'}
-                                                    onChange={(e) => {
-                                                        const newType = e.target.value
-                                                        if (schedulerSources.length > 0) {
-                                                            setSchedulerSources([{ ...schedulerSources[0], source_type: newType }])
-                                                        } else {
-                                                            setSchedulerSources([{ source_type: newType, url: '', name: 'New Source' }])
-                                                        }
-                                                    }}
-                                                >
-                                                    <option value="DOWNLOADABLE_URL">URL</option>
-                                                    <option value="API_ENDPOINT">API</option>
-                                                </select>
-                                            </div>
-
-                                            {/* URL Source - Simple */}
-                                            {(!schedulerSources[0]?.source_type || schedulerSources[0]?.source_type === 'DOWNLOADABLE_URL') && (
-                                                <div>
-                                                    <label className="text-xs text-text-secondary mb-1 block">File Download URL *</label>
-                                                    <Input
-                                                        value={schedulerSources[0]?.url || ''}
-                                                        onChange={(e) => {
-                                                            if (schedulerSources.length > 0) {
-                                                                setSchedulerSources([{ ...schedulerSources[0], url: e.target.value }])
-                                                            } else {
-                                                                setSchedulerSources([{ source_type: 'DOWNLOADABLE_URL', url: e.target.value, name: 'New Source' }])
-                                                            }
-                                                        }}
-                                                        placeholder="https://example.com/symbols.csv"
-                                                        className="text-sm"
-                                                    />
-                                                    <p className="text-xs text-text-secondary mt-1">
-                                                        File will be temporarily downloaded and processed
-                                                    </p>
-                                                </div>
-                                            )}
-
-                                            {/* API Source - Complete Configuration */}
-                                            {schedulerSources[0]?.source_type === 'API_ENDPOINT' && (
-                                                <div className="space-y-4">
-                                                    {/* API Endpoint */}
-                                                    <div>
-                                                        <label className="text-xs text-text-secondary mb-1 block">API Endpoint *</label>
-                                                        <Input
-                                                            value={schedulerSources[0]?.url || ''}
-                                                            onChange={(e) => {
-                                                                if (schedulerSources.length > 0) {
-                                                                    setSchedulerSources([{ ...schedulerSources[0], url: e.target.value }])
-                                                                } else {
-                                                                    setSchedulerSources([{ source_type: 'API_ENDPOINT', url: e.target.value, name: 'New Source' }])
-                                                                }
-                                                            }}
-                                                            placeholder="https://api.example.com/symbols"
-                                                            className="text-sm"
-                                                        />
-                                                    </div>
-
-                                                    {/* HTTP Method */}
-                                                    <div>
-                                                        <label className="text-xs text-text-secondary mb-1 block">HTTP Method</label>
-                                                        <select
-                                                            className="w-full bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
-                                                            value={apiMethod}
-                                                            onChange={(e) => setApiMethod(e.target.value as 'GET' | 'POST')}
-                                                        >
-                                                            <option value="GET">GET</option>
-                                                            <option value="POST">POST</option>
-                                                        </select>
-                                                    </div>
-
-                                                    {/* Authentication */}
-                                                    <div>
-                                                        <label className="text-xs text-text-secondary mb-1 block">Authentication</label>
-                                                        <select
-                                                            className="w-full bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
-                                                            value={apiAuthType}
-                                                            onChange={(e) => setApiAuthType(e.target.value as 'NONE' | 'API_KEY' | 'BEARER_TOKEN')}
-                                                        >
-                                                            <option value="NONE">None</option>
-                                                            <option value="API_KEY">API Key</option>
-                                                            <option value="BEARER_TOKEN">Bearer Token</option>
-                                                        </select>
-                                                    </div>
-
-                                                    {/* API Key Configuration */}
-                                                    {apiAuthType === 'API_KEY' && (
-                                                        <div className="grid grid-cols-2 gap-2">
-                                                            <div>
-                                                                <label className="text-xs text-text-secondary mb-1 block">Key Name</label>
-                                                                <Input
-                                                                    value={apiKey}
-                                                                    onChange={(e) => setApiKey(e.target.value)}
-                                                                    placeholder="X-API-Key"
-                                                                    className="text-sm"
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs text-text-secondary mb-1 block">Key Value</label>
-                                                                <Input
-                                                                    type="password"
-                                                                    value={apiKeyValue}
-                                                                    onChange={(e) => setApiKeyValue(e.target.value)}
-                                                                    placeholder="Your API key"
-                                                                    className="text-sm"
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Bearer Token */}
-                                                    {apiAuthType === 'BEARER_TOKEN' && (
-                                                        <div>
-                                                            <label className="text-xs text-text-secondary mb-1 block">Bearer Token</label>
+                                        {activeTab === 'manual' && (
+                                            <>
+                                                {step === 'upload' && (
+                                                    <div className="space-y-6">
+                                                        <div className="border-2 border-dashed border-[#1f2a44] rounded-lg p-10 text-center hover:border-primary/50 transition-colors">
                                                             <Input
-                                                                type="password"
-                                                                value={bearerToken}
-                                                                onChange={(e) => setBearerToken(e.target.value)}
-                                                                placeholder="Your bearer token"
-                                                                className="text-sm"
+                                                                id="symbol-file-input"
+                                                                type="file"
+                                                                accept=".csv,.xlsx"
+                                                                onChange={handleFileChange}
+                                                                className="hidden"
                                                             />
+                                                            <label htmlFor="symbol-file-input" className="cursor-pointer flex flex-col items-center gap-2">
+                                                                <span className="text-4xl">📄</span>
+                                                                <span className="text-text-primary font-medium">Click to select file</span>
+                                                                <span className="text-text-secondary text-sm">Supported: CSV, Excel</span>
+                                                                {file && <span className="text-primary font-bold mt-2">{file.name}</span>}
+                                                            </label>
                                                         </div>
-                                                    )}
 
-                                                    {/* Query Parameters */}
-                                                    <div>
-                                                        <label className="text-xs text-text-secondary mb-1 block">Query Parameters (Optional)</label>
-                                                        <div className="space-y-2">
-                                                            {queryParams.map((param, idx) => (
-                                                                <div key={idx} className="grid grid-cols-[1fr_1fr_auto] gap-2">
-                                                                    <Input
-                                                                        value={param.key}
-                                                                        onChange={(e) => {
-                                                                            const newParams = [...queryParams]
-                                                                            newParams[idx].key = e.target.value
-                                                                            setQueryParams(newParams)
-                                                                        }}
-                                                                        placeholder="Key"
-                                                                        className="text-sm"
+                                                        {/* Transformation Script Toggle */}
+                                                        <div className="flex items-center gap-3 p-3 bg-[#0a1020] rounded border border-[#1f2a44]">
+                                                            <input
+                                                                type="checkbox"
+                                                                id="enable-transformation"
+                                                                checked={enableTransformation}
+                                                                onChange={(e) => {
+                                                                    setEnableTransformation(e.target.checked)
+                                                                    if (!e.target.checked) {
+                                                                        setSelectedScriptId('')
+                                                                        setEditingScriptId(null)
+                                                                    }
+                                                                }}
+                                                                className="w-4 h-4 text-primary bg-[#0a1020] border-[#1f2a44] rounded focus:ring-primary"
+                                                            />
+                                                            <label id="enable-transformation-label" htmlFor="enable-transformation" className="text-sm text-text-primary cursor-pointer">
+                                                                Enable Transformation Script
+                                                            </label>
+                                                        </div>
+
+                                                        {/* Transformation Script Panel (only if toggle is ON) */}
+                                                        {enableTransformation && (
+                                                            <div className="space-y-4 p-4 bg-[#0a1020] rounded border border-[#1f2a44]">
+                                                                <div className="flex items-center justify-between">
+                                                                    <h3 className="text-sm font-semibold text-text-primary">Transformation Script</h3>
+                                                                    <div className="flex gap-2">
+                                                                        <select
+                                                                            className="bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-1.5 text-xs text-text-primary focus:outline-none focus:border-primary"
+                                                                            value={selectedScriptId}
+                                                                            onChange={(e) => handleSelectScript(e.target.value)}
+                                                                        >
+                                                                            <option value="">New Script</option>
+                                                                            {scripts.map(s => (
+                                                                                <option key={s.id} value={s.id.toString()}>{s.name} (v{s.version})</option>
+                                                                            ))}
+                                                                        </select>
+                                                                        {selectedScriptId && (
+                                                                            <>
+                                                                                <Button
+                                                                                    type="button"
+                                                                                    variant="ghost"
+                                                                                    size="sm"
+                                                                                    onClick={(e) => {
+                                                                                        e.preventDefault()
+                                                                                        e.stopPropagation()
+                                                                                        console.log('[DELETE BUTTON] Clicked, selectedScriptId:', selectedScriptId)
+                                                                                        const scriptId = parseInt(selectedScriptId)
+                                                                                        console.log('[DELETE BUTTON] Parsed scriptId:', scriptId)
+                                                                                        if (!isNaN(scriptId) && scriptId > 0) {
+                                                                                            console.log('[DELETE BUTTON] Calling handleDeleteScript with:', scriptId)
+                                                                                            handleDeleteScript(scriptId)
+                                                                                        } else {
+                                                                                            console.error('[DELETE BUTTON] Invalid scriptId:', scriptId, 'from selectedScriptId:', selectedScriptId)
+                                                                                        }
+                                                                                    }}
+                                                                                    className="text-xs text-danger hover:text-danger"
+                                                                                    title="Delete script"
+                                                                                >
+                                                                                    <Trash2 className="w-3 h-3 mr-1" />
+                                                                                    Delete
+                                                                                </Button>
+                                                                            </>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="grid grid-cols-2 gap-2">
+                                                                    <div>
+                                                                        <label className="text-xs text-text-secondary mb-1 block">Script Name</label>
+                                                                        <Input
+                                                                            id="transformation-script-name"
+                                                                            value={scriptName}
+                                                                            onChange={(e) => setScriptName(e.target.value)}
+                                                                            placeholder="e.g. NSE Normalizer"
+                                                                            className="text-sm"
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs text-text-secondary mb-1 block">Description (Optional)</label>
+                                                                        <Input
+                                                                            value={scriptDescription}
+                                                                            onChange={(e) => setScriptDescription(e.target.value)}
+                                                                            placeholder="Optional description"
+                                                                            className="text-sm"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="flex flex-col">
+                                                                    <label className="text-xs text-text-secondary mb-1">Python Code</label>
+                                                                    <textarea
+                                                                        id="transformation-code-editor"
+                                                                        className="flex-1 min-h-[300px] bg-[#0a1020] border border-[#1f2a44] rounded p-4 font-mono text-sm text-gray-300 focus:outline-none focus:border-primary resize-none"
+                                                                        value={scriptContent}
+                                                                        onChange={(e) => setScriptContent(e.target.value)}
+                                                                        spellCheck={false}
+                                                                        placeholder="# Input: df (pandas DataFrame)&#10;# Output: final_df (pandas DataFrame)&#10;&#10;import pandas as pd&#10;&#10;df['symbol'] = df['symbol'].str.upper()&#10;final_df = df"
                                                                     />
-                                                                    <Input
-                                                                        value={param.value}
-                                                                        onChange={(e) => {
-                                                                            const newParams = [...queryParams]
-                                                                            newParams[idx].value = e.target.value
-                                                                            setQueryParams(newParams)
-                                                                        }}
-                                                                        placeholder="Value"
-                                                                        className="text-sm"
-                                                                    />
+                                                                </div>
+
+                                                                {!backendHealthy && (
+                                                                    <div className="p-2 bg-yellow-500/10 border border-yellow-500/20 rounded mb-2">
+                                                                        <p className="text-yellow-500 text-xs">
+                                                                            ⚠️ Backend server is not reachable. Script saving is disabled. Please ensure the backend is running.
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+
+                                                                {scriptError && (
+                                                                    <div className="p-2 bg-red-500/10 border border-red-500/20 rounded mb-2">
+                                                                        <p className="text-error text-xs">{scriptError}</p>
+                                                                    </div>
+                                                                )}
+
+                                                                <div className="flex gap-2 justify-end">
                                                                     <Button
-                                                                        variant="ghost"
+                                                                        variant="secondary"
                                                                         size="sm"
-                                                                        onClick={() => setQueryParams(queryParams.filter((_, i) => i !== idx))}
+                                                                        onClick={handleSaveAsNewScript}
+                                                                        disabled={!scriptName.trim() || savingScript || !backendHealthy}
+                                                                        title={!backendHealthy ? 'Backend server is not reachable' : ''}
                                                                     >
-                                                                        ×
+                                                                        {savingScript ? 'Saving...' : 'Save As New'}
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={handleSaveScript}
+                                                                        disabled={!scriptName.trim() || savingScript || !backendHealthy}
+                                                                        title={!backendHealthy ? 'Backend server is not reachable' : ''}
+                                                                    >
+                                                                        {savingScript ? 'Saving...' : editingScriptId ? 'Update Script' : 'Save Script'}
                                                                     </Button>
                                                                 </div>
-                                                            ))}
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => setQueryParams([...queryParams, { key: '', value: '' }])}
-                                                                className="text-xs"
-                                                            >
-                                                                + Add Parameter
+
+                                                                {/* Edit Current Script Section - appears when a script is selected */}
+                                                                {selectedScriptId && editingScriptId && (
+                                                                    <div className="mt-4 pt-4 border-t border-[#1f2a44]">
+                                                                        <div className="flex items-center justify-between mb-2">
+                                                                            <span className="text-xs text-text-secondary">Editing: {scriptName}</span>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault()
+                                                                                    e.stopPropagation()
+                                                                                    handleSelectScript(selectedScriptId) // Reload script
+                                                                                }}
+                                                                                className="text-xs text-info hover:text-info"
+                                                                                title="Reload script from database"
+                                                                            >
+                                                                                <RefreshCw className="w-3 h-3 mr-1" />
+                                                                                Reload
+                                                                            </Button>
+                                                                        </div>
+                                                                        <p className="text-xs text-text-secondary mb-2">
+                                                                            Make changes above and click "Update Script" to save changes to the current script.
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        <div className="flex justify-between items-center pt-4 border-t border-[#1f2a44]">
+                                                            <Button variant="ghost" size="sm" onClick={handleDownloadTemplate}>
+                                                                ⬇ Download Template
                                                             </Button>
+                                                            <div className="flex gap-2">
+                                                                <Button variant="secondary" onClick={handleClose}>Cancel</Button>
+                                                                <Button onClick={() => handleManualUpload()} disabled={!file || loading}>
+                                                                    {loading ? 'Analyzing...' : 'Preview Upload'}
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {step === 'preview' && preview && (
+                                                    <div className="space-y-4">
+                                                        {/* Processing Status Indicator - Show at top when processing */}
+                                                        {isProcessing && (
+                                                            <div className="bg-primary/10 border-2 border-primary/50 rounded-lg p-5 shadow-lg">
+                                                                <div className="flex items-center gap-3 mb-3">
+                                                                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                                                                    <span className="text-base font-bold text-primary">Uploading Symbols...</span>
+                                                                </div>
+
+                                                            </div>
+                                                        )}
+
+                                                        <div className="flex justify-between items-center bg-secondary/10 p-3 rounded">
+                                                            <div>
+                                                                <p className="text-sm text-text-secondary">File: <span className="text-text-primary font-bold">{file?.name}</span></p>
+                                                                <p className="text-sm text-text-secondary">Rows: <span className="text-text-primary font-bold">{preview.total_rows || preview.totalRows || 0}</span></p>
+                                                            </div>
+                                                        </div>
+
+                                                        {preview.headers && Array.isArray(preview.headers) && preview.headers.length > 0 && preview.rows && Array.isArray(preview.rows) && preview.rows.length > 0 ? (
+                                                            <div className="overflow-x-auto border border-[#1f2a44] rounded">
+                                                                <Table>
+                                                                    <TableHeader>
+                                                                        {preview.headers.map((h: string) => (
+                                                                            <TableHeaderCell key={h}>{h}</TableHeaderCell>
+                                                                        ))}
+                                                                    </TableHeader>
+                                                                    <TableBody>
+                                                                        {preview.rows.map((row: any, i: number) => (
+                                                                            <TableRow key={i}>
+                                                                                {preview.headers.map((h: string) => (
+                                                                                    <TableCell key={h} className="whitespace-nowrap">
+                                                                                        {row[h] !== null && row[h] !== undefined ? String(row[h]) : ''}
+                                                                                    </TableCell>
+                                                                                ))}
+                                                                            </TableRow>
+                                                                        ))}
+                                                                    </TableBody>
+                                                                </Table>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="border border-[#1f2a44] rounded p-8 text-center">
+                                                                <p className="text-text-secondary">No preview data available</p>
+                                                                <p className="text-xs text-text-secondary mt-2">
+                                                                    Headers: {preview.headers ? (Array.isArray(preview.headers) ? preview.headers.length : 'invalid') : 'missing'}
+                                                                    <br />
+                                                                    Rows: {preview.rows ? (Array.isArray(preview.rows) ? preview.rows.length : 'invalid') : 'missing'}
+                                                                </p>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="flex justify-end gap-2 pt-4 border-t border-[#1f2a44]">
+                                                            <Button variant="secondary" onClick={() => setStep('upload')} disabled={isProcessing}>Back</Button>
+                                                            {fileRef.current && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={async (e) => {
+                                                                        e.preventDefault()
+                                                                        const storedFile = fileRef.current
+                                                                        if (storedFile && storedFile instanceof File) {
+                                                                            setFile(storedFile)
+                                                                            if (scriptIdRef.current !== undefined) {
+                                                                                setSelectedScriptId(scriptIdRef.current.toString())
+                                                                            }
+                                                                            // Re-upload to get a fresh preview_id
+                                                                            await handleManualUpload(storedFile)
+                                                                            // After re-upload, the preview step will show again
+                                                                            // User can then immediately click "Confirm Upload"
+                                                                        } else {
+                                                                            setError('File reference lost. Please select the file again.')
+                                                                        }
+                                                                    }}
+                                                                    disabled={loading || isProcessing}
+                                                                    title="Re-upload the file to get a fresh preview session"
+                                                                >
+                                                                    Re-upload
+                                                                </Button>
+                                                            )}
+                                                            <Button
+                                                                onClick={handleManualConfirm}
+                                                                disabled={loading || isProcessing || !preview?.preview_id}
+                                                                title={!preview?.preview_id ? 'Preview session expired. Please upload again.' : ''}
+                                                            >
+                                                                {loading || isProcessing ? 'Processing...' : 'Confirm Upload'}
+                                                            </Button>
+                                                        </div>
+                                                        {preview && !isProcessing && (
+                                                            <p className="text-xs text-text-secondary text-center mt-2">
+                                                                Ready to upload {preview.total_rows || preview.totalRows || 0} symbols. Click "Confirm Upload" to save to database.
+                                                                {fileRef.current && (
+                                                                    <span className="block mt-1 text-warning">
+                                                                        ⚠️ If you see a "Preview session expired" error, click "Re-upload" to refresh, then immediately click "Confirm Upload".
+                                                                    </span>
+                                                                )}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+
+                                        {activeTab === 'auto' && (
+                                            <div className="space-y-6">
+                                                {/* Auto Upload Form - Matches Manual Upload Structure */}
+                                                <div className="space-y-6">
+                                                    {/* Source Configuration Section - Matches Manual Upload File Selection */}
+                                                    <div className="border-2 border-dashed border-[#1f2a44] rounded-lg p-6 hover:border-primary/50 transition-colors">
+                                                        <div className="space-y-4">
+                                                            <div className="flex items-center gap-2 mb-4">
+                                                                <span className="text-2xl">🔗</span>
+                                                                <h3 className="text-sm font-semibold text-text-primary">Source Configuration</h3>
+                                                            </div>
+
+                                                            {/* Source Type Selector */}
+                                                            <div>
+                                                                <label className="text-xs text-text-secondary mb-1 block">Source Type *</label>
+                                                                <select
+                                                                    className="w-full bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
+                                                                    value={schedulerSources[0]?.source_type || 'DOWNLOADABLE_URL'}
+                                                                    onChange={(e) => {
+                                                                        const newType = e.target.value
+                                                                        if (schedulerSources.length > 0) {
+                                                                            setSchedulerSources([{ ...schedulerSources[0], source_type: newType }])
+                                                                        } else {
+                                                                            setSchedulerSources([{ source_type: newType, url: '', name: 'New Source' }])
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <option value="DOWNLOADABLE_URL">URL</option>
+                                                                    <option value="API_ENDPOINT">API</option>
+                                                                </select>
+                                                            </div>
+
+                                                            {/* URL Source - Simple */}
+                                                            {(!schedulerSources[0]?.source_type || schedulerSources[0]?.source_type === 'DOWNLOADABLE_URL') && (
+                                                                <div>
+                                                                    <label className="text-xs text-text-secondary mb-1 block">File Download URL *</label>
+                                                                    <Input
+                                                                        value={schedulerSources[0]?.url || ''}
+                                                                        onChange={(e) => {
+                                                                            if (schedulerSources.length > 0) {
+                                                                                setSchedulerSources([{ ...schedulerSources[0], url: e.target.value }])
+                                                                            } else {
+                                                                                setSchedulerSources([{ source_type: 'DOWNLOADABLE_URL', url: e.target.value, name: 'New Source' }])
+                                                                            }
+                                                                        }}
+                                                                        placeholder="https://example.com/symbols.csv"
+                                                                        className="text-sm"
+                                                                    />
+                                                                    <p className="text-xs text-text-secondary mt-1">
+                                                                        File will be temporarily downloaded and processed
+                                                                    </p>
+                                                                </div>
+                                                            )}
+
+                                                            {/* API Source - Complete Configuration */}
+                                                            {schedulerSources[0]?.source_type === 'API_ENDPOINT' && (
+                                                                <div className="space-y-4">
+                                                                    {/* API Endpoint */}
+                                                                    <div>
+                                                                        <label className="text-xs text-text-secondary mb-1 block">API Endpoint *</label>
+                                                                        <Input
+                                                                            value={schedulerSources[0]?.url || ''}
+                                                                            onChange={(e) => {
+                                                                                if (schedulerSources.length > 0) {
+                                                                                    setSchedulerSources([{ ...schedulerSources[0], url: e.target.value }])
+                                                                                } else {
+                                                                                    setSchedulerSources([{ source_type: 'API_ENDPOINT', url: e.target.value, name: 'New Source' }])
+                                                                                }
+                                                                            }}
+                                                                            placeholder="https://api.example.com/symbols"
+                                                                            className="text-sm"
+                                                                        />
+                                                                    </div>
+
+                                                                    {/* HTTP Method */}
+                                                                    <div>
+                                                                        <label className="text-xs text-text-secondary mb-1 block">HTTP Method</label>
+                                                                        <select
+                                                                            className="w-full bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
+                                                                            value={apiMethod}
+                                                                            onChange={(e) => setApiMethod(e.target.value as 'GET' | 'POST')}
+                                                                        >
+                                                                            <option value="GET">GET</option>
+                                                                            <option value="POST">POST</option>
+                                                                        </select>
+                                                                    </div>
+
+                                                                    {/* Authentication */}
+                                                                    <div>
+                                                                        <label className="text-xs text-text-secondary mb-1 block">Authentication</label>
+                                                                        <select
+                                                                            className="w-full bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
+                                                                            value={apiAuthType}
+                                                                            onChange={(e) => setApiAuthType(e.target.value as 'NONE' | 'API_KEY' | 'BEARER_TOKEN')}
+                                                                        >
+                                                                            <option value="NONE">None</option>
+                                                                            <option value="API_KEY">API Key</option>
+                                                                            <option value="BEARER_TOKEN">Bearer Token</option>
+                                                                        </select>
+                                                                    </div>
+
+                                                                    {/* API Key Configuration */}
+                                                                    {apiAuthType === 'API_KEY' && (
+                                                                        <div className="grid grid-cols-2 gap-2">
+                                                                            <div>
+                                                                                <label className="text-xs text-text-secondary mb-1 block">Key Name</label>
+                                                                                <Input
+                                                                                    value={apiKey}
+                                                                                    onChange={(e) => setApiKey(e.target.value)}
+                                                                                    placeholder="X-API-Key"
+                                                                                    className="text-sm"
+                                                                                />
+                                                                            </div>
+                                                                            <div>
+                                                                                <label className="text-xs text-text-secondary mb-1 block">Key Value</label>
+                                                                                <Input
+                                                                                    type="password"
+                                                                                    value={apiKeyValue}
+                                                                                    onChange={(e) => setApiKeyValue(e.target.value)}
+                                                                                    placeholder="Your API key"
+                                                                                    className="text-sm"
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Bearer Token */}
+                                                                    {apiAuthType === 'BEARER_TOKEN' && (
+                                                                        <div>
+                                                                            <label className="text-xs text-text-secondary mb-1 block">Bearer Token</label>
+                                                                            <Input
+                                                                                type="password"
+                                                                                value={bearerToken}
+                                                                                onChange={(e) => setBearerToken(e.target.value)}
+                                                                                placeholder="Your bearer token"
+                                                                                className="text-sm"
+                                                                            />
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Query Parameters */}
+                                                                    <div>
+                                                                        <label className="text-xs text-text-secondary mb-1 block">Query Parameters (Optional)</label>
+                                                                        <div className="space-y-2">
+                                                                            {queryParams.map((param, idx) => (
+                                                                                <div key={idx} className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                                                                                    <Input
+                                                                                        value={param.key}
+                                                                                        onChange={(e) => {
+                                                                                            const newParams = [...queryParams]
+                                                                                            newParams[idx].key = e.target.value
+                                                                                            setQueryParams(newParams)
+                                                                                        }}
+                                                                                        placeholder="Key"
+                                                                                        className="text-sm"
+                                                                                    />
+                                                                                    <Input
+                                                                                        value={param.value}
+                                                                                        onChange={(e) => {
+                                                                                            const newParams = [...queryParams]
+                                                                                            newParams[idx].value = e.target.value
+                                                                                            setQueryParams(newParams)
+                                                                                        }}
+                                                                                        placeholder="Value"
+                                                                                        className="text-sm"
+                                                                                    />
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="sm"
+                                                                                        onClick={() => setQueryParams(queryParams.filter((_, i) => i !== idx))}
+                                                                                    >
+                                                                                        ×
+                                                                                    </Button>
+                                                                                </div>
+                                                                            ))}
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                onClick={() => setQueryParams([...queryParams, { key: '', value: '' }])}
+                                                                                className="text-xs"
+                                                                            >
+                                                                                + Add Parameter
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Test Connection Button */}
+                                                                    <div className="pt-2">
+                                                                        <Button
+                                                                            variant="secondary"
+                                                                            size="sm"
+                                                                            onClick={async () => {
+                                                                                const url = schedulerSources[0]?.url
+                                                                                if (!url) {
+                                                                                    setAutoError('Please enter a URL/Endpoint first')
+                                                                                    return
+                                                                                }
+                                                                                setAutoError('')
+                                                                                try {
+                                                                                    // Build headers for test
+                                                                                    let testHeaders: any = {}
+                                                                                    if (apiAuthType === 'BEARER_TOKEN' && bearerToken) {
+                                                                                        testHeaders['Authorization'] = `Bearer ${bearerToken}`
+                                                                                    } else if (apiAuthType === 'API_KEY' && apiKey && apiKeyValue) {
+                                                                                        testHeaders[apiKey] = apiKeyValue
+                                                                                    }
+
+                                                                                    // Use backend endpoint to test connection (avoids CORS issues)
+                                                                                    const result = await symbolsAPI.testConnection(
+                                                                                        url,
+                                                                                        schedulerSources[0]?.source_type || 'DOWNLOADABLE_URL',
+                                                                                        schedulerSources[0]?.source_type === 'API_ENDPOINT' ? apiMethod : undefined,
+                                                                                        Object.keys(testHeaders).length > 0 ? testHeaders : undefined
+                                                                                    )
+
+                                                                                    console.log('[TEST CONNECTION] Result:', result)
+                                                                                    if (result && result.success) {
+                                                                                        setAutoError('')
+                                                                                        setTestConnectionResult({ success: true, message: result.message || 'Connection test successful' })
+                                                                                        setShowTestConnectionModal(true)
+                                                                                        console.log('[TEST CONNECTION] Setting success modal')
+                                                                                    } else {
+                                                                                        setTestConnectionResult({ success: false, message: result?.message || 'Connection test failed' })
+                                                                                        setShowTestConnectionModal(true)
+                                                                                        console.log('[TEST CONNECTION] Setting failure modal')
+                                                                                    }
+                                                                                } catch (e: any) {
+                                                                                    console.error('[TEST CONNECTION] Error:', e)
+                                                                                    setTestConnectionResult({ success: false, message: getErrorMessage(e, 'Connection test failed') })
+                                                                                    setShowTestConnectionModal(true)
+                                                                                    console.log('[TEST CONNECTION] Setting error modal')
+                                                                                }
+                                                                            }}
+                                                                            disabled={!schedulerSources[0]?.url}
+                                                                        >
+                                                                            Test Connection
+                                                                        </Button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Test Connection for URL Source */}
+                                                            {(!schedulerSources[0]?.source_type || schedulerSources[0]?.source_type === 'DOWNLOADABLE_URL') && schedulerSources[0]?.url && (
+                                                                <div className="pt-2">
+                                                                    <Button
+                                                                        variant="secondary"
+                                                                        size="sm"
+                                                                        onClick={async () => {
+                                                                            const url = schedulerSources[0]?.url
+                                                                            if (!url) {
+                                                                                setAutoError('Please enter a URL first')
+                                                                                return
+                                                                            }
+                                                                            setAutoError('')
+                                                                            try {
+                                                                                // Use backend endpoint to test connection (avoids CORS issues)
+                                                                                const result = await symbolsAPI.testConnection(url, 'DOWNLOADABLE_URL')
+
+                                                                                console.log('[TEST CONNECTION] Result:', result)
+                                                                                if (result && result.success) {
+                                                                                    setAutoError('')
+                                                                                    setTestConnectionResult({ success: true, message: result.message || 'Connection test successful' })
+                                                                                    setShowTestConnectionModal(true)
+                                                                                    console.log('[TEST CONNECTION] Setting success modal')
+                                                                                } else {
+                                                                                    setTestConnectionResult({ success: false, message: result?.message || 'Connection test failed' })
+                                                                                    setShowTestConnectionModal(true)
+                                                                                    console.log('[TEST CONNECTION] Setting failure modal')
+                                                                                }
+                                                                            } catch (e: any) {
+                                                                                console.error('[TEST CONNECTION] Error:', e)
+                                                                                setTestConnectionResult({ success: false, message: getErrorMessage(e, 'Connection test failed') })
+                                                                                setShowTestConnectionModal(true)
+                                                                                console.log('[TEST CONNECTION] Setting error modal')
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        Test Connection
+                                                                    </Button>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
 
-                                                    {/* Test Connection Button */}
-                                                    <div className="pt-2">
-                                                        <Button
-                                                            variant="secondary"
-                                                            size="sm"
-                                                            onClick={async () => {
-                                                                const url = schedulerSources[0]?.url
-                                                                if (!url) {
-                                                                    setAutoError('Please enter a URL/Endpoint first')
-                                                                    return
-                                                                }
-                                                                setAutoError('')
-                                                                try {
-                                                                    // Build headers for test
-                                                                    let testHeaders: any = {}
-                                                                    if (apiAuthType === 'BEARER_TOKEN' && bearerToken) {
-                                                                        testHeaders['Authorization'] = `Bearer ${bearerToken}`
-                                                                    } else if (apiAuthType === 'API_KEY' && apiKey && apiKeyValue) {
-                                                                        testHeaders[apiKey] = apiKeyValue
-                                                                    }
+                                                    {/* Schedule Name & Description - Matches Manual Upload Form Style */}
+                                                    <div data-scheduler-form className="space-y-4 p-4 bg-[#0a1020] rounded border border-[#1f2a44]">
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <div>
+                                                                <label className="text-xs text-text-secondary mb-1 block">Schedule Name *</label>
+                                                                <Input
+                                                                    value={schedulerName}
+                                                                    onChange={(e) => setSchedulerName(e.target.value)}
+                                                                    placeholder="e.g. Daily NSE Symbols"
+                                                                    className="text-sm"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs text-text-secondary mb-1 block">Description (Optional)</label>
+                                                                <Input
+                                                                    value={schedulerDescription}
+                                                                    onChange={(e) => setSchedulerDescription(e.target.value)}
+                                                                    placeholder="Optional description"
+                                                                    className="text-sm"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
 
-                                                                    // Use backend endpoint to test connection (avoids CORS issues)
-                                                                    const result = await symbolsAPI.testConnection(
-                                                                        url,
-                                                                        schedulerSources[0]?.source_type || 'DOWNLOADABLE_URL',
-                                                                        schedulerSources[0]?.source_type === 'API_ENDPOINT' ? apiMethod : undefined,
-                                                                        Object.keys(testHeaders).length > 0 ? testHeaders : undefined
-                                                                    )
 
-                                                                    console.log('[TEST CONNECTION] Result:', result)
-                                                                    if (result && result.success) {
-                                                                        setAutoError('')
-                                                                        setTestConnectionResult({ success: true, message: result.message || 'Connection test successful' })
-                                                                        setShowTestConnectionModal(true)
-                                                                        console.log('[TEST CONNECTION] Setting success modal')
-                                                                    } else {
-                                                                        setTestConnectionResult({ success: false, message: result?.message || 'Connection test failed' })
-                                                                        setShowTestConnectionModal(true)
-                                                                        console.log('[TEST CONNECTION] Setting failure modal')
-                                                                    }
-                                                                } catch (e: any) {
-                                                                    console.error('[TEST CONNECTION] Error:', e)
-                                                                    setTestConnectionResult({ success: false, message: getErrorMessage(e, 'Connection test failed') })
-                                                                    setShowTestConnectionModal(true)
-                                                                    console.log('[TEST CONNECTION] Setting error modal')
+                                                    {/* Transformation Script Toggle - EXACTLY matches Manual Upload */}
+                                                    <div className="flex items-center gap-3 p-3 bg-[#0a1020] rounded border border-[#1f2a44]">
+                                                        <input
+                                                            type="checkbox"
+                                                            id="enable-transformation-auto"
+                                                            checked={enableTransformation}
+                                                            onChange={(e) => {
+                                                                setEnableTransformation(e.target.checked)
+                                                                if (!e.target.checked) {
+                                                                    setSelectedScriptId('')
+                                                                    setEditingScriptId(null)
                                                                 }
                                                             }}
-                                                            disabled={!schedulerSources[0]?.url}
-                                                        >
-                                                            Test Connection
-                                                        </Button>
+                                                            className="w-4 h-4 text-primary bg-[#0a1020] border-[#1f2a44] rounded focus:ring-primary"
+                                                        />
+                                                        <label htmlFor="enable-transformation-auto" className="text-sm text-text-primary cursor-pointer">
+                                                            Enable Transformation Script
+                                                        </label>
+                                                    </div>
+
+                                                    {/* Transformation Script Panel - EXACTLY matches Manual Upload */}
+                                                    {enableTransformation && (
+                                                        <div className="space-y-4 p-4 bg-[#0a1020] rounded border border-[#1f2a44]">
+                                                            <div className="flex items-center justify-between">
+                                                                <h3 className="text-sm font-semibold text-text-primary">Transformation Script</h3>
+                                                                <div className="flex gap-2">
+                                                                    <select
+                                                                        className="bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-1.5 text-xs text-text-primary focus:outline-none focus:border-primary"
+                                                                        value={selectedScriptId}
+                                                                        onChange={(e) => handleSelectScript(e.target.value)}
+                                                                    >
+                                                                        <option value="">New Script</option>
+                                                                        {scripts.map(s => (
+                                                                            <option key={s.id} value={s.id.toString()}>{s.name} (v{s.version})</option>
+                                                                        ))}
+                                                                    </select>
+                                                                    {selectedScriptId && (
+                                                                        <>
+                                                                            <Button
+                                                                                type="button"
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault()
+                                                                                    e.stopPropagation()
+                                                                                    console.log('[DELETE BUTTON] Clicked, selectedScriptId:', selectedScriptId)
+                                                                                    const scriptId = parseInt(selectedScriptId)
+                                                                                    console.log('[DELETE BUTTON] Parsed scriptId:', scriptId)
+                                                                                    if (!isNaN(scriptId) && scriptId > 0) {
+                                                                                        console.log('[DELETE BUTTON] Calling handleDeleteScript with:', scriptId)
+                                                                                        handleDeleteScript(scriptId)
+                                                                                    } else {
+                                                                                        console.error('[DELETE BUTTON] Invalid scriptId:', scriptId, 'from selectedScriptId:', selectedScriptId)
+                                                                                    }
+                                                                                }}
+                                                                                className="text-xs text-danger hover:text-danger"
+                                                                                title="Delete script"
+                                                                            >
+                                                                                <Trash2 className="w-3 h-3 mr-1" />
+                                                                                Delete
+                                                                            </Button>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <div>
+                                                                    <label className="text-xs text-text-secondary mb-1 block">Script Name</label>
+                                                                    <Input
+                                                                        value={scriptName}
+                                                                        onChange={(e) => setScriptName(e.target.value)}
+                                                                        placeholder="e.g. NSE Normalizer"
+                                                                        className="text-sm"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs text-text-secondary mb-1 block">Description (Optional)</label>
+                                                                    <Input
+                                                                        value={scriptDescription}
+                                                                        onChange={(e) => setScriptDescription(e.target.value)}
+                                                                        placeholder="Optional description"
+                                                                        className="text-sm"
+                                                                    />
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="flex flex-col">
+                                                                <label className="text-xs text-text-secondary mb-1">Python Code</label>
+                                                                <textarea
+                                                                    className="flex-1 min-h-[300px] bg-[#0a1020] border border-[#1f2a44] rounded p-4 font-mono text-sm text-gray-300 focus:outline-none focus:border-primary resize-none"
+                                                                    value={scriptContent}
+                                                                    onChange={(e) => setScriptContent(e.target.value)}
+                                                                    spellCheck={false}
+                                                                    placeholder="# Input: df (pandas DataFrame)&#10;# Output: final_df (pandas DataFrame)&#10;&#10;import pandas as pd&#10;&#10;df['symbol'] = df['symbol'].str.upper()&#10;final_df = df"
+                                                                />
+                                                            </div>
+
+                                                            {!backendHealthy && (
+                                                                <div className="p-2 bg-yellow-500/10 border border-yellow-500/20 rounded mb-2">
+                                                                    <p className="text-yellow-500 text-xs">
+                                                                        ⚠️ Backend server is not reachable. Script saving is disabled. Please ensure the backend is running.
+                                                                    </p>
+                                                                </div>
+                                                            )}
+
+                                                            {scriptError && (
+                                                                <div className="p-2 bg-red-500/10 border border-red-500/20 rounded mb-2">
+                                                                    <p className="text-error text-xs">{scriptError}</p>
+                                                                </div>
+                                                            )}
+
+                                                            <div className="flex gap-2 justify-end">
+                                                                <Button
+                                                                    variant="secondary"
+                                                                    size="sm"
+                                                                    onClick={handleSaveAsNewScript}
+                                                                    disabled={!scriptName.trim() || savingScript || !backendHealthy}
+                                                                    title={!backendHealthy ? 'Backend server is not reachable' : ''}
+                                                                >
+                                                                    {savingScript ? 'Saving...' : 'Save As New'}
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    onClick={handleSaveScript}
+                                                                    disabled={!scriptName.trim() || savingScript || !backendHealthy}
+                                                                    title={!backendHealthy ? 'Backend server is not reachable' : ''}
+                                                                >
+                                                                    {savingScript ? 'Saving...' : editingScriptId ? 'Update Script' : 'Save Script'}
+                                                                </Button>
+                                                            </div>
+
+                                                            {/* Edit Current Script Section - appears when a script is selected */}
+                                                            {selectedScriptId && editingScriptId && (
+                                                                <div className="mt-4 pt-4 border-t border-[#1f2a44]">
+                                                                    <div className="flex items-center justify-between mb-2">
+                                                                        <span className="text-xs text-text-secondary">Editing: {scriptName}</span>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            onClick={(e) => {
+                                                                                e.preventDefault()
+                                                                                e.stopPropagation()
+                                                                                handleSelectScript(selectedScriptId) // Reload script
+                                                                            }}
+                                                                            className="text-xs text-info hover:text-info"
+                                                                            title="Reload script from database"
+                                                                        >
+                                                                            <RefreshCw className="w-3 h-3 mr-1" />
+                                                                            Reload
+                                                                        </Button>
+                                                                    </div>
+                                                                    <p className="text-xs text-text-secondary mb-2">
+                                                                        Make changes above and click "Update Script" to save changes to the current script.
+                                                                    </p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Schedule Timer Section - Matches Manual Upload Card Style */}
+                                                    <div className="space-y-4 p-4 bg-[#0a1020] rounded border border-[#1f2a44]">
+                                                        <h3 className="text-sm font-semibold text-text-primary mb-3">Schedule Timer</h3>
+
+                                                        <div>
+                                                            <label className="text-xs text-text-secondary mb-1 block">Schedule Type *</label>
+                                                            <select
+                                                                className="w-full bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
+                                                                value={schedulerMode}
+                                                                onChange={(e) => setSchedulerMode(e.target.value as any)}
+                                                            >
+                                                                <option value="RUN_ONCE">Run Once (Manual trigger only)</option>
+                                                                <option value="INTERVAL">Interval (Every X minutes/hours/days)</option>
+                                                                <option value="CRON">Cron Expression (Advanced)</option>
+                                                            </select>
+                                                        </div>
+
+                                                        {schedulerMode === 'INTERVAL' && (
+                                                            <div className="space-y-3">
+                                                                <div className="grid grid-cols-2 gap-2">
+                                                                    <div>
+                                                                        <label className="text-xs text-text-secondary mb-1 block">Interval Value *</label>
+                                                                        <Input
+                                                                            type="number"
+                                                                            value={intervalValue}
+                                                                            onChange={(e) => setIntervalValue(parseInt(e.target.value) || 1)}
+                                                                            min="1"
+                                                                            className="text-sm"
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs text-text-secondary mb-1 block">Interval Unit *</label>
+                                                                        <select
+                                                                            className="w-full bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
+                                                                            value={intervalUnit}
+                                                                            onChange={(e) => setIntervalUnit(e.target.value as any)}
+                                                                        >
+                                                                            <option value="seconds">Seconds</option>
+                                                                            <option value="minutes">Minutes</option>
+                                                                            <option value="hours">Hours</option>
+                                                                            <option value="days">Days</option>
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Start Time */}
+                                                                <div>
+                                                                    <label className="text-xs text-text-secondary mb-1 block">Start Time (Optional)</label>
+                                                                    <div className="flex gap-2">
+                                                                        <Input
+                                                                            type="time"
+                                                                            value={startTime}
+                                                                            onChange={(e) => setStartTime(e.target.value)}
+                                                                            className="text-sm flex-1"
+                                                                        />
+                                                                        <select
+                                                                            className="bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
+                                                                            value={timeFormat}
+                                                                            onChange={(e) => setTimeFormat(e.target.value as '12h' | '24h')}
+                                                                        >
+                                                                            <option value="24h">24h</option>
+                                                                            <option value="12h">12h (AM/PM)</option>
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Timezone */}
+                                                                <div>
+                                                                    <label className="text-xs text-text-secondary mb-1 block">Timezone *</label>
+                                                                    <select
+                                                                        className="w-full bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
+                                                                        value={timezone}
+                                                                        onChange={(e) => setTimezone(e.target.value)}
+                                                                    >
+                                                                        <option value="UTC">UTC</option>
+                                                                        <option value="America/New_York">America/New_York (EST/EDT)</option>
+                                                                        <option value="America/Chicago">America/Chicago (CST/CDT)</option>
+                                                                        <option value="America/Denver">America/Denver (MST/MDT)</option>
+                                                                        <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+                                                                        <option value="Europe/London">Europe/London (GMT/BST)</option>
+                                                                        <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
+                                                                        <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+                                                                        <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+                                                                        <option value="Asia/Shanghai">Asia/Shanghai (CST)</option>
+                                                                        <option value="Australia/Sydney">Australia/Sydney (AEDT/AEST)</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {schedulerMode === 'CRON' && (
+                                                            <div>
+                                                                <label className="text-xs text-text-secondary mb-1 block">Cron Expression *</label>
+                                                                <Input
+                                                                    value={cronExpression}
+                                                                    onChange={(e) => setCronExpression(e.target.value)}
+                                                                    placeholder="0 0 * * * (daily at midnight)"
+                                                                    className="text-sm"
+                                                                />
+                                                                <p className="text-xs text-text-secondary mt-1">
+                                                                    Format: minute hour day month weekday
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Action Buttons - Matches Manual Upload */}
+                                                    <div className="flex justify-end items-center pt-4 border-t border-[#1f2a44]">
+                                                        <div className="flex gap-2">
+                                                            {selectedScheduler ? (
+                                                                <>
+                                                                    <Button variant="ghost" onClick={handleCancelEdit}>Cancel</Button>
+                                                                    <Button onClick={handleUpdateScheduler} disabled={!schedulerName.trim() || schedulerSources.length === 0 || !schedulerSources[0]?.url}>
+                                                                        Update Schedule
+                                                                    </Button>
+                                                                </>
+                                                            ) : (
+                                                                <Button onClick={handleCreateScheduler} disabled={!schedulerName.trim() || schedulerSources.length === 0 || !schedulerSources[0]?.url}>
+                                                                    Save Schedule
+                                                                </Button>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            )}
 
-                                            {/* Test Connection for URL Source */}
-                                            {(!schedulerSources[0]?.source_type || schedulerSources[0]?.source_type === 'DOWNLOADABLE_URL') && schedulerSources[0]?.url && (
-                                                <div className="pt-2">
-                                                    <Button
-                                                        variant="secondary"
-                                                        size="sm"
-                                                        onClick={async () => {
-                                                            const url = schedulerSources[0]?.url
-                                                            if (!url) {
-                                                                setAutoError('Please enter a URL first')
-                                                                return
-                                                            }
-                                                            setAutoError('')
-                                                            try {
-                                                                // Use backend endpoint to test connection (avoids CORS issues)
-                                                                const result = await symbolsAPI.testConnection(url, 'DOWNLOADABLE_URL')
-                                                                
-                                                                console.log('[TEST CONNECTION] Result:', result)
-                                                                if (result && result.success) {
-                                                                    setAutoError('')
-                                                                    setTestConnectionResult({ success: true, message: result.message || 'Connection test successful' })
-                                                                    setShowTestConnectionModal(true)
-                                                                    console.log('[TEST CONNECTION] Setting success modal')
-                                                                } else {
-                                                                    setTestConnectionResult({ success: false, message: result?.message || 'Connection test failed' })
-                                                                    setShowTestConnectionModal(true)
-                                                                    console.log('[TEST CONNECTION] Setting failure modal')
-                                                                }
-                                                            } catch (e: any) {
-                                                                console.error('[TEST CONNECTION] Error:', e)
-                                                                setTestConnectionResult({ success: false, message: getErrorMessage(e, 'Connection test failed') })
-                                                                setShowTestConnectionModal(true)
-                                                                console.log('[TEST CONNECTION] Setting error modal')
-                                                            }
-                                                        }}
-                                                    >
-                                                        Test Connection
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
+                                                {/* Activity / Schedule Management Section - Matches Manual Upload Theme */}
+                                                <div className="bg-[#0a1020] rounded border border-[#1f2a44] p-6">
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <h4 className="text-sm font-semibold text-text-primary">Activity & Schedules</h4>
+                                                        <RefreshButton variant="ghost" size="sm" onClick={loadSchedulers} />
+                                                    </div>
 
-                                    {/* Schedule Name & Description - Matches Manual Upload Form Style */}
-                                    <div data-scheduler-form className="space-y-4 p-4 bg-[#0a1020] rounded border border-[#1f2a44]">
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <div>
-                                                <label className="text-xs text-text-secondary mb-1 block">Schedule Name *</label>
-                                                <Input
-                                                    value={schedulerName}
-                                                    onChange={(e) => setSchedulerName(e.target.value)}
-                                                    placeholder="e.g. Daily NSE Symbols"
-                                                    className="text-sm"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="text-xs text-text-secondary mb-1 block">Description (Optional)</label>
-                                                <Input
-                                                    value={schedulerDescription}
-                                                    onChange={(e) => setSchedulerDescription(e.target.value)}
-                                                    placeholder="Optional description"
-                                                    className="text-sm"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
+                                                    {schedulers.length === 0 ? (
+                                                        <div className="border border-[#1f2a44] rounded p-8 text-center">
+                                                            <p className="text-text-secondary">No schedules configured</p>
+                                                            <p className="text-xs text-text-secondary mt-2">Create a schedule above to get started</p>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="overflow-x-auto border border-[#1f2a44] rounded">
+                                                            <Table>
+                                                                <TableHeader>
+                                                                    <TableHeaderCell>Schedule Name</TableHeaderCell>
+                                                                    <TableHeaderCell>Source Type</TableHeaderCell>
+                                                                    <TableHeaderCell>Frequency</TableHeaderCell>
+                                                                    <TableHeaderCell>Status</TableHeaderCell>
+                                                                    <TableHeaderCell>Last Run</TableHeaderCell>
+                                                                    <TableHeaderCell>Last Run Status</TableHeaderCell>
+                                                                    <TableHeaderCell>Next Run</TableHeaderCell>
+                                                                    <TableHeaderCell>Enabled</TableHeaderCell>
+                                                                    <TableHeaderCell>Actions</TableHeaderCell>
+                                                                </TableHeader>
+                                                                <TableBody>
+                                                                    {schedulers.map((scheduler: any) => {
+                                                                        const scheduleSummary = scheduler.mode === 'INTERVAL'
+                                                                            ? `Every ${scheduler.interval_value} ${scheduler.interval_unit}`
+                                                                            : scheduler.mode === 'CRON'
+                                                                                ? `Cron: ${scheduler.cron_expression}`
+                                                                                : 'One-time (Manual)'
 
+                                                                        const sourceUrl = scheduler.sources?.[0]?.url || 'N/A'
+                                                                        const sourceType = scheduler.sources?.[0]?.source_type || 'N/A'
+                                                                        const sourceTypeLabel = sourceType === 'DOWNLOADABLE_URL' ? 'URL' :
+                                                                            sourceType === 'API_ENDPOINT' ? 'API' :
+                                                                                sourceType
 
-                                    {/* Transformation Script Toggle - EXACTLY matches Manual Upload */}
-                                    <div className="flex items-center gap-3 p-3 bg-[#0a1020] rounded border border-[#1f2a44]">
-                                        <input
-                                            type="checkbox"
-                                            id="enable-transformation-auto"
-                                            checked={enableTransformation}
-                                            onChange={(e) => {
-                                                setEnableTransformation(e.target.checked)
-                                                if (!e.target.checked) {
-                                                    setSelectedScriptId('')
-                                                    setEditingScriptId(null)
-                                                }
-                                            }}
-                                            className="w-4 h-4 text-primary bg-[#0a1020] border-[#1f2a44] rounded focus:ring-primary"
-                                        />
-                                        <label htmlFor="enable-transformation-auto" className="text-sm text-text-primary cursor-pointer">
-                                            Enable Transformation Script
-                                        </label>
-                                    </div>
+                                                                        // SINGLE SOURCE OF TRUTH: Get status from API (from database)
+                                                                        // Current active status (running/queued if active, null if idle)
+                                                                        const currentStatus = scheduler.status || null
+                                                                        const isRunning = currentStatus === 'running' || currentStatus === 'queued'
 
-                                    {/* Transformation Script Panel - EXACTLY matches Manual Upload */}
-                                    {enableTransformation && (
-                                        <div className="space-y-4 p-4 bg-[#0a1020] rounded border border-[#1f2a44]">
-                                            <div className="flex items-center justify-between">
-                                                <h3 className="text-sm font-semibold text-text-primary">Transformation Script</h3>
-                                                <div className="flex gap-2">
-                                                    <select
-                                                        className="bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-1.5 text-xs text-text-primary focus:outline-none focus:border-primary"
-                                                        value={selectedScriptId}
-                                                        onChange={(e) => handleSelectScript(e.target.value)}
-                                                    >
-                                                        <option value="">New Script</option>
-                                                        {scripts.map(s => (
-                                                            <option key={s.id} value={s.id.toString()}>{s.name} (v{s.version})</option>
-                                                        ))}
-                                                    </select>
-                                                    {selectedScriptId && (
-                                                        <>
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={(e) => {
-                                                                    e.preventDefault()
-                                                                    e.stopPropagation()
-                                                                    console.log('[DELETE BUTTON] Clicked, selectedScriptId:', selectedScriptId)
-                                                                    const scriptId = parseInt(selectedScriptId)
-                                                                    console.log('[DELETE BUTTON] Parsed scriptId:', scriptId)
-                                                                    if (!isNaN(scriptId) && scriptId > 0) {
-                                                                        console.log('[DELETE BUTTON] Calling handleDeleteScript with:', scriptId)
-                                                                        handleDeleteScript(scriptId)
-                                                                    } else {
-                                                                        console.error('[DELETE BUTTON] Invalid scriptId:', scriptId, 'from selectedScriptId:', selectedScriptId)
-                                                                    }
-                                                                }}
-                                                                className="text-xs text-danger hover:text-danger"
-                                                                title="Delete script"
-                                                            >
-                                                                <Trash2 className="w-3 h-3 mr-1" />
-                                                                Delete
-                                                            </Button>
-                                                        </>
+                                                                        // Last Run timestamp (from database)
+                                                                        const lastRunAt = scheduler.last_run_at
+                                                                            ? new Date(scheduler.last_run_at).toLocaleString()
+                                                                            : '—'
+
+                                                                        // Last Run Status (status of most recent run from database)
+                                                                        const lastRunStatus = scheduler.last_run_status || null
+                                                                        const lastRunStatusDisplay = lastRunStatus
+                                                                            ? (lastRunStatus === 'completed' || lastRunStatus === 'success' ? 'Completed' :
+                                                                                lastRunStatus === 'failed' ? 'Failed' :
+                                                                                    lastRunStatus === 'crashed' ? 'Crashed' :
+                                                                                        lastRunStatus === 'cancelled' ? 'Cancelled' :
+                                                                                            lastRunStatus === 'running' ? 'Running' :
+                                                                                                lastRunStatus === 'queued' ? 'Queued' :
+                                                                                                    lastRunStatus)
+                                                                            : 'Never run'
+
+                                                                        const nextRun = scheduler.next_run_at
+                                                                            ? new Date(scheduler.next_run_at).toLocaleString()
+                                                                            : 'Not scheduled'
+
+                                                                        return (
+                                                                            <TableRow key={scheduler.id}>
+                                                                                <TableCell className="font-medium text-text-primary">{scheduler.name}</TableCell>
+                                                                                <TableCell className="text-sm text-text-secondary">
+                                                                                    <span title={sourceUrl}>{sourceTypeLabel}</span>
+                                                                                </TableCell>
+                                                                                <TableCell className="text-sm text-text-secondary">{scheduleSummary}</TableCell>
+                                                                                {/* Status Column - Current Active Status (from database only) */}
+                                                                                <TableCell>
+                                                                                    {currentStatus ? (
+                                                                                        <span className={`text-xs px-2 py-1 rounded font-medium ${currentStatus === 'running' ? 'bg-primary/10 text-primary' :
+                                                                                                currentStatus === 'queued' ? 'bg-warning/10 text-warning' :
+                                                                                                    'bg-gray-500/10 text-gray-500'
+                                                                                            }`}>
+                                                                                            {currentStatus === 'running' ? 'Running' : currentStatus === 'queued' ? 'Queued' : currentStatus}
+                                                                                        </span>
+                                                                                    ) : (
+                                                                                        <span className="text-xs px-2 py-1 rounded font-medium bg-gray-500/10 text-gray-500">
+                                                                                            -
+                                                                                        </span>
+                                                                                    )}
+                                                                                </TableCell>
+                                                                                {/* Last Run Column - Timestamp */}
+                                                                                <TableCell className="text-sm text-text-secondary">{lastRunAt}</TableCell>
+                                                                                {/* Last Run Status Column */}
+                                                                                <TableCell>
+                                                                                    <span className={`text-xs px-2 py-1 rounded font-medium ${lastRunStatusDisplay === 'Completed' ? 'bg-success/10 text-success' :
+                                                                                            lastRunStatusDisplay === 'Failed' || lastRunStatusDisplay === 'Crashed' ? 'bg-error/10 text-error' :
+                                                                                                lastRunStatusDisplay === 'Cancelled' ? 'bg-warning/10 text-warning' :
+                                                                                                    lastRunStatusDisplay === 'Running' || lastRunStatusDisplay === 'Queued' ? 'bg-primary/10 text-primary' :
+                                                                                                        'bg-gray-500/10 text-gray-500'
+                                                                                        }`}>
+                                                                                        {lastRunStatusDisplay}
+                                                                                    </span>
+                                                                                </TableCell>
+                                                                                <TableCell className="text-sm text-text-secondary">{nextRun}</TableCell>
+                                                                                <TableCell>
+                                                                                    <Switch
+                                                                                        checked={scheduler.is_active}
+                                                                                        onCheckedChange={() => handleToggleScheduler(scheduler.id)}
+                                                                                    />
+                                                                                </TableCell>
+                                                                                <TableCell>
+                                                                                    <div className="flex gap-2">
+                                                                                        <Button
+                                                                                            size="sm"
+                                                                                            variant="ghost"
+                                                                                            onClick={() => handleTriggerScheduler(scheduler.id)}
+                                                                                            title={isRunning ? "A run is already in progress" : "Run schedule now"}
+                                                                                            disabled={isRunning}
+                                                                                        >
+                                                                                            <Play className={`w-4 h-4 ${isRunning ? 'text-gray-500' : 'text-primary'}`} />
+                                                                                        </Button>
+                                                                                        <Button
+                                                                                            size="sm"
+                                                                                            variant="ghost"
+                                                                                            onClick={() => handleEditScheduler(scheduler)}
+                                                                                            title="Edit schedule"
+                                                                                        >
+                                                                                            <Edit className="w-4 h-4 text-text-secondary hover:text-primary" />
+                                                                                        </Button>
+                                                                                        <Button
+                                                                                            size="sm"
+                                                                                            variant="ghost"
+                                                                                            onClick={() => {
+                                                                                                handleDeleteScheduler(scheduler.id)
+                                                                                            }}
+                                                                                            title="Delete schedule"
+                                                                                            className="text-danger hover:text-danger"
+                                                                                        >
+                                                                                            <Trash2 className="w-4 h-4 text-danger" />
+                                                                                        </Button>
+                                                                                    </div>
+                                                                                </TableCell>
+                                                                            </TableRow>
+                                                                        )
+                                                                    })}
+                                                                </TableBody>
+                                                            </Table>
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>
-
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <div>
-                                                    <label className="text-xs text-text-secondary mb-1 block">Script Name</label>
-                                                    <Input
-                                                        value={scriptName}
-                                                        onChange={(e) => setScriptName(e.target.value)}
-                                                        placeholder="e.g. NSE Normalizer"
-                                                        className="text-sm"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="text-xs text-text-secondary mb-1 block">Description (Optional)</label>
-                                                    <Input
-                                                        value={scriptDescription}
-                                                        onChange={(e) => setScriptDescription(e.target.value)}
-                                                        placeholder="Optional description"
-                                                        className="text-sm"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="flex flex-col">
-                                                <label className="text-xs text-text-secondary mb-1">Python Code</label>
-                                                <textarea
-                                                    className="flex-1 min-h-[300px] bg-[#0a1020] border border-[#1f2a44] rounded p-4 font-mono text-sm text-gray-300 focus:outline-none focus:border-primary resize-none"
-                                                    value={scriptContent}
-                                                    onChange={(e) => setScriptContent(e.target.value)}
-                                                    spellCheck={false}
-                                                    placeholder="# Input: df (pandas DataFrame)&#10;# Output: final_df (pandas DataFrame)&#10;&#10;import pandas as pd&#10;&#10;df['symbol'] = df['symbol'].str.upper()&#10;final_df = df"
-                                                />
-                                            </div>
-
-                                            {!backendHealthy && (
-                                                <div className="p-2 bg-yellow-500/10 border border-yellow-500/20 rounded mb-2">
-                                                    <p className="text-yellow-500 text-xs">
-                                                        ⚠️ Backend server is not reachable. Script saving is disabled. Please ensure the backend is running.
-                                                    </p>
-                                                </div>
-                                            )}
-
-                                            {scriptError && (
-                                                <div className="p-2 bg-red-500/10 border border-red-500/20 rounded mb-2">
-                                                    <p className="text-error text-xs">{scriptError}</p>
-                                                </div>
-                                            )}
-
-                                            <div className="flex gap-2 justify-end">
-                                                <Button
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    onClick={handleSaveAsNewScript}
-                                                    disabled={!scriptName.trim() || savingScript || !backendHealthy}
-                                                    title={!backendHealthy ? 'Backend server is not reachable' : ''}
-                                                >
-                                                    {savingScript ? 'Saving...' : 'Save As New'}
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    onClick={handleSaveScript}
-                                                    disabled={!scriptName.trim() || savingScript || !backendHealthy}
-                                                    title={!backendHealthy ? 'Backend server is not reachable' : ''}
-                                                >
-                                                    {savingScript ? 'Saving...' : editingScriptId ? 'Update Script' : 'Save Script'}
-                                                </Button>
-                                            </div>
-                                            
-                                            {/* Edit Current Script Section - appears when a script is selected */}
-                                            {selectedScriptId && editingScriptId && (
-                                                <div className="mt-4 pt-4 border-t border-[#1f2a44]">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <span className="text-xs text-text-secondary">Editing: {scriptName}</span>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={(e) => {
-                                                                e.preventDefault()
-                                                                e.stopPropagation()
-                                                                handleSelectScript(selectedScriptId) // Reload script
-                                                            }}
-                                                            className="text-xs text-info hover:text-info"
-                                                            title="Reload script from database"
-                                                        >
-                                                            <RefreshCw className="w-3 h-3 mr-1" />
-                                                            Reload
-                                                        </Button>
-                                                    </div>
-                                                    <p className="text-xs text-text-secondary mb-2">
-                                                        Make changes above and click "Update Script" to save changes to the current script.
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Schedule Timer Section - Matches Manual Upload Card Style */}
-                                    <div className="space-y-4 p-4 bg-[#0a1020] rounded border border-[#1f2a44]">
-                                        <h3 className="text-sm font-semibold text-text-primary mb-3">Schedule Timer</h3>
-
-                                        <div>
-                                            <label className="text-xs text-text-secondary mb-1 block">Schedule Type *</label>
-                                            <select
-                                                className="w-full bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
-                                                value={schedulerMode}
-                                                onChange={(e) => setSchedulerMode(e.target.value as any)}
-                                            >
-                                                <option value="RUN_ONCE">Run Once (Manual trigger only)</option>
-                                                <option value="INTERVAL">Interval (Every X minutes/hours/days)</option>
-                                                <option value="CRON">Cron Expression (Advanced)</option>
-                                            </select>
-                                        </div>
-
-                                        {schedulerMode === 'INTERVAL' && (
-                                            <div className="space-y-3">
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <div>
-                                                        <label className="text-xs text-text-secondary mb-1 block">Interval Value *</label>
-                                                        <Input
-                                                            type="number"
-                                                            value={intervalValue}
-                                                            onChange={(e) => setIntervalValue(parseInt(e.target.value) || 1)}
-                                                            min="1"
-                                                            className="text-sm"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-xs text-text-secondary mb-1 block">Interval Unit *</label>
-                                                        <select
-                                                            className="w-full bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
-                                                            value={intervalUnit}
-                                                            onChange={(e) => setIntervalUnit(e.target.value as any)}
-                                                        >
-                                                            <option value="seconds">Seconds</option>
-                                                            <option value="minutes">Minutes</option>
-                                                            <option value="hours">Hours</option>
-                                                            <option value="days">Days</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                {/* Start Time */}
-                                                <div>
-                                                    <label className="text-xs text-text-secondary mb-1 block">Start Time (Optional)</label>
-                                                    <div className="flex gap-2">
-                                                        <Input
-                                                            type="time"
-                                                            value={startTime}
-                                                            onChange={(e) => setStartTime(e.target.value)}
-                                                            className="text-sm flex-1"
-                                                        />
-                                                        <select
-                                                            className="bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
-                                                            value={timeFormat}
-                                                            onChange={(e) => setTimeFormat(e.target.value as '12h' | '24h')}
-                                                        >
-                                                            <option value="24h">24h</option>
-                                                            <option value="12h">12h (AM/PM)</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                {/* Timezone */}
-                                                <div>
-                                                    <label className="text-xs text-text-secondary mb-1 block">Timezone *</label>
-                                                    <select
-                                                        className="w-full bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
-                                                        value={timezone}
-                                                        onChange={(e) => setTimezone(e.target.value)}
-                                                    >
-                                                        <option value="UTC">UTC</option>
-                                                        <option value="America/New_York">America/New_York (EST/EDT)</option>
-                                                        <option value="America/Chicago">America/Chicago (CST/CDT)</option>
-                                                        <option value="America/Denver">America/Denver (MST/MDT)</option>
-                                                        <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
-                                                        <option value="Europe/London">Europe/London (GMT/BST)</option>
-                                                        <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
-                                                        <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
-                                                        <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
-                                                        <option value="Asia/Shanghai">Asia/Shanghai (CST)</option>
-                                                        <option value="Australia/Sydney">Australia/Sydney (AEDT/AEST)</option>
-                                                    </select>
-                                                </div>
-                                            </div>
                                         )}
+                                    </>
+                                )}
 
-                                        {schedulerMode === 'CRON' && (
-                                            <div>
-                                                <label className="text-xs text-text-secondary mb-1 block">Cron Expression *</label>
-                                                <Input
-                                                    value={cronExpression}
-                                                    onChange={(e) => setCronExpression(e.target.value)}
-                                                    placeholder="0 0 * * * (daily at midnight)"
-                                                    className="text-sm"
-                                                />
-                                                <p className="text-xs text-text-secondary mt-1">
-                                                    Format: minute hour day month weekday
-                                                </p>
-                                            </div>
-                                        )}
+                                {/* Source Form Modal */}
+                                {showSourceForm && (
+                                    <SourceFormModal
+                                        source={editingSource}
+                                        onSave={handleSaveSource}
+                                        onCancel={() => {
+                                            setShowSourceForm(false)
+                                            setEditingSource(null)
+                                        }}
+                                    />
+                                )}
+
+                                {(error || autoError) && (
+                                    <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded">
+                                        <p className="text-error text-sm text-center">{activeTab === 'manual' ? error : autoError}</p>
                                     </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
 
-                                    {/* Action Buttons - Matches Manual Upload */}
-                                    <div className="flex justify-end items-center pt-4 border-t border-[#1f2a44]">
-                                        <div className="flex gap-2">
-                                            {selectedScheduler ? (
-                                                <>
-                                                    <Button variant="ghost" onClick={handleCancelEdit}>Cancel</Button>
-                                                    <Button onClick={handleUpdateScheduler} disabled={!schedulerName.trim() || schedulerSources.length === 0 || !schedulerSources[0]?.url}>
-                                                        Update Schedule
-                                                    </Button>
-                                                </>
-                                            ) : (
-                                                <Button onClick={handleCreateScheduler} disabled={!schedulerName.trim() || schedulerSources.length === 0 || !schedulerSources[0]?.url}>
-                                                    Save Schedule
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
+                    {/* Delete Confirmation Popup */}
+                    {showDeleteConfirm && scriptToDelete && (
+                        <SecondaryModal
+                            isOpen={showDeleteConfirm}
+                            onClose={() => {
+                                setShowDeleteConfirm(false)
+                                setScriptToDelete(null)
+                            }}
+                            title="Delete Script"
+                            maxWidth="max-w-md"
+                        >
+                            <p className="text-text-secondary mb-6">
+                                Are you sure you want to delete this script? This action cannot be undone.
+                            </p>
+                            <div className="flex gap-2 justify-end">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        console.log('[DELETE CONFIRM] Cancel clicked')
+                                        setShowDeleteConfirm(false)
+                                        setScriptToDelete(null)
+                                    }}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="danger"
+                                    size="sm"
+                                    onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        console.log('[DELETE CONFIRM] Delete confirmed, scriptId:', scriptToDelete)
+                                        confirmDeleteScript()
+                                    }}
+                                >
+                                    Delete
+                                </Button>
+                            </div>
+                        </SecondaryModal>
+                    )}
 
-                                {/* Activity / Schedule Management Section - Matches Manual Upload Theme */}
-                                <div className="bg-[#0a1020] rounded border border-[#1f2a44] p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h4 className="text-sm font-semibold text-text-primary">Activity & Schedules</h4>
-                                        <RefreshButton variant="ghost" size="sm" onClick={loadSchedulers} />
-                                    </div>
+                    {/* Error Popup */}
+                    {showErrorPopup && (
+                        <SecondaryModal
+                            isOpen={showErrorPopup}
+                            onClose={() => {
+                                setShowErrorPopup(false)
+                                setErrorPopupMessage('')
+                            }}
+                            title="Error"
+                            maxWidth="max-w-md"
+                        >
+                            <p className="text-text-secondary mb-6 whitespace-pre-wrap">
+                                {errorPopupMessage}
+                            </p>
+                            <div className="flex justify-end">
+                                <Button
+                                    size="sm"
+                                    onClick={() => {
+                                        setShowErrorPopup(false)
+                                        setErrorPopupMessage('')
+                                    }}
+                                >
+                                    OK
+                                </Button>
+                            </div>
+                        </SecondaryModal>
+                    )}
 
-                                    {schedulers.length === 0 ? (
-                                        <div className="border border-[#1f2a44] rounded p-8 text-center">
-                                            <p className="text-text-secondary">No schedules configured</p>
-                                            <p className="text-xs text-text-secondary mt-2">Create a schedule above to get started</p>
-                                        </div>
-                                    ) : (
-                                        <div className="overflow-x-auto border border-[#1f2a44] rounded">
-                                            <Table>
-                                                <TableHeader>
-                                                    <TableHeaderCell>Schedule Name</TableHeaderCell>
-                                                    <TableHeaderCell>Source Type</TableHeaderCell>
-                                                    <TableHeaderCell>Frequency</TableHeaderCell>
-                                                    <TableHeaderCell>Status</TableHeaderCell>
-                                                    <TableHeaderCell>Last Run</TableHeaderCell>
-                                                    <TableHeaderCell>Last Run Status</TableHeaderCell>
-                                                    <TableHeaderCell>Next Run</TableHeaderCell>
-                                                    <TableHeaderCell>Enabled</TableHeaderCell>
-                                                    <TableHeaderCell>Actions</TableHeaderCell>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {schedulers.map((scheduler: any) => {
-                                                        const scheduleSummary = scheduler.mode === 'INTERVAL'
-                                                            ? `Every ${scheduler.interval_value} ${scheduler.interval_unit}`
-                                                            : scheduler.mode === 'CRON'
-                                                                ? `Cron: ${scheduler.cron_expression}`
-                                                                : 'One-time (Manual)'
+                </div>
+            )}
 
-                                                        const sourceUrl = scheduler.sources?.[0]?.url || 'N/A'
-                                                        const sourceType = scheduler.sources?.[0]?.source_type || 'N/A'
-                                                        const sourceTypeLabel = sourceType === 'DOWNLOADABLE_URL' ? 'URL' :
-                                                            sourceType === 'API_ENDPOINT' ? 'API' :
-                                                                sourceType
-
-                                                        // SINGLE SOURCE OF TRUTH: Get status from API (from database)
-                                                        // Current active status (running/queued if active, null if idle)
-                                                        const currentStatus = scheduler.status || null
-                                                        const isRunning = currentStatus === 'running' || currentStatus === 'queued'
-                                                        
-                                                        // Last Run timestamp (from database)
-                                                        const lastRunAt = scheduler.last_run_at
-                                                            ? new Date(scheduler.last_run_at).toLocaleString()
-                                                            : '—'
-                                                        
-                                                        // Last Run Status (status of most recent run from database)
-                                                        const lastRunStatus = scheduler.last_run_status || null
-                                                        const lastRunStatusDisplay = lastRunStatus
-                                                            ? (lastRunStatus === 'completed' || lastRunStatus === 'success' ? 'Completed' :
-                                                                lastRunStatus === 'failed' ? 'Failed' :
-                                                                lastRunStatus === 'crashed' ? 'Crashed' :
-                                                                lastRunStatus === 'cancelled' ? 'Cancelled' :
-                                                                lastRunStatus === 'running' ? 'Running' :
-                                                                lastRunStatus === 'queued' ? 'Queued' :
-                                                                lastRunStatus)
-                                                            : 'Never run'
-
-                                                        const nextRun = scheduler.next_run_at
-                                                            ? new Date(scheduler.next_run_at).toLocaleString()
-                                                            : 'Not scheduled'
-
-                                                        return (
-                                                            <TableRow key={scheduler.id}>
-                                                                <TableCell className="font-medium text-text-primary">{scheduler.name}</TableCell>
-                                                                <TableCell className="text-sm text-text-secondary">
-                                                                    <span title={sourceUrl}>{sourceTypeLabel}</span>
-                                                                </TableCell>
-                                                                <TableCell className="text-sm text-text-secondary">{scheduleSummary}</TableCell>
-                                                                {/* Status Column - Current Active Status (from database only) */}
-                                                                <TableCell>
-                                                                    {currentStatus ? (
-                                                                        <span className={`text-xs px-2 py-1 rounded font-medium ${
-                                                                            currentStatus === 'running' ? 'bg-primary/10 text-primary' :
-                                                                            currentStatus === 'queued' ? 'bg-warning/10 text-warning' :
-                                                                            'bg-gray-500/10 text-gray-500'
-                                                                        }`}>
-                                                                            {currentStatus === 'running' ? 'Running' : currentStatus === 'queued' ? 'Queued' : currentStatus}
-                                                                        </span>
-                                                                    ) : (
-                                                                        <span className="text-xs px-2 py-1 rounded font-medium bg-gray-500/10 text-gray-500">
-                                                                            -
-                                                                        </span>
-                                                                    )}
-                                                                </TableCell>
-                                                                {/* Last Run Column - Timestamp */}
-                                                                <TableCell className="text-sm text-text-secondary">{lastRunAt}</TableCell>
-                                                                {/* Last Run Status Column */}
-                                                                <TableCell>
-                                                                    <span className={`text-xs px-2 py-1 rounded font-medium ${
-                                                                        lastRunStatusDisplay === 'Completed' ? 'bg-success/10 text-success' :
-                                                                        lastRunStatusDisplay === 'Failed' || lastRunStatusDisplay === 'Crashed' ? 'bg-error/10 text-error' :
-                                                                        lastRunStatusDisplay === 'Cancelled' ? 'bg-warning/10 text-warning' :
-                                                                        lastRunStatusDisplay === 'Running' || lastRunStatusDisplay === 'Queued' ? 'bg-primary/10 text-primary' :
-                                                                        'bg-gray-500/10 text-gray-500'
-                                                                    }`}>
-                                                                        {lastRunStatusDisplay}
-                                                                    </span>
-                                                                </TableCell>
-                                                                <TableCell className="text-sm text-text-secondary">{nextRun}</TableCell>
-                                                                <TableCell>
-                                                                    <Switch
-                                                                        checked={scheduler.is_active}
-                                                                        onCheckedChange={() => handleToggleScheduler(scheduler.id)}
-                                                                    />
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    <div className="flex gap-2">
-                                                                        <Button
-                                                                            size="sm"
-                                                                            variant="ghost"
-                                                                            onClick={() => handleTriggerScheduler(scheduler.id)}
-                                                                            title={isRunning ? "A run is already in progress" : "Run schedule now"}
-                                                                            disabled={isRunning}
-                                                                        >
-                                                                            <Play className={`w-4 h-4 ${isRunning ? 'text-gray-500' : 'text-primary'}`} />
-                                                                        </Button>
-                                                                        <Button
-                                                                            size="sm"
-                                                                            variant="ghost"
-                                                                            onClick={() => handleEditScheduler(scheduler)}
-                                                                            title="Edit schedule"
-                                                                        >
-                                                                            <Edit className="w-4 h-4 text-text-secondary hover:text-primary" />
-                                                                        </Button>
-                                                                        <Button
-                                                                            size="sm"
-                                                                            variant="ghost"
-                                                                            onClick={() => {
-                                                                                handleDeleteScheduler(scheduler.id)
-                                                                            }}
-                                                                            title="Delete schedule"
-                                                                            className="text-danger hover:text-danger"
-                                                                        >
-                                                                            <Trash2 className="w-4 h-4 text-danger" />
-                                                                        </Button>
-                                                                    </div>
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        )
-                                                    })}
-                                                </TableBody>
-                                            </Table>
-                                        </div>
-                                    )}
-                                </div>
+            {/* Test Connection Result Modal - Outside main modal so it can show even when main modal is open */}
+            {showTestConnectionModal && testConnectionResult && (
+                <SecondaryModal
+                    isOpen={showTestConnectionModal}
+                    onClose={() => {
+                        setShowTestConnectionModal(false)
+                        setTestConnectionResult(null)
+                    }}
+                    title={testConnectionResult.success ? 'Connection Successful' : 'Connection Failed'}
+                    maxWidth="max-w-md"
+                >
+                    <div className="flex items-start gap-4 mb-6">
+                        {testConnectionResult.success ? (
+                            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-success/20 flex items-center justify-center">
+                                <svg className="w-7 h-7 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                        ) : (
+                            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-error/20 flex items-center justify-center">
+                                <svg className="w-7 h-7 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
                             </div>
                         )}
-                    </>
-                )}
-
-                {/* Source Form Modal */}
-                {showSourceForm && (
-                    <SourceFormModal
-                        source={editingSource}
-                        onSave={handleSaveSource}
-                        onCancel={() => {
-                            setShowSourceForm(false)
-                            setEditingSource(null)
-                        }}
-                    />
-                )}
-
-                {(error || autoError) && (
-                    <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded">
-                        <p className="text-error text-sm text-center">{activeTab === 'manual' ? error : autoError}</p>
-                    </div>
-                )}
-                </div>
-                </div>
-            </div>
-
-            {/* Delete Confirmation Popup */}
-            {showDeleteConfirm && scriptToDelete && (
-                <SecondaryModal
-                    isOpen={showDeleteConfirm}
-                    onClose={() => {
-                        setShowDeleteConfirm(false)
-                        setScriptToDelete(null)
-                    }}
-                    title="Delete Script"
-                    maxWidth="max-w-md"
-                >
-                        <p className="text-text-secondary mb-6">
-                            Are you sure you want to delete this script? This action cannot be undone.
-                        </p>
-                        <div className="flex gap-2 justify-end">
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    console.log('[DELETE CONFIRM] Cancel clicked')
-                                    setShowDeleteConfirm(false)
-                                    setScriptToDelete(null)
-                                }}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="danger"
-                                size="sm"
-                                onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    console.log('[DELETE CONFIRM] Delete confirmed, scriptId:', scriptToDelete)
-                                    confirmDeleteScript()
-                                }}
-                            >
-                                Delete
-                            </Button>
+                        <div className="flex-1 pt-1">
+                            <p className="text-text-secondary whitespace-pre-wrap">
+                                {testConnectionResult.message}
+                            </p>
                         </div>
+                    </div>
+                    <div className="flex justify-end">
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => {
+                                setShowTestConnectionModal(false)
+                                setTestConnectionResult(null)
+                            }}
+                        >
+                            OK
+                        </Button>
+                    </div>
                 </SecondaryModal>
             )}
 
-            {/* Error Popup */}
-            {showErrorPopup && (
+            {/* Delete Scheduler Confirmation Modal */}
+            {showDeleteSchedulerConfirm && schedulerToDelete && (
                 <SecondaryModal
-                    isOpen={showErrorPopup}
+                    isOpen={showDeleteSchedulerConfirm}
                     onClose={() => {
-                        setShowErrorPopup(false)
-                        setErrorPopupMessage('')
+                        setShowDeleteSchedulerConfirm(false)
+                        setSchedulerToDelete(null)
                     }}
-                    title="Error"
+                    title="Delete Scheduler"
                     maxWidth="max-w-md"
                 >
-                        <p className="text-text-secondary mb-6 whitespace-pre-wrap">
-                            {errorPopupMessage}
+                    <div className="mb-6">
+                        <p className="text-text-secondary mb-4">
+                            Are you sure you want to delete scheduler <span className="font-semibold text-text">"{schedulerToDelete.name}"</span>?
                         </p>
-                        <div className="flex justify-end">
-                            <Button
-                                size="sm"
-                                onClick={() => {
-                                    setShowErrorPopup(false)
-                                    setErrorPopupMessage('')
-                                }}
-                            >
-                                OK
-                            </Button>
-                        </div>
+                        <p className="text-text-secondary text-sm">
+                            This will cancel future runs but will not delete past status history.
+                        </p>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => {
+                                setShowDeleteSchedulerConfirm(false)
+                                setSchedulerToDelete(null)
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={confirmDeleteScheduler}
+                        >
+                            Delete
+                        </Button>
+                    </div>
                 </SecondaryModal>
             )}
 
-        </div>
-        )}
-        
-        {/* Test Connection Result Modal - Outside main modal so it can show even when main modal is open */}
-        {showTestConnectionModal && testConnectionResult && (
-            <SecondaryModal
-                isOpen={showTestConnectionModal}
-                onClose={() => {
-                    setShowTestConnectionModal(false)
-                    setTestConnectionResult(null)
-                }}
-                title={testConnectionResult.success ? 'Connection Successful' : 'Connection Failed'}
-                maxWidth="max-w-md"
-            >
-                <div className="flex items-start gap-4 mb-6">
-                    {testConnectionResult.success ? (
-                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-success/20 flex items-center justify-center">
-                            <svg className="w-7 h-7 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                        </div>
-                    ) : (
-                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-error/20 flex items-center justify-center">
-                            <svg className="w-7 h-7 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </div>
-                    )}
-                    <div className="flex-1 pt-1">
-                        <p className="text-text-secondary whitespace-pre-wrap">
-                            {testConnectionResult.message}
-                        </p>
-                    </div>
-                </div>
-                <div className="flex justify-end">
-                    <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                            setShowTestConnectionModal(false)
-                            setTestConnectionResult(null)
-                        }}
-                    >
-                        OK
-                    </Button>
-                </div>
-            </SecondaryModal>
-        )}
-
-        {/* Delete Scheduler Confirmation Modal */}
-        {showDeleteSchedulerConfirm && schedulerToDelete && (
-            <SecondaryModal
-                isOpen={showDeleteSchedulerConfirm}
-                onClose={() => {
-                    setShowDeleteSchedulerConfirm(false)
-                    setSchedulerToDelete(null)
-                }}
-                title="Delete Scheduler"
-                maxWidth="max-w-md"
-            >
-                <div className="mb-6">
-                    <p className="text-text-secondary mb-4">
-                        Are you sure you want to delete scheduler <span className="font-semibold text-text">"{schedulerToDelete.name}"</span>?
-                    </p>
-                    <p className="text-text-secondary text-sm">
-                        This will cancel future runs but will not delete past status history.
-                    </p>
-                </div>
-                <div className="flex gap-2 justify-end">
-                    <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                            setShowDeleteSchedulerConfirm(false)
-                            setSchedulerToDelete(null)
-                        }}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={confirmDeleteScheduler}
-                    >
-                        Delete
-                    </Button>
-                </div>
-            </SecondaryModal>
-        )}
-        
-        {/* Render background upload popup even when main modal is closed */}
-        {showBackgroundUploadPopup && backgroundUploadPopup}
+            {/* Render background upload popup even when main modal is closed */}
+            {showBackgroundUploadPopup && backgroundUploadPopup}
         </>
     )
 }
@@ -3533,116 +3533,116 @@ function SourceFormModal({ source, onSave, onCancel }: { source: any, onSave: (d
 
     return (
         <>
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-[#0f1623] border border-[#1f2a44] rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <h3 className="text-lg font-bold text-text-primary mb-4">
-                    {source ? 'Edit Source' : 'Add Source'}
-                </h3>
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-[#0f1623] border border-[#1f2a44] rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                    <h3 className="text-lg font-bold text-text-primary mb-4">
+                        {source ? 'Edit Source' : 'Add Source'}
+                    </h3>
 
-                <div className="space-y-4">
-                    <div>
-                        <label className="text-xs text-text-secondary mb-1 block">Source Name</label>
-                        <Input
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder="e.g. NSE Symbols API"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="text-xs text-text-secondary mb-1 block">Source Type</label>
-                        <select
-                            className="w-full bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
-                            value={sourceType}
-                            onChange={(e) => setSourceType(e.target.value as any)}
-                        >
-                            <option value="DOWNLOADABLE_URL">Downloadable URL (File)</option>
-                            <option value="API_ENDPOINT">API Endpoint (JSON/Stream)</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="text-xs text-text-secondary mb-1 block">URL / Endpoint</label>
-                        <Input
-                            value={url}
-                            onChange={(e) => setUrl(e.target.value)}
-                            placeholder="https://api.example.com/symbols.csv"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="text-xs text-text-secondary mb-1 block">Headers (Optional)</label>
-                        <div className="flex gap-2 mb-2">
+                    <div className="space-y-4">
+                        <div>
+                            <label className="text-xs text-text-secondary mb-1 block">Source Name</label>
                             <Input
-                                value={headerKey}
-                                onChange={(e) => setHeaderKey(e.target.value)}
-                                placeholder="Header Key"
-                                className="flex-1"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder="e.g. NSE Symbols API"
                             />
-                            <Input
-                                value={headerValue}
-                                onChange={(e) => setHeaderValue(e.target.value)}
-                                placeholder="Header Value"
-                                className="flex-1"
-                            />
-                            <Button size="sm" onClick={handleAddHeader}>Add</Button>
                         </div>
-                        {Object.keys(headers).length > 0 && (
-                            <div className="space-y-1">
-                                {Object.entries(headers).map(([key, value]) => (
-                                    <div key={key} className="flex items-center justify-between p-2 bg-[#0a1020] rounded">
-                                        <span className="text-xs text-text-primary">{key}: {value}</span>
-                                        <Button size="sm" variant="ghost" onClick={() => handleRemoveHeader(key)}>Remove</Button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
 
-                    <div>
-                        <label className="text-xs text-text-secondary mb-1 block">Authentication (Optional)</label>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div>
+                            <label className="text-xs text-text-secondary mb-1 block">Source Type</label>
                             <select
-                                className="bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
-                                value={authType}
-                                onChange={(e) => setAuthType(e.target.value as any)}
+                                className="w-full bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
+                                value={sourceType}
+                                onChange={(e) => setSourceType(e.target.value as any)}
                             >
-                                <option value="">None</option>
-                                <option value="token">Bearer Token</option>
-                                <option value="key">API Key</option>
-                                <option value="basic">Basic Auth</option>
+                                <option value="DOWNLOADABLE_URL">Downloadable URL (File)</option>
+                                <option value="API_ENDPOINT">API Endpoint (JSON/Stream)</option>
                             </select>
-                            {authType && (
+                        </div>
+
+                        <div>
+                            <label className="text-xs text-text-secondary mb-1 block">URL / Endpoint</label>
+                            <Input
+                                value={url}
+                                onChange={(e) => setUrl(e.target.value)}
+                                placeholder="https://api.example.com/symbols.csv"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-xs text-text-secondary mb-1 block">Headers (Optional)</label>
+                            <div className="flex gap-2 mb-2">
                                 <Input
-                                    value={authValue}
-                                    onChange={(e) => setAuthValue(e.target.value)}
-                                    placeholder={authType === 'token' ? 'Token' : authType === 'key' ? 'API Key' : 'username:password'}
-                                    type={authType === 'basic' ? 'text' : 'password'}
+                                    value={headerKey}
+                                    onChange={(e) => setHeaderKey(e.target.value)}
+                                    placeholder="Header Key"
+                                    className="flex-1"
                                 />
+                                <Input
+                                    value={headerValue}
+                                    onChange={(e) => setHeaderValue(e.target.value)}
+                                    placeholder="Header Value"
+                                    className="flex-1"
+                                />
+                                <Button size="sm" onClick={handleAddHeader}>Add</Button>
+                            </div>
+                            {Object.keys(headers).length > 0 && (
+                                <div className="space-y-1">
+                                    {Object.entries(headers).map(([key, value]) => (
+                                        <div key={key} className="flex items-center justify-between p-2 bg-[#0a1020] rounded">
+                                            <span className="text-xs text-text-primary">{key}: {value}</span>
+                                            <Button size="sm" variant="ghost" onClick={() => handleRemoveHeader(key)}>Remove</Button>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </div>
+
+                        <div>
+                            <label className="text-xs text-text-secondary mb-1 block">Authentication (Optional)</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <select
+                                    className="bg-[#121b2f] border border-[#1f2a44] rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary"
+                                    value={authType}
+                                    onChange={(e) => setAuthType(e.target.value as any)}
+                                >
+                                    <option value="">None</option>
+                                    <option value="token">Bearer Token</option>
+                                    <option value="key">API Key</option>
+                                    <option value="basic">Basic Auth</option>
+                                </select>
+                                {authType && (
+                                    <Input
+                                        value={authValue}
+                                        onChange={(e) => setAuthValue(e.target.value)}
+                                        placeholder={authType === 'token' ? 'Token' : authType === 'key' ? 'API Key' : 'username:password'}
+                                        type={authType === 'basic' ? 'text' : 'password'}
+                                    />
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                id="source-enabled"
+                                checked={isEnabled}
+                                onChange={(e) => setIsEnabled(e.target.checked)}
+                                className="w-4 h-4 text-primary bg-[#0a1020] border-[#1f2a44] rounded focus:ring-primary"
+                            />
+                            <label htmlFor="source-enabled" className="text-xs text-text-primary cursor-pointer">
+                                Enable this source
+                            </label>
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="checkbox"
-                            id="source-enabled"
-                            checked={isEnabled}
-                            onChange={(e) => setIsEnabled(e.target.checked)}
-                            className="w-4 h-4 text-primary bg-[#0a1020] border-[#1f2a44] rounded focus:ring-primary"
-                        />
-                        <label htmlFor="source-enabled" className="text-xs text-text-primary cursor-pointer">
-                            Enable this source
-                        </label>
+                    <div className="flex justify-end gap-2 mt-6">
+                        <Button variant="secondary" onClick={onCancel}>Cancel</Button>
+                        <Button onClick={handleSave} disabled={!name.trim() || !url.trim()}>Save</Button>
                     </div>
-                </div>
-
-                <div className="flex justify-end gap-2 mt-6">
-                    <Button variant="secondary" onClick={onCancel}>Cancel</Button>
-                    <Button onClick={handleSave} disabled={!name.trim() || !url.trim()}>Save</Button>
                 </div>
             </div>
-        </div>
         </>
     )
 }

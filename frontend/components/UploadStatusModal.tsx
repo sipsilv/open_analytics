@@ -100,15 +100,15 @@ const isTerminalStatus = (status: string | null | undefined): boolean => {
 const validateAndSanitizeLog = (log: any): UploadLog | null => {
   try {
     if (!log || typeof log !== 'object') return null
-    
+
     // Validate required fields
     if (!log.job_id || typeof log.job_id !== 'string') return null
     if (!log.file_name || typeof log.file_name !== 'string') return null
-    
+
     // Sanitize and validate status - CRITICAL: Preserve CANCELLED status
     const rawStatus = log.status || ''
     const normalizedStatus = normalizeStatus(rawStatus)
-    
+
     // CRITICAL: CANCELLED must be preserved - check it first
     let validStatus: string
     if (normalizedStatus === 'CANCELLED') {
@@ -124,16 +124,16 @@ const validateAndSanitizeLog = (log: any): UploadLog | null => {
       })
       validStatus = normalizedStatus || 'UNKNOWN'
     }
-    
+
     // Validate and sanitize numeric fields
     const totalRows = typeof log.total_rows === 'number' && log.total_rows >= 0 ? log.total_rows : 0
     const insertedRows = typeof log.inserted_rows === 'number' && log.inserted_rows >= 0 ? log.inserted_rows : 0
     const updatedRows = typeof log.updated_rows === 'number' && log.updated_rows >= 0 ? log.updated_rows : 0
     const failedRows = typeof log.failed_rows === 'number' && log.failed_rows >= 0 ? log.failed_rows : 0
-    const progressPercentage = typeof log.progress_percentage === 'number' 
-      ? Math.max(0, Math.min(100, log.progress_percentage)) 
+    const progressPercentage = typeof log.progress_percentage === 'number'
+      ? Math.max(0, Math.min(100, log.progress_percentage))
       : 0
-    
+
     // Validate and sanitize error_summary
     let errorSummary: string[] = []
     if (Array.isArray(log.error_summary)) {
@@ -142,7 +142,7 @@ const validateAndSanitizeLog = (log: any): UploadLog | null => {
         .map((e: string) => e.trim())
         .filter((e: string) => e.length > 0)
     }
-    
+
     return {
       job_id: String(log.job_id).trim(),
       file_name: String(log.file_name).trim(),
@@ -150,8 +150,8 @@ const validateAndSanitizeLog = (log: any): UploadLog | null => {
       triggered_by: typeof log.triggered_by === 'string' ? log.triggered_by.trim() : 'UNKNOWN',
       started_at: log.started_at && typeof log.started_at === 'string' ? log.started_at : null,
       ended_at: log.ended_at && typeof log.ended_at === 'string' ? log.ended_at : null,
-      duration_seconds: typeof log.duration_seconds === 'number' && log.duration_seconds >= 0 
-        ? log.duration_seconds 
+      duration_seconds: typeof log.duration_seconds === 'number' && log.duration_seconds >= 0
+        ? log.duration_seconds
         : null,
       total_rows: totalRows,
       inserted_rows: insertedRows,
@@ -232,40 +232,40 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
         setLoading(true)
         setLastError(null)
       }
-      
+
       console.log('[UploadStatusModal] Fetching upload logs - page:', page, 'pageSize:', pageSize)
-      
+
       // Validate inputs
       const validPage = typeof page === 'number' && page > 0 ? page : 1
       const validPageSize = typeof pageSize === 'number' && pageSize > 0 ? pageSize : 8
-      
+
       const response = await symbolsAPI.getUploadLogs(validPageSize, validPage)
-      
+
       // Validate response structure
       if (!response || typeof response !== 'object') {
         throw new Error('Invalid response format from API')
       }
-      
+
       // Validate and sanitize logs array
       const rawLogs = Array.isArray(response.logs) ? response.logs : []
-      
+
       // Debug: Log raw statuses before validation
       console.log('[UploadStatusModal] Raw statuses from API:', rawLogs.map((log: any) => ({
         job_id: log?.job_id,
         status: log?.status,
         status_type: typeof log?.status
       })))
-      
+
       const validatedLogs = rawLogs
         .map(validateAndSanitizeLog)
         .filter((log): log is UploadLog => log !== null)
-      
+
       // Debug: Log validated statuses
       console.log('[UploadStatusModal] Validated statuses:', validatedLogs.map(log => ({
         job_id: log.job_id,
         status: log.status
       })))
-      
+
       console.log('[UploadStatusModal] Loaded logs:', {
         total: response.total || 0,
         logs_count: validatedLogs.length,
@@ -275,18 +275,18 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
         validated: validatedLogs.length === rawLogs.length,
         cancelled_count: validatedLogs.filter(log => normalizeStatus(log.status) === 'CANCELLED').length
       })
-      
+
       // Set validated logs
       setLogs(validatedLogs)
-      
+
       // Validate and set pagination
       const validTotal = typeof response.total === 'number' && response.total >= 0 ? response.total : 0
-      
+
       // Calculate totalPages - use backend value if available, otherwise calculate from total
       // If we got a full page of results, there might be more pages
       const hasMorePages = validatedLogs.length === validPageSize
       let validTotalPages = 1
-      
+
       if (typeof response.total_pages === 'number' && response.total_pages > 0) {
         validTotalPages = response.total_pages
       } else if (validTotal > 0) {
@@ -296,10 +296,10 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
         // Set to current page + 1 to enable Next button
         validTotalPages = Math.max(page + 1, 2)
       }
-      
+
       setTotal(validTotal)
       setTotalPages(validTotalPages)
-      
+
       console.log('[UploadStatusModal] Pagination calculated:', {
         validTotal,
         validTotalPages,
@@ -308,7 +308,7 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
         logsOnPage: validatedLogs.length,
         pageSize: validPageSize
       })
-      
+
       // Log status breakdown for debugging
       if (validatedLogs.length > 0) {
         const statusBreakdown = {
@@ -330,9 +330,9 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
         code: error?.code,
         url: error?.config?.url
       })
-      
+
       setLastError(errorMsg)
-      
+
       // On error, keep previous logs if available, otherwise set empty
       setLogs(prevLogs => {
         if (prevLogs.length === 0) {
@@ -356,23 +356,23 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
       setLastError(null)
     }
   }, [isOpen])
-  
+
   // Track last refresh trigger to refresh when modal opens
   const lastRefreshTriggerRef = useRef<number>(0)
 
   // Load logs when modal opens or page changes
   useEffect(() => {
     if (!isOpen) return
-    
+
     console.log('[UploadStatusModal] Modal opened or page changed, loading logs:', { page, isOpen, lastRefreshTrigger: lastRefreshTriggerRef.current, currentRefreshTrigger: refreshTrigger })
-    
+
     // If there was a refresh trigger while modal was closed, refresh now
     const shouldRefresh = refreshTrigger !== undefined && refreshTrigger > lastRefreshTriggerRef.current
     if (shouldRefresh) {
       console.log('[UploadStatusModal] Refresh trigger detected on modal open, refreshing logs...')
       lastRefreshTriggerRef.current = refreshTrigger || 0
     }
-    
+
     const isInitialLoad = page === 1
     loadLogs(!isInitialLoad && !shouldRefresh) // Silent if refreshing due to trigger
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -383,7 +383,7 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
   useEffect(() => {
     if (refreshTrigger !== undefined && refreshTrigger > 0) {
       console.log('[UploadStatusModal] Refresh trigger detected, refreshing logs...', { isOpen, refreshTrigger, lastRefreshTrigger: lastRefreshTriggerRef.current })
-      
+
       if (isOpen) {
         // If modal is open, refresh immediately
         console.log('[UploadStatusModal] Modal is open, refreshing logs immediately...')
@@ -446,15 +446,15 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
     showConfirm('Are you sure you want to cancel this upload? Processing will stop immediately.', async () => {
       try {
         // Optimistically update UI
-        setLogs(prevLogs => prevLogs.map(log => 
+        setLogs(prevLogs => prevLogs.map(log =>
           log.job_id === jobId.trim()
             ? { ...log, status: 'CANCELLED', ended_at: new Date().toISOString() }
             : log
         ))
-        
+
         // Call API
         await symbolsAPI.cancelUpload(jobId.trim())
-        
+
         // Reload logs to get accurate status
         await loadLogs(false)
       } catch (error: any) {
@@ -468,7 +468,7 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
 
   // Cancel all running jobs
   const handleCancelAllRunning = async () => {
-    const runningJobs = logs.filter(log => 
+    const runningJobs = logs.filter(log =>
       isRunningStatus(log.status) && !isCancelledStatus(log.status)
     )
 
@@ -480,15 +480,15 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
     showConfirm(`Are you sure you want to cancel ${runningJobs.length} running job(s)? Processing will stop immediately for all of them.`, async () => {
       try {
         setLoading(true)
-        
+
         // Optimistically update UI
         const jobIds = runningJobs.map(job => job.job_id).filter(Boolean)
-        setLogs(prevLogs => prevLogs.map(log => 
+        setLogs(prevLogs => prevLogs.map(log =>
           jobIds.includes(log.job_id)
             ? { ...log, status: 'CANCELLED', ended_at: new Date().toISOString() }
             : log
         ))
-        
+
         // Cancel all in parallel
         await Promise.all(
           jobIds.map(jobId => symbolsAPI.cancelUpload(jobId).catch(err => {
@@ -496,7 +496,7 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
             return { error: true, jobId, err }
           }))
         )
-        
+
         // Reload logs
         await loadLogs(false)
       } catch (error: any) {
@@ -542,7 +542,7 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
     try {
       const date = new Date(timestamp)
       if (isNaN(date.getTime())) return timestamp
-      
+
       const year = date.getFullYear()
       const month = String(date.getMonth() + 1).padStart(2, '0')
       const day = String(date.getDate()).padStart(2, '0')
@@ -560,9 +560,9 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
     if (!status) {
       return <Clock className="w-4 h-4 text-gray-500" />
     }
-    
+
     const normalized = normalizeStatus(status)
-    
+
     // CRITICAL: CANCELLED must be checked FIRST
     // Also check original string for "cancel" to catch any variations
     if (normalized === 'CANCELLED' || (typeof status === 'string' && status.toLowerCase().includes('cancel'))) {
@@ -589,7 +589,7 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
     if (normalized === 'QUEUED') {
       return <Clock className="w-4 h-4 text-gray-500" />
     }
-    
+
     return <Clock className="w-4 h-4 text-gray-500" />
   }
 
@@ -598,10 +598,10 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
     if (!status) {
       return <span className="text-xs uppercase font-bold px-2 py-0.5 rounded bg-gray-500/10 text-gray-500">Unknown</span>
     }
-    
+
     const normalized = normalizeStatus(status)
     const baseClasses = "text-xs uppercase font-bold px-2 py-0.5 rounded"
-    
+
     // CRITICAL: CANCELLED must be checked FIRST - absolute priority
     // Check both normalized and original string for "cancel" to catch any variations
     if (normalized === 'CANCELLED' || (typeof status === 'string' && status.toLowerCase().includes('cancel'))) {
@@ -615,7 +615,7 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
       }
       return <span className={`${baseClasses} bg-warning/10 text-warning`}>Cancelled</span>
     }
-    
+
     // Terminal error states
     if (normalized === 'FAILED') {
       return <span className={`${baseClasses} bg-red-500/10 text-red-500`}>Failed</span>
@@ -629,7 +629,7 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
     if (normalized === 'STOPPED') {
       return <span className={`${baseClasses} bg-orange-500/10 text-orange-500`}>Stopped</span>
     }
-    
+
     // Success states
     if (normalized === 'SUCCESS') {
       return <span className={`${baseClasses} bg-green-500/10 text-green-500`}>Completed</span>
@@ -637,7 +637,7 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
     if (normalized === 'PARTIAL' || normalized === 'COMPLETED_WITH_WARNINGS') {
       return <span className={`${baseClasses} bg-yellow-500/10 text-yellow-500`}>Completed (with warnings)</span>
     }
-    
+
     // Running states
     if (normalized === 'RUNNING') {
       return <span className={`${baseClasses} bg-blue-500/10 text-blue-500`}>Running</span>
@@ -648,7 +648,7 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
     if (normalized === 'QUEUED') {
       return <span className={`${baseClasses} bg-gray-500/10 text-gray-500`}>Queued</span>
     }
-    
+
     // Fallback
     return <span className={`${baseClasses} bg-gray-500/10 text-gray-500`}>{status || 'Unknown'}</span>
   }
@@ -739,17 +739,17 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <button 
-          onClick={onClose} 
+        <button
+          onClick={onClose}
           className="absolute top-0 -right-14 z-[10000] w-8 h-8 p-0 bg-transparent hover:bg-red-600 rounded text-red-600 hover:text-white transition-colors flex items-center justify-center"
           title="Close"
         >
           <X className="w-5 h-5" />
         </button>
-        
+
         <div className="flex items-center justify-between p-4 border-b border-border" style={{ backgroundColor: '#0a1020' }}>
           <div>
-            <h2 className="text-xl font-semibold" style={{ color: '#ffffff' }}>Upload Status</h2>
+            <h2 id="upload-status-modal-heading" className="text-xl font-semibold" style={{ color: '#ffffff' }}>Upload Status</h2>
             <p className="text-sm" style={{ color: '#9ca3af' }}>File-level upload tracking</p>
           </div>
           <div className="flex items-center gap-2">
@@ -780,7 +780,7 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
               Error: {lastError}
             </div>
           )}
-          
+
           {loading && logs.length === 0 ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -816,14 +816,14 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
                     // CRITICAL: Get raw status and normalize - CANCELLED check must be first
                     const rawStatus = String(log.status || '').trim()
                     const normalizedStatus = normalizeStatus(rawStatus)
-                    
+
                     // CRITICAL: CANCELLED takes absolute priority - check directly
                     const isCancelled = normalizedStatus === 'CANCELLED'
                     const isRunning = !isCancelled && isRunningStatus(rawStatus)
                     const errorsExpanded = expandedErrors.has(log.job_id)
                     const hasErrors = Array.isArray(log.error_summary) && log.error_summary.length > 0
                     const sequentialNumber = (page - 1) * pageSize + index + 1
-                    
+
                     // Debug: Log status for debugging cancelled items
                     if (rawStatus.toLowerCase().includes('cancel') || normalizedStatus === 'CANCELLED') {
                       console.log('[UploadStatusModal] Status check for job:', {
@@ -860,9 +860,8 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
                           <div className="flex items-center gap-2 min-w-[100px]">
                             <div className="flex-1 bg-gray-700 rounded-full h-2">
                               <div
-                                className={`h-2 rounded-full transition-all ${
-                                  isCancelled ? 'bg-warning' : 'bg-blue-500'
-                                }`}
+                                className={`h-2 rounded-full transition-all ${isCancelled ? 'bg-warning' : 'bg-blue-500'
+                                  }`}
                                 style={{ width: `${Math.min(100, Math.max(0, log.progress_percentage))}%` }}
                               />
                             </div>
@@ -947,7 +946,7 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
             <div className="mt-4 pt-4 border-t border-border flex items-center" style={{ minHeight: '3rem', paddingTop: '1rem' }}>
               {/* Left spacer - flex-1 to push content apart */}
               <div className="flex-1"></div>
-              
+
               {/* Center: Pagination controls */}
               <div className="flex items-center gap-1">
                 <Button
@@ -995,7 +994,7 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
-              
+
               {/* Right: Record count */}
               <div className="flex-1 flex justify-end">
                 <div className="text-sm" style={{ color: '#9ca3af' }}>

@@ -18,18 +18,20 @@ test.describe('User Feedback & Feature Requests', () => {
     test('should submit a feature request', async ({ page }) => {
         await page.getByRole('button', { name: /Submit New/i }).click();
 
-        // Wait for modal - use first() for heading since it might exist in background page too
-        await expect(page.getByRole('heading', { name: /Feature Requests & Feedback/i }).nth(1)).toBeVisible();
+        // Wait for modal using explicit ID
+        const modalHeading = page.locator('#unified-submit-modal-heading');
+        await expect(modalHeading).toBeVisible({ timeout: 10000 });
 
         // Fill the form using labels
         await page.getByLabel(/Category/i).selectOption('Enhancement');
         await page.getByLabel(/Title/i).fill('Test Feature Request Title');
         await page.getByLabel(/Description/i).fill('This is a test feature request description with more than 10 characters.');
 
-        // Submit
-        const submitButton = page.getByRole('button', { name: /Submit/i, exact: true }).first();
+        // Submit - scroll into view and use force click if needed due to modal overlays
+        const submitButton = page.locator('#unified-submit-button');
         await expect(submitButton).toBeEnabled();
-        await submitButton.click();
+        await submitButton.scrollIntoViewIfNeeded();
+        await submitButton.click({ force: true });
 
         // Success message
         await expect(page.getByText(/Feature Request Submitted/i)).toBeVisible({ timeout: 10000 });

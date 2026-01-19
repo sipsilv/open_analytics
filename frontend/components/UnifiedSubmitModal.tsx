@@ -252,7 +252,7 @@ export function UnifiedSubmitModal({ isOpen, onClose, onSuccess }: UnifiedSubmit
           </button>
           <div className="p-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(90vh - 0px)', overflowX: 'hidden' }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-sans font-semibold text-text-primary">
+              <h2 id="unified-submit-modal-heading" className="text-xl font-sans font-semibold text-text-primary">
                 Feature Requests & Feedback
               </h2>
             </div>
@@ -575,6 +575,7 @@ export function UnifiedSubmitModal({ isOpen, onClose, onSuccess }: UnifiedSubmit
                     Cancel
                   </Button>
                   <Button
+                    id="unified-submit-button"
                     type="submit"
                     size="sm"
                     disabled={loading || !title.trim() || title.trim().length < 3 || description.trim().length < 10}

@@ -425,7 +425,7 @@ export function ConnectionModal({ isOpen, onClose, connection, onUpdate, categor
                     </button>
                     <div className="p-6 max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-sans font-semibold text-[#e5e7eb]">
+                            <h2 id="connection-modal-heading" className="text-xl font-sans font-semibold text-[#e5e7eb]">
                                 {connection ? 'Edit Connection' : 'Add New Connection'}
                             </h2>
                         </div>
