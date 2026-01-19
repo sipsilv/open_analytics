@@ -51,3 +51,5 @@ data/
 Data/
 uploads/
 connections/
+test-results/
+playwright-report/
