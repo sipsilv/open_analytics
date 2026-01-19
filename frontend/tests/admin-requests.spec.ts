@@ -52,7 +52,7 @@ test.describe('Admin - Request & Feedback', () => {
     await page.waitForTimeout(1000); // Wait for data to load
 
     // Find approve/reject buttons (these are the action buttons for pending requests)
-    const approveButtons = page.getByRole('button', { name: /Approve/i });
+    const approveButtons = page.getByRole('button', { name: /^Approve$/ });
     const count = await approveButtons.count();
 
     if (count > 0) {

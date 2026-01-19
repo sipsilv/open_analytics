@@ -76,7 +76,8 @@ test.describe('Authentication', () => {
     await signInButton.click();
 
     // Should show error message
-    await expect(page.getByText(/Invalid identifier or password/i)).toBeVisible({ timeout: 10000 });
+    // Match either "Invalid" or "Incorrect" - backend uses "Incorrect identifier or password"
+    await expect(page.getByText(/Invalid|Incorrect identifier or password/i)).toBeVisible({ timeout: 10000 });
 
     // Should stay on login page
     await expect(page).toHaveURL(/\/login/);
@@ -127,7 +128,7 @@ test.describe('Authentication', () => {
     await expect(page.getByLabel(/Full Name/i)).toBeVisible();
 
     // Close modal
-    await page.getByRole('button', { name: /×/ }).click();
+    await page.getByRole('button', { name: /Close/i }).click();
     await expect(page.getByText(/Request Login Access/i)).not.toBeVisible();
   });
 });

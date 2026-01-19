@@ -39,26 +39,26 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Prevent duplicate submissions
     if (loading) return
-    
+
     // Client-side validation
     if (!formData.name.trim()) {
       setMessage('Name is required')
       return
     }
-    
+
     if (!formData.mobile.trim()) {
       setMessage('Mobile number is required')
       return
     }
-    
+
     if (!formData.reason.trim()) {
       setMessage('Reason for access is required')
       return
     }
-    
+
     setLoading(true)
     setMessage('')
 
@@ -75,7 +75,7 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
         mobile: formData.mobile.trim(),
         reason: formData.reason.trim(),
       }
-      
+
       // Add optional fields only if they have values
       // Validate email format if provided
       const emailTrimmed = formData.email.trim()
@@ -91,7 +91,7 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
       } else {
         payload.email = null
       }
-      
+
       const companyTrimmed = formData.company.trim()
       if (companyTrimmed) {
         payload.company = companyTrimmed
@@ -100,7 +100,7 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
       }
 
       const response = await authAPI.requestAccess(payload)
-      
+
       // Success
       setMessage('Request submitted successfully! An admin will review your request.')
       setTimeout(() => {
@@ -111,7 +111,7 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
     } catch (error: any) {
       // Extract error message from backend response
       let errorMessage = 'Failed to submit request. Please try again.'
-      
+
       if (error?.response?.data?.detail) {
         errorMessage = error.response.data.detail
       } else if (error?.message) {
@@ -119,7 +119,7 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
       } else if (typeof error === 'string') {
         errorMessage = error
       }
-      
+
       setMessage(errorMessage)
     } finally {
       setLoading(false)
@@ -128,15 +128,15 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div 
+      <div
         className="bg-[#121b2f] border border-[#1f2a44] rounded-lg shadow-xl w-full max-w-md mx-4 p-6 relative"
         style={{
           animation: isVisible ? 'modalSlideIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)' : 'none',
         }}
       >
         {/* Close Button - Positioned outside modal at top-right with padding */}
-        <button 
-          onClick={onClose} 
+        <button
+          onClick={onClose}
           className="absolute top-0 -right-14 z-[100] w-8 h-8 p-0 bg-transparent hover:bg-red-600 rounded text-red-600 hover:text-white transition-colors flex items-center justify-center"
           title="Close"
           aria-label="Close"
@@ -154,6 +154,7 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
+            id="contact-name"
             label="Full Name"
             type="text"
             value={formData.name}
@@ -163,6 +164,7 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
           />
 
           <Input
+            id="contact-email"
             label="Email (Optional)"
             type="email"
             value={formData.email}
@@ -171,6 +173,7 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
           />
 
           <Input
+            id="contact-mobile"
             label="Mobile Number (Required)"
             type="tel"
             value={formData.mobile}
@@ -180,6 +183,7 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
           />
 
           <Input
+            id="contact-company"
             label="Company (Required)"
             type="text"
             value={formData.company}

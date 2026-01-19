@@ -11,7 +11,8 @@ test.describe('Admin - Feature Request Status Logic', () => {
 
     test('should match status and progress logic', async ({ page }) => {
         // Wait for table to load
-        await expect(page.locator('h1')).toContainText('Feature Request & Feedback');
+        // Use more specific selector to avoid ambiguity with other h1s or multiple matches
+        await expect(page.locator('h1.text-2xl')).toContainText('Feature Request & Feedback');
 
         // Check availability of items or wait for 'No items found'
         const table = page.locator('table');
