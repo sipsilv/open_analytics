@@ -38,6 +38,9 @@ jobs:
           JWT_SECRET_KEY: "test_secret_key_for_ci_visibility_only"
           JWT_SYSTEM_SECRET_KEY: "system_test_secret_key_for_ci_visibility_only"
           ENCRYPTION_KEY: "VGhpcyBpcyBhIHRlc3Qga2V5IGZvciBDSQ==" # Basic base64 key for testing
+          ADMIN_EMAIL: "admin@openanalytics.co.in"
+          ADMIN_PASSWORD: "admin123"
+          ADMIN_USERNAME: "Admin User"
         run: |
           cd backend
           python -m pytest \
@@ -106,6 +109,9 @@ jobs:
           JWT_SYSTEM_SECRET_KEY: "system_test_secret_key_for_ci_visibility_only"
           ENCRYPTION_KEY: "VGhpcyBpcyBhIHRlc3Qga2V5IGZvciBDSQ==" 
           TESTING: "true" # Suppress background worker loops (News AI Processor)
+          ADMIN_EMAIL: "admin@openanalytics.co.in"
+          ADMIN_PASSWORD: "admin123"
+          ADMIN_USERNAME: "Admin User"
         run: |
           cd frontend
           npx playwright test

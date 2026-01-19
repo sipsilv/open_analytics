@@ -59,6 +59,14 @@ export default defineConfig({
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
+      env: {
+        ADMIN_EMAIL: 'admin@openanalytics.co.in',
+        ADMIN_PASSWORD: 'admin123',
+        ADMIN_USERNAME: 'Admin User',
+        JWT_SECRET_KEY: 'test_secret_key_for_local_tests',
+        JWT_SYSTEM_SECRET_KEY: 'system_test_key',
+        ENCRYPTION_KEY: 'VGhpcyBpcyBhIHRlc3Qga2V5IGZvciBDSQ==', // Base64 dummy key
+      },
     },
     {
       command: process.env.CI
@@ -67,6 +75,14 @@ export default defineConfig({
       url: 'http://localhost:8000/health',
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
+      env: {
+        ADMIN_EMAIL: 'admin@openanalytics.co.in',
+        ADMIN_PASSWORD: 'admin123',
+        ADMIN_USERNAME: 'Admin User',
+        JWT_SECRET_KEY: 'test_secret_key_for_local_tests',
+        JWT_SYSTEM_SECRET_KEY: 'system_test_key',
+        ENCRYPTION_KEY: 'VGhpcyBpcyBhIHRlc3Qga2V5IGZvciBDSQ==', // Base64 dummy key
+      },
     },
   ],
 });
