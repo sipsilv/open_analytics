@@ -1,7 +1,15 @@
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
+import { seedFeedbackData } from './helpers/seed';
 
 test.describe('Admin - Requests & Feedback Dashboard', () => {
+    test.beforeAll(async ({ browser }) => {
+        const page = await browser.newPage();
+        await loginAsAdmin(page);
+        await seedFeedbackData(page);
+        await page.close();
+    });
+
     test.beforeEach(async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto('/admin/requests-feedback');
