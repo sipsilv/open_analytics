@@ -75,7 +75,7 @@ export default function RequestsFeedbackDetailsPage() {
       } else {
         acceptanceStatus = 'pending'
       }
-      
+
       setSelectedStatus(acceptanceStatus)
       const initialProgressStatus = getProgressStatus(selectedItem.status, selectedItem.type)
       setSelectedProgressStatus(initialProgressStatus)
@@ -96,9 +96,9 @@ export default function RequestsFeedbackDetailsPage() {
   useEffect(() => {
     if (!selectedStatus || !selectedItem) return
 
-    // If status is rejected, progress status must be "Not Applicable"
+    // If status is rejected, progress status must be "Closed"
     if (selectedStatus === 'rejected') {
-      setSelectedProgressStatus('Not Applicable')
+      setSelectedProgressStatus('Closed')
       return
     }
 
@@ -112,8 +112,8 @@ export default function RequestsFeedbackDetailsPage() {
 
     // If status is approved, ensure progress status is valid
     if (selectedStatus === 'approved') {
-      // If current progress is "Not Applicable", change to "Not Started"
-      if (selectedProgressStatus === 'Not Applicable') {
+      // If current progress is "Closed", change to "Not Started"
+      if (selectedProgressStatus === 'Closed') {
         setSelectedProgressStatus('Not Started')
       }
     }
@@ -160,12 +160,12 @@ export default function RequestsFeedbackDetailsPage() {
     setLoading(true)
     try {
       const items: UnifiedItem[] = []
-      
+
       // Determine which types to load based on category filter
       const categoryType = categoryFilter ? getTypeFromCategory(categoryFilter) : null
       const loadFeatureRequests = !categoryFilter || categoryType === null || categoryType === 'feature_request'
       const loadFeedback = !categoryFilter || categoryType === null || categoryType === 'feedback'
-      
+
       if (loadFeatureRequests) {
         try {
           const featureRequests = await adminAPI.getFeatureRequests(
@@ -177,7 +177,7 @@ export default function RequestsFeedbackDetailsPage() {
           console.error('Failed to load feature requests:', e)
         }
       }
-      
+
       if (loadFeedback) {
         try {
           const feedback = await adminAPI.getFeedback(
@@ -189,7 +189,7 @@ export default function RequestsFeedbackDetailsPage() {
           console.error('Failed to load feedback:', e)
         }
       }
-      
+
       // Filter by category if specified
       let filteredItems = items
       if (categoryFilter) {
@@ -198,7 +198,7 @@ export default function RequestsFeedbackDetailsPage() {
           return itemCategory === categoryFilter
         })
       }
-      
+
       // Filter by acceptance status if specified
       if (acceptanceStatusFilter) {
         filteredItems = filteredItems.filter(item => {
@@ -206,7 +206,7 @@ export default function RequestsFeedbackDetailsPage() {
           return acceptanceStatus.toLowerCase() === acceptanceStatusFilter.toLowerCase()
         })
       }
-      
+
       // Filter by progress status if specified
       if (progressStatusFilter) {
         filteredItems = filteredItems.filter(item => {
@@ -214,7 +214,7 @@ export default function RequestsFeedbackDetailsPage() {
           return progressStatus === progressStatusFilter
         })
       }
-      
+
       filteredItems.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       setUnifiedItems(filteredItems)
     } catch (error) {
@@ -250,66 +250,66 @@ export default function RequestsFeedbackDetailsPage() {
     if (acceptanceStatus === 'rejected') {
       return 'rejected'
     }
-    
-    // If progress is "Not Applicable", it means rejected
-    if (progressStatus === 'Not Applicable') {
+
+    // If progress is "Closed", it means rejected
+    if (progressStatus === 'Closed') {
       return 'rejected'
     }
-    
+
     // If progress is "Implemented", return implemented for feature requests, resolved for feedback
     if (progressStatus === 'Implemented') {
       return type === 'feature_request' ? 'implemented' : 'resolved'
     }
-    
+
     // If progress is "Completed", return resolved
     if (progressStatus === 'Completed') {
       return 'resolved'
     }
-    
+
     // If progress is "In Progress", return in_progress
     if (progressStatus === 'In Progress') {
       return 'in_progress'
     }
-    
+
     // If approved but not started, keep approved for feature requests, map to in_progress for feedback
     if (acceptanceStatus === 'approved' && progressStatus === 'Not Started') {
       return type === 'feature_request' ? 'approved' : 'in_progress'
     }
-    
+
     // If pending and not started, return pending for feature requests, open for feedback
     if (acceptanceStatus === 'pending' && progressStatus === 'Not Started') {
       return type === 'feature_request' ? 'pending' : 'open'
     }
-    
+
     // Default to acceptance status, but map approved to in_progress for feedback
     if (type === 'feedback' && acceptanceStatus === 'approved') {
       return 'in_progress'
     }
-    
+
     // Map implemented to resolved for feedback
     if (type === 'feedback' && acceptanceStatus === 'implemented') {
       return 'resolved'
     }
-    
+
     return acceptanceStatus
   }
 
   // Validate status and progress status combination
   const validateStatusCombination = (acceptanceStatus: string, progressStatus: string): { valid: boolean; message?: string } => {
-    // If rejected, progress must be "Not Applicable"
-    if (acceptanceStatus === 'rejected' && progressStatus !== 'Not Applicable') {
-      return { valid: false, message: 'Rejected items must have "Not Applicable" progress status.' }
+    // If rejected, progress must be "Closed"
+    if (acceptanceStatus === 'rejected' && progressStatus !== 'Closed') {
+      return { valid: false, message: 'Rejected items must have "Closed" progress status.' }
     }
 
     // If pending, progress should be "Not Started" or "Not Applicable"
-    if ((acceptanceStatus === 'pending' || acceptanceStatus === 'open') && 
-        progressStatus !== 'Not Started' && progressStatus !== 'Not Applicable') {
-      return { valid: false, message: 'Pending items can only have "Not Started" or "Not Applicable" progress status.' }
+    if ((acceptanceStatus === 'pending' || acceptanceStatus === 'open') &&
+      progressStatus !== 'Not Started' && progressStatus !== 'Closed') {
+      return { valid: false, message: 'Pending items can only have "Not Started" or "Closed" progress status.' }
     }
 
-    // If approved, progress cannot be "Not Applicable"
-    if (acceptanceStatus === 'approved' && progressStatus === 'Not Applicable') {
-      return { valid: false, message: 'Approved items cannot have "Not Applicable" progress status.' }
+    // If approved, progress cannot be "Closed"
+    if (acceptanceStatus === 'approved' && progressStatus === 'Closed') {
+      return { valid: false, message: 'Approved items cannot have "Closed" progress status.' }
     }
 
     return { valid: true }
@@ -317,19 +317,19 @@ export default function RequestsFeedbackDetailsPage() {
 
   const handleStatusChange = async () => {
     if (!selectedItem) return
-    
+
     // Validate the combination
     const validation = validateStatusCombination(selectedStatus, selectedProgressStatus)
     if (!validation.valid) {
       alert(validation.message)
       return
     }
-    
+
     setUpdating(true)
     try {
       // Determine the final status based on selected status and progress status
       const finalStatus = getFinalStatus(selectedStatus, selectedProgressStatus, selectedItem.type)
-      
+
       if (selectedItem.type === 'feature_request') {
         await adminAPI.updateFeatureRequest(selectedItem.id.toString(), {
           status: finalStatus,
@@ -397,38 +397,38 @@ export default function RequestsFeedbackDetailsPage() {
   // Get progress status (implementation status) - validates against acceptance status
   const getProgressStatus = (status: string, type: 'feature_request' | 'feedback'): string => {
     const statusLower = status.toLowerCase()
-    
-    // If rejected, progress is always "Not Applicable"
+
+    // If rejected, progress is always "Closed"
     if (statusLower === 'rejected') {
-      return 'Not Applicable'
+      return 'Closed'
     }
-    
+
     // If implemented, return "Implemented"
     if (statusLower === 'implemented') {
       return 'Implemented'
     }
-    
+
     // If in progress or in review, return "In Progress"
     if (statusLower === 'in_progress' || statusLower === 'in_review') {
       return 'In Progress'
     }
-    
+
     // If resolved (for feedback), return "Completed"
     if (statusLower === 'resolved' && type === 'feedback') {
       return 'Completed'
     }
-    
+
     // If approved, check if it's implemented or just approved
     if (statusLower === 'approved') {
       // For approved items, default to "Not Started" unless already implemented
       return 'Not Started'
     }
-    
+
     // For pending/open, progress should be "Not Started"
     if (statusLower === 'pending' || statusLower === 'open') {
       return 'Not Started'
     }
-    
+
     // Default to "Not Started"
     return 'Not Started'
   }
@@ -442,7 +442,7 @@ export default function RequestsFeedbackDetailsPage() {
         return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
       case 'Not Started':
         return 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border border-gray-500/20'
-      case 'Not Applicable':
+      case 'Closed':
         return 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
       default:
         return 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border border-gray-500/20'
@@ -581,7 +581,7 @@ export default function RequestsFeedbackDetailsPage() {
                 <option value="In Progress">In Progress</option>
                 <option value="Implemented">Implemented</option>
                 <option value="Completed">Completed</option>
-                <option value="Not Applicable">Not Applicable</option>
+                <option value="Closed">Closed</option>
               </select>
             </div>
           </div>
@@ -596,7 +596,7 @@ export default function RequestsFeedbackDetailsPage() {
             </TableHeader>
             <TableBody>
               {unifiedItems.map((item, index) => {
-                const displayText = item.type === 'feature_request' 
+                const displayText = item.type === 'feature_request'
                   ? (item as FeatureRequest).description.substring(0, 60) + '...'
                   : (item as Feedback).subject
                 const category = getItemCategory(item)
@@ -645,7 +645,7 @@ export default function RequestsFeedbackDetailsPage() {
 
       {/* Detail Modal */}
       {selectedItem && typeof window !== 'undefined' && createPortal(
-        <div 
+        <div
           className="fixed inset-0 z-[9999] flex items-center justify-center"
           style={{
             position: 'fixed',
@@ -666,7 +666,7 @@ export default function RequestsFeedbackDetailsPage() {
           } as React.CSSProperties}
           onClick={() => setSelectedItem(null)}
         >
-          <div 
+          <div
             className="relative"
             onClick={(e) => e.stopPropagation()}
           >
@@ -698,183 +698,183 @@ export default function RequestsFeedbackDetailsPage() {
                   </h2>
                 </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-sans font-medium text-text-secondary mb-1">User</label>
-                  <p className="text-sm font-sans text-text-primary">{selectedItem.user_name}</p>
-                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-sans font-medium text-text-secondary mb-1">User</label>
+                    <p className="text-sm font-sans text-text-primary">{selectedItem.user_name}</p>
+                  </div>
 
-                {selectedItem.type === 'feature_request' ? (
-                  <>
-                    <div>
-                      <label className="block text-xs font-sans font-medium text-text-secondary mb-1">Description</label>
-                      <p className="text-sm font-sans text-text-primary whitespace-pre-wrap">{(selectedItem as FeatureRequest).description}</p>
-                    </div>
-
-                    {(selectedItem as FeatureRequest).context && (
+                  {selectedItem.type === 'feature_request' ? (
+                    <>
                       <div>
-                        <label className="block text-xs font-sans font-medium text-text-secondary mb-1">Context</label>
-                        <div className="text-sm font-sans text-text-secondary space-y-1">
-                          {(selectedItem as FeatureRequest).context.page && <div>Page: {(selectedItem as FeatureRequest).context.page}</div>}
-                          {(selectedItem as FeatureRequest).context.module && <div>Module: {(selectedItem as FeatureRequest).context.module}</div>}
-                          {(selectedItem as FeatureRequest).context.issue_type && <div>Type: {(selectedItem as FeatureRequest).context.issue_type}</div>}
-                        </div>
+                        <label className="block text-xs font-sans font-medium text-text-secondary mb-1">Description</label>
+                        <p className="text-sm font-sans text-text-primary whitespace-pre-wrap">{(selectedItem as FeatureRequest).description}</p>
                       </div>
-                    )}
 
-                    {(selectedItem as FeatureRequest).ai_analysis && (
-                      <div className="border-t border-border pt-4">
-                        <h3 className="text-sm font-sans font-semibold text-text-primary mb-3">AI Analysis</h3>
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-xs font-sans font-medium text-text-secondary mb-1">Summary</label>
-                            <p className="text-sm font-sans text-text-primary">{(selectedItem as FeatureRequest).ai_analysis.summary}</p>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-xs font-sans font-medium text-text-secondary mb-1">Category</label>
-                              <p className="text-sm font-sans text-text-primary">{(selectedItem as FeatureRequest).ai_analysis.category}</p>
-                            </div>
-                            <div>
-                              <label className="block text-xs font-sans font-medium text-text-secondary mb-1">Complexity</label>
-                              <p className="text-sm font-sans text-text-primary">{(selectedItem as FeatureRequest).ai_analysis.complexity}</p>
-                            </div>
+                      {(selectedItem as FeatureRequest).context && (
+                        <div>
+                          <label className="block text-xs font-sans font-medium text-text-secondary mb-1">Context</label>
+                          <div className="text-sm font-sans text-text-secondary space-y-1">
+                            {(selectedItem as FeatureRequest).context.page && <div>Page: {(selectedItem as FeatureRequest).context.page}</div>}
+                            {(selectedItem as FeatureRequest).context.module && <div>Module: {(selectedItem as FeatureRequest).context.module}</div>}
+                            {(selectedItem as FeatureRequest).context.issue_type && <div>Type: {(selectedItem as FeatureRequest).context.issue_type}</div>}
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <label className="block text-xs font-sans font-medium text-text-secondary mb-1">Subject</label>
-                      <p className="text-sm font-sans text-text-primary">{(selectedItem as Feedback).subject}</p>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-sans font-medium text-text-secondary mb-1">Message</label>
-                      <p className="text-sm font-sans text-text-primary whitespace-pre-wrap">{(selectedItem as Feedback).message}</p>
-                    </div>
-                  </>
-                )}
-
-                <div className="border-t border-border pt-4 space-y-4">
-                  <div>
-                    <label className="block text-xs font-sans font-medium text-text-secondary mb-2">
-                      Status (Acceptance) <span className="text-error">*</span>
-                    </label>
-                    <select
-                      value={selectedStatus}
-                      onChange={(e) => setSelectedStatus(e.target.value)}
-                      className="w-full px-3 py-2 border border-border dark:border-[#1f2a44] rounded-lg bg-[#f9fafb] dark:bg-[#121b2f] text-text-primary dark:text-[#e5e7eb] font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-[#3b82f6]/30 focus:border-primary dark:focus:border-[#3b82f6] transition-all duration-200"
-                      disabled={updating}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
-                      {selectedItem.type === 'feedback' && <option value="open">Open</option>}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-sans font-medium text-text-secondary mb-2">
-                      Progress Status <span className="text-error">*</span>
-                    </label>
-                    <select
-                      value={selectedProgressStatus}
-                      onChange={(e) => setSelectedProgressStatus(e.target.value)}
-                      className="w-full px-3 py-2 border border-border dark:border-[#1f2a44] rounded-lg bg-[#f9fafb] dark:bg-[#121b2f] text-text-primary dark:text-[#e5e7eb] font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-[#3b82f6]/30 focus:border-primary dark:focus:border-[#3b82f6] transition-all duration-200"
-                      disabled={updating || selectedStatus === 'rejected'}
-                    >
-                      {selectedStatus === 'rejected' ? (
-                        <option value="Not Applicable">Not Applicable</option>
-                      ) : selectedStatus === 'pending' || selectedStatus === 'open' ? (
-                        <>
-                          <option value="Not Started">Not Started</option>
-                          <option value="Not Applicable">Not Applicable</option>
-                        </>
-                      ) : selectedStatus === 'approved' ? (
-                        selectedItem.type === 'feature_request' ? (
-                          <>
-                            <option value="Not Started">Not Started</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Implemented">Implemented</option>
-                          </>
-                        ) : (
-                          <>
-                            <option value="Not Started">Not Started</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Completed">Completed</option>
-                          </>
-                        )
-                      ) : (
-                        selectedItem.type === 'feature_request' ? (
-                          <>
-                            <option value="Not Started">Not Started</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Implemented">Implemented</option>
-                            <option value="Not Applicable">Not Applicable</option>
-                          </>
-                        ) : (
-                          <>
-                            <option value="Not Started">Not Started</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Completed">Completed</option>
-                            <option value="Not Applicable">Not Applicable</option>
-                          </>
-                        )
                       )}
-                    </select>
-                    {selectedStatus === 'rejected' && (
-                      <p className="text-xs text-text-secondary mt-1">
-                        Progress status is automatically set to "Not Applicable" when status is rejected.
-                      </p>
-                    )}
-                    {selectedStatus === 'pending' && (
-                      <p className="text-xs text-text-secondary mt-1">
-                        Pending items can only be "Not Started" or "Not Applicable".
-                      </p>
-                    )}
+
+                      {(selectedItem as FeatureRequest).ai_analysis && (
+                        <div className="border-t border-border pt-4">
+                          <h3 className="text-sm font-sans font-semibold text-text-primary mb-3">AI Analysis</h3>
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-xs font-sans font-medium text-text-secondary mb-1">Summary</label>
+                              <p className="text-sm font-sans text-text-primary">{(selectedItem as FeatureRequest).ai_analysis.summary}</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-xs font-sans font-medium text-text-secondary mb-1">Category</label>
+                                <p className="text-sm font-sans text-text-primary">{(selectedItem as FeatureRequest).ai_analysis.category}</p>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-sans font-medium text-text-secondary mb-1">Complexity</label>
+                                <p className="text-sm font-sans text-text-primary">{(selectedItem as FeatureRequest).ai_analysis.complexity}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <label className="block text-xs font-sans font-medium text-text-secondary mb-1">Subject</label>
+                        <p className="text-sm font-sans text-text-primary">{(selectedItem as Feedback).subject}</p>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-sans font-medium text-text-secondary mb-1">Message</label>
+                        <p className="text-sm font-sans text-text-primary whitespace-pre-wrap">{(selectedItem as Feedback).message}</p>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="border-t border-border pt-4 space-y-4">
+                    <div>
+                      <label className="block text-xs font-sans font-medium text-text-secondary mb-2">
+                        Status (Acceptance) <span className="text-error">*</span>
+                      </label>
+                      <select
+                        value={selectedStatus}
+                        onChange={(e) => setSelectedStatus(e.target.value)}
+                        className="w-full px-3 py-2 border border-border dark:border-[#1f2a44] rounded-lg bg-[#f9fafb] dark:bg-[#121b2f] text-text-primary dark:text-[#e5e7eb] font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-[#3b82f6]/30 focus:border-primary dark:focus:border-[#3b82f6] transition-all duration-200"
+                        disabled={updating}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                        {selectedItem.type === 'feedback' && <option value="open">Open</option>}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-sans font-medium text-text-secondary mb-2">
+                        Progress Status <span className="text-error">*</span>
+                      </label>
+                      <select
+                        value={selectedProgressStatus}
+                        onChange={(e) => setSelectedProgressStatus(e.target.value)}
+                        className="w-full px-3 py-2 border border-border dark:border-[#1f2a44] rounded-lg bg-[#f9fafb] dark:bg-[#121b2f] text-text-primary dark:text-[#e5e7eb] font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-[#3b82f6]/30 focus:border-primary dark:focus:border-[#3b82f6] transition-all duration-200"
+                        disabled={updating || selectedStatus === 'rejected'}
+                      >
+                        {selectedStatus === 'rejected' ? (
+                          <option value="Closed">Closed</option>
+                        ) : selectedStatus === 'pending' || selectedStatus === 'open' ? (
+                          <>
+                            <option value="Not Started">Not Started</option>
+                            <option value="Closed">Closed</option>
+                          </>
+                        ) : selectedStatus === 'approved' ? (
+                          selectedItem.type === 'feature_request' ? (
+                            <>
+                              <option value="Not Started">Not Started</option>
+                              <option value="In Progress">In Progress</option>
+                              <option value="Implemented">Implemented</option>
+                            </>
+                          ) : (
+                            <>
+                              <option value="Not Started">Not Started</option>
+                              <option value="In Progress">In Progress</option>
+                              <option value="Completed">Completed</option>
+                            </>
+                          )
+                        ) : (
+                          selectedItem.type === 'feature_request' ? (
+                            <>
+                              <option value="Not Started">Not Started</option>
+                              <option value="In Progress">In Progress</option>
+                              <option value="Implemented">Implemented</option>
+                              <option value="Not Applicable">Not Applicable</option>
+                            </>
+                          ) : (
+                            <>
+                              <option value="Not Started">Not Started</option>
+                              <option value="In Progress">In Progress</option>
+                              <option value="Completed">Completed</option>
+                              <option value="Not Applicable">Not Applicable</option>
+                            </>
+                          )
+                        )}
+                      </select>
+                      {selectedStatus === 'rejected' && (
+                        <p className="text-xs text-text-secondary mt-1">
+                          Progress status is automatically set to "Not Applicable" when status is rejected.
+                        </p>
+                      )}
+                      {selectedStatus === 'pending' && (
+                        <p className="text-xs text-text-secondary mt-1">
+                          Pending items can only be "Not Started" or "Not Applicable".
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-sans font-medium text-text-secondary mb-2">
+                        {selectedItem.type === 'feature_request' ? 'Admin Note' : 'Notes'}
+                      </label>
+                      <textarea
+                        value={adminNote || (selectedItem.type === 'feature_request' ? (selectedItem as FeatureRequest).admin_note || '' : '')}
+                        onChange={(e) => setAdminNote(e.target.value)}
+                        className="w-full px-3 py-2 border border-border dark:border-[#1f2a44] rounded-lg bg-[#f9fafb] dark:bg-[#121b2f] text-text-primary dark:text-[#e5e7eb] font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-[#3b82f6]/30 focus:border-primary dark:focus:border-[#3b82f6] resize-none transition-all duration-200 placeholder:text-text-muted dark:placeholder:text-[#6b7280]"
+                        rows={3}
+                        placeholder="Add a note about this item..."
+                        disabled={updating}
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-sans font-medium text-text-secondary mb-2">
-                      {selectedItem.type === 'feature_request' ? 'Admin Note' : 'Notes'}
-                    </label>
-                    <textarea
-                      value={adminNote || (selectedItem.type === 'feature_request' ? (selectedItem as FeatureRequest).admin_note || '' : '')}
-                      onChange={(e) => setAdminNote(e.target.value)}
-                      className="w-full px-3 py-2 border border-border dark:border-[#1f2a44] rounded-lg bg-[#f9fafb] dark:bg-[#121b2f] text-text-primary dark:text-[#e5e7eb] font-sans text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-[#3b82f6]/30 focus:border-primary dark:focus:border-[#3b82f6] resize-none transition-all duration-200 placeholder:text-text-muted dark:placeholder:text-[#6b7280]"
-                      rows={3}
-                      placeholder="Add a note about this item..."
+                  <div className="flex gap-2 justify-end pt-4 border-t border-border">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedItem(null)
+                        setAdminNote('')
+                        setSelectedStatus('')
+                        setSelectedProgressStatus('')
+                      }}
                       disabled={updating}
-                    />
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleStatusChange}
+                      disabled={updating || !selectedStatus || !selectedProgressStatus}
+                    >
+                      {updating ? 'Updating...' : 'Update Status'}
+                    </Button>
                   </div>
                 </div>
-
-                <div className="flex gap-2 justify-end pt-4 border-t border-border">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedItem(null)
-                      setAdminNote('')
-                      setSelectedStatus('')
-                      setSelectedProgressStatus('')
-                    }}
-                    disabled={updating}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleStatusChange}
-                    disabled={updating || !selectedStatus || !selectedProgressStatus}
-                  >
-                    {updating ? 'Updating...' : 'Update Status'}
-                  </Button>
-                </div>
-              </div>
               </div>
             </div>
           </div>

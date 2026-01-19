@@ -37,7 +37,9 @@ test.describe('Admin - Symbols Master', () => {
         await expect(statusHeading).toBeVisible({ timeout: 10000 });
 
         // Close modal
-        await page.locator('button:has(svg.lucide-x)').first().click();
+        const closeButton = page.locator('#upload-status-modal-close-button');
+        await closeButton.scrollIntoViewIfNeeded();
+        await closeButton.click({ force: true });
         await expect(statusHeading).not.toBeVisible();
     });
 

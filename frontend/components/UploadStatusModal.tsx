@@ -740,9 +740,11 @@ export function UploadStatusModal({ isOpen, onClose, refreshTrigger }: UploadSta
         onClick={(e) => e.stopPropagation()}
       >
         <button
+          id="upload-status-modal-close-button"
           onClick={onClose}
-          className="absolute top-0 -right-14 z-[10000] w-8 h-8 p-0 bg-transparent hover:bg-red-600 rounded text-red-600 hover:text-white transition-colors flex items-center justify-center"
+          className="absolute top-2 right-2 z-[10001] w-8 h-8 p-0 bg-transparent hover:bg-red-600 rounded text-red-600 hover:text-white transition-colors flex items-center justify-center"
           title="Close"
+          aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
