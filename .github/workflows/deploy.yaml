@@ -189,6 +189,7 @@ jobs:
     needs: [test-backend, test-frontend]
     runs-on: ubuntu-latest
     environment: rubik-env
+    # Only run if both test jobs succeed (fail fast on test failures)
 
     steps:
       # 🚀 BUILD STARTED NOTIFICATION

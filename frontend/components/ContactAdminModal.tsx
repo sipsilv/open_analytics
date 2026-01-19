@@ -1,11 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Modal } from '@/components/ui/Modal'
+import { X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
-import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { authAPI } from '@/lib/api'
 import { getErrorMessage } from '@/lib/error-utils'
 
@@ -118,12 +117,14 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
     }
   }
 
+  if (!isOpen) return null
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div
         className="bg-[#121b2f] border border-[#1f2a44] rounded-lg shadow-xl w-full max-w-md mx-4 p-6 relative"
         style={{
-          animation: isVisible ? 'modalSlideIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)' : 'none',
+          animation: isOpen ? 'modalSlideIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)' : 'none',
         }}
       >
         {/* Close Button - Positioned outside modal at top-right with padding */}
@@ -133,7 +134,7 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
           title="Close"
           aria-label="Close"
           style={{
-            animation: isVisible ? 'modalSlideIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)' : 'none',
+            animation: isOpen ? 'modalSlideIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)' : 'none',
           }}
         >
           <X className="w-5 h-5" />
@@ -199,29 +200,30 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
               ? 'bg-success/10 border border-success'
               : 'bg-error/10 border border-error'
               }`}>
-              {typeof message === 'string' ? message : getErrorMessage(message, 'An error occurred')}
-            </p>
-          </div>
-        )}
+              <p className={message.includes('successfully') ? 'text-success' : 'text-error'}>
+                {typeof message === 'string' ? message : getErrorMessage(message, 'An error occurred')}
+              </p>
+            </div>
+          )}
 
-      <div className="flex gap-2 justify-end pt-2">
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={handleClose}
-          disabled={loading}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          disabled={loading}
-        >
-          {loading ? 'Submitting...' : 'Submit Request'}
-        </Button>
+          <div className="flex gap-2 justify-end pt-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleClose}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? 'Submitting...' : 'Submit Request'}
+            </Button>
+          </div>
+        </form>
       </div>
-    </form>
-    </Modal >
+    </div>
   )
 }
-
