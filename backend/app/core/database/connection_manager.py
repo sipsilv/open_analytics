@@ -223,24 +223,45 @@ class ConnectionManager:
             # If we are in Docker (implied by /app/data existing or path starting with /app)
             # and the path looks like a Windows path (drive letter or backslashes)
             if (sys.platform != "win32") and (":" in path_str or "\\" in path_str):
-                # Try to rebase relative to data_dir
-                # Strategy: find known markers like 'auth', 'analytics', 'data'
-                parts = path_str.replace("\\", "/").split("/")
-                
-                # Common subdirectories in our structure
-                markers = ["auth", "analytics", "Company Fundamentals", "symbols", "connections", "logs"]
-                
-                for marker in markers:
-                    if marker in parts:
-                        try:
+                try:
+                    # Try to rebase relative to data_dir
+                    # Strategy: find known markers like 'auth', 'analytics', 'data'
+                    parts = path_str.replace("\\", "/").split("/")
+                    
+                    # Common subdirectories in our structure
+                    markers = ["auth", "analytics", "Company Fundamentals", "symbols", "connections", "logs"]
+                    
+                    for marker in markers:
+                        if marker in parts:
                             idx = parts.index(marker)
                             # Reconstruct path from marker onwards relative to our data_dir
                             rel_path = os.path.join(*parts[idx:])
                             new_path = os.path.join(self.data_dir, rel_path)
                             print(f"[INFO] Path correction (Win->Docker): '{path_str}' -> '{new_path}'")
                             return new_path
-                        except Exception as e:
-                            print(f"[WARNING] Path correction failed for '{path_str}': {e}")
+                except Exception as e:
+                    print(f"[WARNING] Path correction failed for '{path_str}': {e}")
+
+            # Generic Invalid Path Fix (e.g. /home/user/... on CI)
+            # If path starts with / (but wasn't found existing above) and we are on non-Windows
+            if (sys.platform != "win32") and path_str.startswith("/"):
+                try:
+                    # Try to rebase relative to data_dir
+                    parts = path_str.strip("/").split("/")
+                    
+                    # Common subdirectories in our structure
+                    markers = ["auth", "analytics", "Company Fundamentals", "symbols", "connections", "logs"]
+                    
+                    for marker in markers:
+                        if marker in parts:
+                            idx = parts.index(marker)
+                            # Reconstruct path from marker onwards relative to our data_dir
+                            rel_path = os.path.join(*parts[idx:])
+                            new_path = os.path.join(self.data_dir, rel_path)
+                            print(f"[INFO] Path correction (Generic): '{path_str}' -> '{new_path}'")
+                            return new_path
+                except Exception as e:
+                    print(f"[WARNING] Path correction failed for '{path_str}': {e}")
             
             return path_str
 
