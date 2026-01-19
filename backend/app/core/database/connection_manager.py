@@ -100,27 +100,47 @@ class ConnectionManager:
             raise ValueError(f"ConnectionManager data_dir cannot be empty. Current value: '{self.data_dir}'")
         
         # Ensure default SQLite auth connection exists
-        if "auth_sqlite_default" not in self.connections:
-            db_path = os.path.abspath(os.path.join(self.data_dir, "auth", "sqlite", "auth.db"))
-            # Validate path is not empty
-            if not db_path or not db_path.strip():
-                raise ValueError(f"Cannot create database path. data_dir: '{self.data_dir}', resulting path: '{db_path}'")
-            self.connections["auth_sqlite_default"] = {
-                "id": "auth_sqlite_default",
-                "name": "Default SQLite Auth",
-                "type": "sqlite",
-                "category": "auth",
-                "config": {
-                    "path": db_path
-                },
-                "is_default": True,
-                "is_active": True,
-                "status": "active",
-                "last_tested": None,
-                "created_at": datetime.now(timezone.utc).isoformat()
-            }
-            # Don't save during initialization to avoid file I/O during import
-            # Will be saved on first actual use
+        # Ensure default connection exists (Postgres or SQLite based on env)
+        # Check if DATABASE_URL is set and points to Postgres
+        db_url = os.getenv("DATABASE_URL", "")
+        use_postgres = db_url.startswith("postgresql")
+        
+        if use_postgres:
+            if "auth_postgres_default" not in self.connections:
+                self.connections["auth_postgres_default"] = {
+                    "id": "auth_postgres_default",
+                    "name": "Default PostgreSQL Auth",
+                    "type": "postgresql",
+                    "category": "auth",
+                    "config": {
+                        "url": db_url
+                    },
+                    "is_default": True,
+                    "is_active": True,
+                    "status": "active",
+                    "last_tested": None,
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                }
+        else:
+            if "auth_sqlite_default" not in self.connections:
+                db_path = os.path.abspath(os.path.join(self.data_dir, "auth", "sqlite", "auth.db"))
+                # Validate path is not empty
+                if not db_path or not db_path.strip():
+                    raise ValueError(f"Cannot create database path. data_dir: '{self.data_dir}', resulting path: '{db_path}'")
+                self.connections["auth_sqlite_default"] = {
+                    "id": "auth_sqlite_default",
+                    "name": "Default SQLite Auth",
+                    "type": "sqlite",
+                    "category": "auth",
+                    "config": {
+                        "path": db_path
+                    },
+                    "is_default": True,
+                    "is_active": True,
+                    "status": "active",
+                    "last_tested": None,
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                }
         
         # Ensure default DuckDB analytics connection exists
         if "analytics_duckdb_default" not in self.connections:
@@ -145,7 +165,10 @@ class ConnectionManager:
         
         # Set active connections if not set
         if "auth" not in self.active_connections:
-            self.active_connections["auth"] = "auth_sqlite_default"
+            if "auth_postgres_default" in self.connections:
+                self.active_connections["auth"] = "auth_postgres_default"
+            else:
+                self.active_connections["auth"] = "auth_sqlite_default"
         if "analytics" not in self.active_connections:
             self.active_connections["analytics"] = "analytics_duckdb_default"
         # Don't save during initialization to avoid file I/O during import

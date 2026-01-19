@@ -54,6 +54,26 @@ services:
           cpus: '0.5'
           memory: 512M
 
+  postgres:
+    image: postgres:15-alpine
+    container_name: openanalytics_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - rubik-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   frontend:
     image: ${FRONTEND_IMAGE}
     container_name: ${FRONTEND_CONTAINER_NAME}
@@ -87,7 +107,6 @@ services:
           cpus: '0.25'
           memory: 256M
 
-
   watchtower:
     image: containrrr/watchtower:latest
     container_name: watchtower
@@ -97,7 +116,7 @@ services:
     environment:
       - DOCKER_API_VERSION=1.44
       # Enable Slack notifications
-      - WATCHTOWER_NOTIFICATIONS=slack 
+      - WATCHTOWER_NOTIFICATIONS=slack
       # Paste your Slack webhook URL here
       - WATCHTOWER_NOTIFICATION_SLACK_HOOK_URL=${SLACK_WEBHOOK_URL}
       # Optional: Set the notification level (info, verbose, debug)
@@ -110,7 +129,9 @@ services:
       - WATCHTOWER_CLEANUP=true
     restart: unless-stopped
 
-
 networks:
   rubik-network:
     driver: bridge
+
+volumes:
+  postgres_data:

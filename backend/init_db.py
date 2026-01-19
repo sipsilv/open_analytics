@@ -76,15 +76,28 @@ def init_database():
         from app.core.auth.security import get_password_hash
         import uuid
         
-        print("\n[INFO] Checking for admin user...")
+        print(f"\n[INFO] Checking for admin user...")
+        
         with Session(engine) as session:
-            admin_email = os.getenv("ADMIN_EMAIL", "admin@openanalytics.co.in")
+            # Verify connection dialect
+            dialect = session.bind.dialect.name
+            print(f"[INFO] Using database dialect: {dialect}")
+            
+            admin_email = os.getenv("ADMIN_EMAIL")
+            if not admin_email:
+                print("[WARNING] ADMIN_EMAIL not set in environment. Skipping admin creation.")
+                return True # Don't fail, just skip
+            
             # Check if admin exists
             existing_user = session.query(User).filter(User.email == admin_email).first()
             
             if not existing_user:
                 print(f"[INFO] Creating default admin user: {admin_email}")
-                admin_password = os.getenv("ADMIN_PASSWORD", "admin123")
+                admin_password = os.getenv("ADMIN_PASSWORD")
+                if not admin_password:
+                     raise ValueError("ADMIN_PASSWORD required in environment variables")
+                
+                admin_username = os.getenv("ADMIN_USERNAME", "Admin User")
                 
                 admin_user = User(
                     user_id=str(uuid.uuid4()),
@@ -92,14 +105,14 @@ def init_database():
                     username="admin",
                     mobile="0000000000",  # Dummy mobile required by schema
                     hashed_password=get_password_hash(admin_password),
-                    name=os.getenv("ADMIN_USERNAME", "Admin User"),
+                    name=admin_username,
                     role="admin",
                     is_active=True,
                     account_status="active"
                 )
                 session.add(admin_user)
                 session.commit()
-                print("[OK] Admin user created successfully")
+                print("[OK] Admin user created successfully via " + dialect)
             else:
                 print("[INFO] Admin user already exists")
                 
