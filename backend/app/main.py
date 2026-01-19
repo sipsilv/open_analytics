@@ -78,6 +78,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Gzip Compression - significantly reduces response payload size
+from fastapi.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+
 # CORS middleware - MUST be added before other middleware
 app.add_middleware(
     CORSMiddleware,
@@ -565,6 +570,13 @@ async def shutdown_event():
         # Symbols module has been removed
         pass
         
+        # Stop Scheduler (Global)
+        try:
+            from app.services.scheduler import stop_scheduler
+            stop_scheduler()
+        except Exception as e:
+            print(f"[WARNING] Error stopping global scheduler: {e}")
+
         # Stop Scheduler Service
         try:
             from app.providers.scheduler import get_scheduler_service

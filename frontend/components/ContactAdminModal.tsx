@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { authAPI } from '@/lib/api'
 import { getErrorMessage } from '@/lib/error-utils'
-import { X } from 'lucide-react'
 
 interface ContactAdminModalProps {
   isOpen: boolean
@@ -24,19 +24,12 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
   })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
-  const [isVisible, setIsVisible] = useState(false)
 
-  // Animation state - sync with modal open/close
-  useEffect(() => {
-    if (isOpen) {
-      // Trigger animation after mount
-      setTimeout(() => setIsVisible(true), 10)
-    } else {
-      setIsVisible(false)
-    }
-  }, [isOpen])
-
-  if (!isOpen) return null
+  const handleClose = () => {
+    setFormData({ name: '', email: '', mobile: '', company: '', reason: '' })
+    setMessage('')
+    onClose()
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -105,9 +98,7 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
       // Success
       setMessage('Request submitted successfully! An admin will review your request.')
       setTimeout(() => {
-        onClose()
-        setFormData({ name: '', email: '', mobile: '', company: '', reason: '' })
-        setMessage('')
+        handleClose()
       }, 2000)
     } catch (error: any) {
       // Extract error message from backend response
@@ -208,32 +199,29 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
               ? 'bg-success/10 border border-success'
               : 'bg-error/10 border border-error'
               }`}>
-              <p className={`text-sm font-sans ${message.includes('successfully') ? 'text-success' : 'text-error'
-                }`}>
-                {typeof message === 'string' ? message : getErrorMessage(message, 'An error occurred')}
-              </p>
-            </div>
-          )}
-
-          <div className="flex gap-2 justify-end pt-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onClose}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-            >
-              {loading ? 'Submitting...' : 'Submit Request'}
-            </Button>
+              {typeof message === 'string' ? message : getErrorMessage(message, 'An error occurred')}
+            </p>
           </div>
-        </form>
+        )}
+
+      <div className="flex gap-2 justify-end pt-2">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={handleClose}
+          disabled={loading}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={loading}
+        >
+          {loading ? 'Submitting...' : 'Submit Request'}
+        </Button>
       </div>
-    </div>
+    </form>
+    </Modal >
   )
 }
 
