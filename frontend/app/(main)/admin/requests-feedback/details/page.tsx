@@ -112,9 +112,9 @@ export default function RequestsFeedbackDetailsPage() {
 
     // If status is approved, ensure progress status is valid
     if (selectedStatus === 'approved') {
-      // If current progress is "Closed", change to "Not Started"
-      if (selectedProgressStatus === 'Closed') {
-        setSelectedProgressStatus('Not Started')
+      // If current progress is "Closed" or "Not Started", change to "In Progress"
+      if (selectedProgressStatus === 'Closed' || selectedProgressStatus === 'Not Started') {
+        setSelectedProgressStatus('In Progress')
       }
     }
   }, [selectedStatus, selectedItem])
@@ -420,8 +420,8 @@ export default function RequestsFeedbackDetailsPage() {
 
     // If approved, check if it's implemented or just approved
     if (statusLower === 'approved') {
-      // For approved items, default to "Not Started" unless already implemented
-      return 'Not Started'
+      // For approved items, default to "In Progress" unless already implemented
+      return 'In Progress'
     }
 
     // For pending/open, progress should be "Not Started"
