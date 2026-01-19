@@ -18,8 +18,8 @@ test.describe('Admin - Accounts Management', () => {
     await page.waitForTimeout(1000); // Wait for data to load
 
     // Check page elements - use heading role for specificity
-    await expect(page.getByRole('heading', { name: /Accounts/i })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole('button', { name: /Create Account/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { level: 1, name: /^Accounts$/ })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('button', { name: /Create User/i })).toBeVisible({ timeout: 10000 });
 
     // Check table headers - use more specific selectors
     const table = page.locator('table').first();
@@ -37,7 +37,7 @@ test.describe('Admin - Accounts Management', () => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
 
-    const createButton = page.getByRole('button', { name: /Create Account/i });
+    const createButton = page.getByRole('button', { name: /Create User/i });
     await createButton.waitFor({ state: 'visible', timeout: 10000 });
     await createButton.click();
 
@@ -45,7 +45,7 @@ test.describe('Admin - Accounts Management', () => {
     await page.waitForTimeout(300);
 
     // Modal should appear - use heading role for specificity
-    await expect(page.getByRole('heading', { name: /Create Account/i })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('heading', { name: /Create User/i })).toBeVisible({ timeout: 5000 });
 
     // Check form fields - use placeholder or input type as fallback
     const usernameInput = page.locator('input[type="text"]').first();
@@ -57,7 +57,7 @@ test.describe('Admin - Accounts Management', () => {
     await cancelButton.click();
 
     await page.waitForTimeout(300);
-    await expect(page.getByRole('heading', { name: /Create Account/i })).not.toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('heading', { name: /Create User/i })).not.toBeVisible({ timeout: 5000 });
   });
 
   test('should search for users', async ({ page }) => {

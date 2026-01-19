@@ -17,20 +17,23 @@ test.describe('Admin - Connections', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(1000);
 
-    // Check page elements - use heading role for specificity
-    await expect(page.getByRole('heading', { name: /Connections/i })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole('button', { name: /Create Connection|Add Connection/i })).toBeVisible({ timeout: 10000 });
+    // Check page elements - use level for heading specificity to avoid strict mode violation
+    await expect(page.getByRole('heading', { level: 1, name: /^Connections$/ })).toBeVisible({ timeout: 10000 });
 
-    // Check table or list is visible
-    const table = page.locator('table').first();
-    await expect(table).toBeVisible({ timeout: 10000 });
+    // On categories page, we check for category view buttons
+    await expect(page.getByRole('button', { name: /View Database Connections/i })).toBeVisible({ timeout: 10000 });
   });
 
   test('should open create connection modal', async ({ page }) => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
 
-    const createButton = page.getByRole('button', { name: /Create Connection|Add Connection/i });
+    // Navigate to a specific category list first
+    await page.getByRole('button', { name: /View Database Connections/i }).click();
+    await page.waitForURL(/\/admin\/connections\/list/);
+    await page.waitForLoadState('networkidle');
+
+    const createButton = page.getByRole('button', { name: /Add Connection/i });
     await createButton.waitFor({ state: 'visible', timeout: 10000 });
     await createButton.click();
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Textarea } from '@/components/ui/Textarea'
 import { ErrorMessage } from '@/components/ui/ErrorMessage'
 import { authAPI } from '@/lib/api'
 import { getErrorMessage } from '@/lib/error-utils'
@@ -192,19 +193,15 @@ export function ContactAdminModal({ isOpen, onClose }: ContactAdminModalProps) {
             placeholder="Enter your company name"
           />
 
-          <div className="w-full">
-            <label className="block text-sm font-sans font-medium text-[#9ca3af] mb-1.5">
-              Reason for Access (Required)
-            </label>
-            <textarea
-              value={formData.reason}
-              onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-              required
-              rows={3}
-              className="w-full px-3 py-2 border border-[#1f2a44] rounded-lg bg-[#121b2f] text-[#e5e7eb] font-sans text-base placeholder:text-[#6b7280] focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/30 focus:border-[#3b82f6] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 resize-none"
-              placeholder="Explain why you need access to the platform"
-            />
-          </div>
+          <Textarea
+            id="contact-reason"
+            label="Reason for Access (Required)"
+            value={formData.reason}
+            onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+            required
+            rows={3}
+            placeholder="Explain why you need access to the platform"
+          />
 
           {message && (
             <div className={`rounded-sm p-2.5 ${message.includes('successfully')
