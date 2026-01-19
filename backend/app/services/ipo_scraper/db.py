@@ -313,7 +313,7 @@ def get_bse_data(limit=100):
         logger.error(f"Error fetching BSE data: {e}")
         return []
 
-from app.services.shared_db import get_shared_db
+from app.providers.shared_db import get_shared_db
 
 logger = logging.getLogger(__name__)
 
