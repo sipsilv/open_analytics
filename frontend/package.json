@@ -10,7 +10,12 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
-    "install:browsers": "playwright install"
+    "install:browsers": "playwright install",
+    "static-build": "next build",
+    "cap-copy": "npx cap copy",
+    "cap-sync": "npx cap sync",
+    "mobile:android": "npm run static-build && npx cap sync android && npx cap open android",
+    "mobile:ios": "npm run static-build && npx cap sync ios && npx cap open ios"
   },
   "dependencies": {
     "axios": "^1.7.2",
@@ -23,6 +28,10 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.0.1",
+    "@capacitor/cli": "^8.0.1",
+    "@capacitor/core": "^8.0.1",
+    "@capacitor/ios": "^8.0.1",
     "@playwright/test": "^1.40.0",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^20.14.10",

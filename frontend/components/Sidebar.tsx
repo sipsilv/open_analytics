@@ -97,7 +97,7 @@ export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { user, logout: storeLogout } = useAuthStore()
-  const { setSubItems, clearSubItems } = useNavigationStore()
+  const { setSubItems, clearSubItems, isMobileMenuOpen, setIsMobileMenuOpen } = useNavigationStore()
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin'
 
@@ -166,10 +166,18 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Toggle Button - Fixed position, outside sidebar container */}
+      {/* Mobile Backdrop */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm lg:hidden transition-opacity duration-300"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Toggle Button - Fixed position, outside sidebar container - Hidden on mobile */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className={`fixed top-1/2 z-50 w-7 h-7 rounded-full bg-[#f3f4f6] dark:bg-[#121b2f] border border-border dark:border-[#1f2a44] flex items-center justify-center hover:bg-[#e5e7eb] dark:hover:bg-[#182447] transition-[left] duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-[#3b82f6]/30 cursor-pointer ${collapsed ? 'left-[50px]' : 'left-[242px]'
+        className={`fixed top-1/2 z-50 w-7 h-7 rounded-full bg-[#f3f4f6] dark:bg-[#121b2f] border border-border dark:border-[#1f2a44] hidden lg:flex items-center justify-center hover:bg-[#e5e7eb] dark:hover:bg-[#182447] transition-[left] duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary/30 dark:focus:ring-[#3b82f6]/30 cursor-pointer ${collapsed ? 'left-[50px]' : 'left-[242px]'
           }`}
         style={{
           transform: 'translateY(-50%)',
@@ -197,10 +205,13 @@ export function Sidebar() {
       </button>
 
       <aside
-        className={`relative h-screen bg-panel dark:bg-[#0a1020] border-r border-border dark:border-[#1f2a44] transition-[width] duration-300 ease-in-out flex flex-col flex-shrink-0 overflow-hidden ${collapsed ? 'w-16' : 'w-64'
-          }`}
+        className={`fixed lg:relative h-screen bg-panel dark:bg-[#0a1020] border-r border-border dark:border-[#1f2a44] transition-all duration-300 ease-in-out flex flex-col flex-shrink-0 overflow-hidden z-[70] ${isMobileMenuOpen
+            ? 'translate-x-0 w-64'
+            : '-translate-x-full lg:translate-x-0'
+          } ${collapsed ? 'lg:w-16' : 'lg:w-64'}
+          `}
         style={{
-          transition: 'width 300ms cubic-bezier(0.4, 0, 0.2, 1)'
+          transition: 'width 300ms cubic-bezier(0.4, 0, 0.2, 1), transform 300ms cubic-bezier(0.4, 0, 0.2, 1)'
         }}
       >
         {/* Logo */}

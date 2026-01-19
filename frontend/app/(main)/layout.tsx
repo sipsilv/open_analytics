@@ -1,12 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useAuthStore, useSessionStore, useThemeStore } from '@/lib/store'
 import { Sidebar } from '@/components/Sidebar'
+import { MobileHeader } from '@/components/MobileHeader'
 import { TopSubNav } from '@/components/TopSubNav'
 import Cookies from 'js-cookie'
 import { userAPI } from '@/lib/api'
+import { useNavigationStore } from '@/lib/store'
 
 export default function MainLayout({
   children,
@@ -17,11 +19,13 @@ export default function MainLayout({
   const { user, setUser, isAuthenticated } = useAuthStore()
   const { setSessionExpiry, setIdleTimeout } = useSessionStore()
   const { initializeTheme } = useThemeStore()
+  const { setIsMobileMenuOpen } = useNavigationStore()
   const [mounted, setMounted] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
     setMounted(true)
-    
+
     const checkAuthAndLoadUser = () => {
       const token = Cookies.get('auth_token')
       if (!token) {
@@ -74,13 +78,18 @@ export default function MainLayout({
     const handleFocus = () => {
       checkAuthAndLoadUser()
     }
-    
+
     window.addEventListener('focus', handleFocus)
-    
+
     return () => {
       window.removeEventListener('focus', handleFocus)
     }
   }, [user, setUser, router, setSessionExpiry, setIdleTimeout, initializeTheme, isAuthenticated])
+
+  // Close mobile menu when Route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false)
+  }, [pathname, setIsMobileMenuOpen])
 
   // Activity tracking - ping server every 2 minutes to update last_active_at
   useEffect(() => {
@@ -88,7 +97,7 @@ export default function MainLayout({
 
     // NO auto-refresh - activity ping removed
     // Ping immediately on mount only
-    userAPI.pingActivity().catch(() => {})
+    userAPI.pingActivity().catch(() => { })
   }, [user])
 
   // Prevent hydration mismatch by not rendering auth-dependent content until mounted
@@ -107,9 +116,10 @@ export default function MainLayout({
   // Always return the same structure to prevent hydration mismatch
   // The router will handle redirects if not authenticated
   return (
-    <div className="flex h-screen bg-background dark:bg-[#0b1220] overflow-hidden">
+    <div className="flex flex-col lg:flex-row h-screen bg-background dark:bg-[#0b1220] overflow-hidden">
       {isAuthenticated && user && <Sidebar />}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden relative">
+        {isAuthenticated && user && <MobileHeader />}
         {isAuthenticated && user && <TopSubNav />}
         <main className="flex-1 overflow-y-auto transition-all duration-[200ms] bg-page-bg dark:bg-[#0e1628]">
           <div className="min-h-full p-4">{children}</div>

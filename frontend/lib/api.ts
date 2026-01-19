@@ -1,10 +1,10 @@
 import axios from 'axios'
 import Cookies from 'js-cookie'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-if (!API_URL) {
-  throw new Error("api url is not found");
+if (!process.env.NEXT_PUBLIC_API_URL) {
+  console.warn("NEXT_PUBLIC_API_URL is not set, falling back to localhost:8000");
 }
 
 const api = axios.create({

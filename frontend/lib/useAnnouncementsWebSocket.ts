@@ -3,12 +3,12 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import Cookies from 'js-cookie'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 // Convert HTTP URL to WebSocket URL
 const getWebSocketUrl = (): string => {
   if (!API_URL) {
-    throw new Error("API_URL is not defined");
+    return 'ws://localhost:8000/api/v1/ws';
   }
 
   const u = new URL(API_URL);

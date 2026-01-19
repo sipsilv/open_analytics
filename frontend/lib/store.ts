@@ -183,14 +183,20 @@ interface SubNavItem {
 
 interface NavigationState {
   subItems: SubNavItem[]
+  isMobileMenuOpen: boolean
   setSubItems: (items: SubNavItem[]) => void
   clearSubItems: () => void
+  setIsMobileMenuOpen: (open: boolean) => void
+  toggleMobileMenu: () => void
 }
 
 export const useNavigationStore = create<NavigationState>((set) => ({
   subItems: [],
+  isMobileMenuOpen: false,
   setSubItems: (items) => set({ subItems: items }),
   clearSubItems: () => set({ subItems: [] }),
+  setIsMobileMenuOpen: (open) => set({ isMobileMenuOpen: open }),
+  toggleMobileMenu: () => set((state) => ({ isMobileMenuOpen: !state.isMobileMenuOpen })),
 }))
 
 interface ThemeState {

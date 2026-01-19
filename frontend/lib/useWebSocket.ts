@@ -3,9 +3,9 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import Cookies from 'js-cookie'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
-if(!API_URL){
-	throw new Error("api url is not found");
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+if (!process.env.NEXT_PUBLIC_API_URL) {
+  console.warn("NEXT_PUBLIC_API_URL is not set for WebSocket initialization");
 }
 
 // Convert HTTP URL to WebSocket URL
@@ -56,11 +56,11 @@ export function useWebSocketStatus(
   const isConnectingRef = useRef(false)
   const maxReconnectAttempts = 5
   const reconnectDelay = 3000 // 3 seconds
-  
+
   // Use ref for callback to avoid dependency issues
   const onStatusUpdateRef = useRef(onStatusUpdate)
   onStatusUpdateRef.current = onStatusUpdate
-  
+
   const onAnnouncementRef = useRef(onAnnouncement)
   onAnnouncementRef.current = onAnnouncement
 
@@ -69,7 +69,7 @@ export function useWebSocketStatus(
     if (isConnectingRef.current) {
       return
     }
-    
+
     // Don't connect if already connected or no auth token
     const token = Cookies.get('auth_token')
     if (!token || wsRef.current?.readyState === WebSocket.OPEN) {
@@ -93,7 +93,7 @@ export function useWebSocketStatus(
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
-          
+
           // Handle user status updates
           if (data.type === 'user_status_update' || data.event === 'user_status_update') {
             const update: UserStatusUpdate = {
@@ -176,7 +176,7 @@ export function useWebSocketStatus(
     const interval = setInterval(() => {
       const token = Cookies.get('auth_token')
       const wsState = wsRef.current?.readyState
-      
+
       // Connect if we have token but no connection
       if (token && !wsRef.current && !isConnectingRef.current) {
         connect()
@@ -192,7 +192,7 @@ export function useWebSocketStatus(
         }
       }
     }, 5000) // Check every 5 seconds instead of 1 second
-    
+
     return () => clearInterval(interval)
   }, [connect, disconnect])
 
