@@ -441,8 +441,9 @@ export function ConnectionModal({ isOpen, onClose, connection, onUpdate, categor
                                 />
 
                                 <div className="w-full">
-                                    <label className="block text-sm font-sans font-medium text-[#9ca3af] mb-1.5">Type</label>
+                                    <label htmlFor="connection-type" className="block text-sm font-sans font-medium text-[#9ca3af] mb-1.5">Type</label>
                                     <select
+                                        id="connection-type"
                                         value={formData.connection_type}
                                         onChange={(e) => setFormData({ ...formData, connection_type: e.target.value })}
                                         className="w-full px-3 py-2 border border-[#1f2a44] rounded-lg bg-[#121b2f] text-[#e5e7eb] focus:ring-2 focus:ring-primary/30 outline-none"
@@ -458,10 +459,11 @@ export function ConnectionModal({ isOpen, onClose, connection, onUpdate, categor
                             <div className="grid grid-cols-2 gap-4">
                                 {formData.connection_type === 'AI_ML' ? (
                                     <div className="w-full">
-                                        <label className="block text-sm font-sans font-medium text-[#9ca3af] mb-1.5">
+                                        <label htmlFor="connection-provider" className="block text-sm font-sans font-medium text-[#9ca3af] mb-1.5">
                                             Provider <span className="text-red-400">*</span>
                                         </label>
                                         <select
+                                            id="connection-provider"
                                             value={formData.provider}
                                             onChange={(e) => {
                                                 const newProvider = e.target.value
@@ -501,8 +503,9 @@ export function ConnectionModal({ isOpen, onClose, connection, onUpdate, categor
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="w-full">
-                                        <label className="block text-sm font-sans font-medium text-[#9ca3af] mb-1.5">Environment</label>
+                                        <label htmlFor="connection-environment" className="block text-sm font-sans font-medium text-[#9ca3af] mb-1.5">Environment</label>
                                         <select
+                                            id="connection-environment"
                                             value={formData.environment}
                                             onChange={(e) => setFormData({ ...formData, environment: e.target.value })}
                                             className="w-full px-3 py-2 border border-[#1f2a44] rounded-lg bg-[#121b2f] text-[#e5e7eb] focus:ring-2 focus:ring-primary/30 outline-none"
@@ -532,8 +535,9 @@ export function ConnectionModal({ isOpen, onClose, connection, onUpdate, categor
                             </div>
 
                             <div className="w-full">
-                                <label className="block text-sm font-sans font-medium text-[#9ca3af] mb-1.5">Description</label>
+                                <label htmlFor="connection-description" className="block text-sm font-sans font-medium text-[#9ca3af] mb-1.5">Description</label>
                                 <textarea
+                                    id="connection-description"
                                     value={formData.description}
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                     className="w-full px-3 py-2 border border-[#1f2a44] rounded-lg bg-[#121b2f] text-[#e5e7eb] focus:ring-2 focus:ring-primary/30 outline-none"
