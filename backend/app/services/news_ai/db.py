@@ -678,6 +678,9 @@ def get_system_setting(key, default=None):
         res = db.run_final_query("SELECT value FROM system_settings WHERE key = ?", [key], fetch='one')
         return res[0] if res else default
     except Exception as e:
+        # If table doesn't exist yet (e.g., during test initialization), return default
+        if "does not exist" in str(e).lower():
+            return default
         logger.error(f"Error getting setting {key}: {e}")
         return default
 

@@ -59,10 +59,10 @@ test.describe('Admin - Feature Request Status Logic', () => {
         const pendingOption = statusSelect.locator('option[value="pending"]');
         if (await pendingOption.count() > 0) {
             await statusSelect.selectOption('pending');
-            // Should default to Open
-            await expect(progressSelect).toHaveValue('Open');
-            // Should NOT have "Closed" anymore
-            await expect(progressSelect.locator('option[value="Closed"]')).not.toBeAttached();
+            // Should default to Not Started
+            await expect(progressSelect).toHaveValue('Not Started');
+            // Should have "Closed" as an option (for rejecting pending items)
+            await expect(progressSelect.locator('option[value="Closed"]')).toBeAttached();
         }
     });
 });
