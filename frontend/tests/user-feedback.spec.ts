@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 
 test.describe('User Feedback & Feature Requests', () => {
+    test.describe.configure({ mode: 'serial' });
+
     test.beforeEach(async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto('/feature-feedback/unified');
@@ -9,30 +11,23 @@ test.describe('User Feedback & Feature Requests', () => {
     });
 
     test('should display unified feedback page', async ({ page }) => {
-        await expect(page.getByRole('heading', { name: /Feature Requests & Feedback/i })).toBeVisible({ timeout: 10000 });
+        await expect(page.getByRole('heading', { name: /Feature Requests & Feedback/i }).first()).toBeVisible({ timeout: 10000 });
         await expect(page.getByRole('button', { name: /Submit New/i })).toBeVisible();
     });
 
     test('should submit a feature request', async ({ page }) => {
         await page.getByRole('button', { name: /Submit New/i }).click();
 
-        // Wait for modal
+        // Wait for modal - use first() for heading since it might exist in background page too
         await expect(page.getByRole('heading', { name: /Feature Requests & Feedback/i }).nth(1)).toBeVisible();
 
-        // Fill the form
-        await page.locator('select').first().selectOption('Enhancement');
-
-        // The Input component for Title might not have a label that Playwright likes yet (Wait, I fixed Input.tsx!)
-        // Let's check if UnifiedSubmitModal uses the new Input with id.
-        // In UnifiedSubmitModal.tsx: 315: <Input ... id is NOT passed.
-        // I should fix UnifiedSubmitModal too to use IDs for better testing.
-
-        // For now, use placeholder
-        await page.getByPlaceholder(/Brief, descriptive title/i).fill('Test Feature Request Title');
-        await page.getByPlaceholder(/Describe the feature or improvement/i).fill('This is a test feature request description with more than 10 characters.');
+        // Fill the form using labels
+        await page.getByLabel(/Category/i).selectOption('Enhancement');
+        await page.getByLabel(/Title/i).fill('Test Feature Request Title');
+        await page.getByLabel(/Description/i).fill('This is a test feature request description with more than 10 characters.');
 
         // Submit
-        const submitButton = page.getByRole('button', { name: /Submit/i, exact: true });
+        const submitButton = page.getByRole('button', { name: /Submit/i, exact: true }).first();
         await expect(submitButton).toBeEnabled();
         await submitButton.click();
 

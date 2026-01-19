@@ -12,13 +12,13 @@ test.describe('Admin - Symbols Master', () => {
         await expect(page.getByRole('heading', { name: /Symbols Master/i })).toBeVisible({ timeout: 10000 });
 
         // Check for core action buttons
-        await expect(page.getByRole('button', { name: /Upload Symbols/i })).toBeVisible();
-        await expect(page.getByRole('button', { name: /Status/i })).toBeVisible();
-        await expect(page.getByRole('button', { name: /Reload Series/i })).toBeVisible();
+        await expect(page.getByRole('button', { name: /Upload Symbols/i }).first()).toBeVisible();
+        await expect(page.getByRole('button', { name: /Status/i }).first()).toBeVisible();
+        await expect(page.getByRole('button', { name: /Reload Series/i }).first()).toBeVisible();
     });
 
     test('should open upload symbols modal', async ({ page }) => {
-        await page.getByRole('button', { name: /Upload Symbols/i }).click();
+        await page.getByRole('button', { name: /Upload Symbols/i }).first().click();
         await expect(page.getByRole('heading', { name: /Upload Symbols/i })).toBeVisible();
 
         // Verify modal has essential fields
@@ -30,8 +30,8 @@ test.describe('Admin - Symbols Master', () => {
     });
 
     test('should open status modal', async ({ page }) => {
-        await page.getByRole('button', { name: /Status/i }).click();
-        await expect(page.getByText(/Recent Upload Jobs/i)).toBeVisible();
+        await page.getByRole('button', { name: /Status/i }).first().click();
+        await expect(page.getByRole('heading', { name: /Upload Status/i })).toBeVisible();
 
         // Close modal
         await page.locator('button:has(svg.lucide-x)').first().click();

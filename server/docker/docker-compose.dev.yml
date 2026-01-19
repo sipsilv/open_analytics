@@ -1,0 +1,17 @@
+# development override to build from local source
+# Use this with: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+
+services:
+  backend:
+    build:
+      context: ../..
+      dockerfile: server/docker/backend.Dockerfile
+    # The main docker-compose.yml already defines ports, env, volumes, etc.
+
+  frontend:
+    build:
+      context: ../..
+      dockerfile: server/docker/frontend.Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+    # The main docker-compose.yml already defines ports, env, etc.

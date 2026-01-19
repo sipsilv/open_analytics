@@ -43,8 +43,8 @@ test.describe('Admin - Connections', () => {
     // Modal should appear - use heading role for specificity
     await expect(page.getByRole('heading', { name: /Create Connection|New Connection/i })).toBeVisible({ timeout: 5000 });
 
-    // Check form fields - use input type as fallback
-    const nameField = page.locator('input[type="text"]').first();
+    // Check form fields
+    const nameField = page.getByPlaceholder(/e.g. Binance Production|TrueData/i).first();
     await expect(nameField).toBeVisible({ timeout: 5000 });
 
     // Close modal
