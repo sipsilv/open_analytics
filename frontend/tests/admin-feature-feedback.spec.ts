@@ -117,8 +117,10 @@ test.describe('Admin - Feature Request & Feedback Details', () => {
             expect(afterRowCount).toBeLessThanOrEqual(initialRowCount);
         }
 
-        // Clear search
-        await page.locator('button:has-text("Clear")').click();
+        // Clear search - wait for button to be visible and attached
+        const clearButton = page.locator('button:has-text("Clear")');
+        await clearButton.waitFor({ state: 'visible', timeout: 10000 });
+        await clearButton.click({ timeout: 10000 });
         await page.waitForLoadState('networkidle');
     });
 
@@ -155,7 +157,9 @@ test.describe('Admin - Feature Request & Feedback Details', () => {
         const statusSelect = page.locator('label:has-text("Acceptance Status")').locator('..').locator('select');
 
         await statusSelect.waitFor({ state: 'visible', timeout: 10000 });
-        await statusSelect.selectOption('Approved');
+        await statusSelect.waitFor({ state: 'attached', timeout: 10000 });
+        await page.waitForTimeout(500); // Give extra time for the select to be ready
+        await statusSelect.selectOption('Approved', { timeout: 10000 });
         await page.waitForTimeout(1000); // Wait for filter to apply
 
         // Verify filter was applied

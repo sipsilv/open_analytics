@@ -57,7 +57,8 @@ test.describe('Admin - Requests & Feedback Dashboard', () => {
         // Verify all statistics labels are present (use waitFor to ensure they load)
         await page.waitForSelector('text=Total Items', { timeout: 5000 });
         await expect(page.locator('text=Total Items')).toBeVisible();
-        await expect(page.locator('text=Feature Requests')).toBeVisible();
+        // Use more specific selector to avoid strict mode violation - target the stat card with primary color
+        await expect(page.locator('.text-primary:has-text("Feature Requests")').first()).toBeVisible();
         await expect(page.locator('text=Feedback').first()).toBeVisible();
 
         // Check for second Pending (Feature Request card) - may not always be present
