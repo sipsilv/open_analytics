@@ -117,10 +117,14 @@ test.describe('Admin - Feature Request & Feedback Details', () => {
             expect(afterRowCount).toBeLessThanOrEqual(initialRowCount);
         }
 
-        // Clear search - wait for button to be visible and attached
-        const clearButton = page.locator('button:has-text("Clear")');
-        await clearButton.waitFor({ state: 'visible', timeout: 10000 });
-        await clearButton.click({ timeout: 10000 });
+        // Verify search input still has value (which makes Clear button visible)
+        const searchValue = await searchInput.inputValue();
+        expect(searchValue).toBeTruthy();
+
+        // Clear search - use more specific selector with the X icon
+        const clearButton = page.locator('button:has-text("Clear")').filter({ has: page.locator('svg') });
+        await clearButton.waitFor({ state: 'visible', timeout: 5000 });
+        await clearButton.click();
         await page.waitForLoadState('networkidle');
     });
 
@@ -153,13 +157,15 @@ test.describe('Admin - Feature Request & Feedback Details', () => {
         await expect(page.locator('h1.text-2xl').first()).toContainText('Feature Request & Feedback');
 
         const noItems = page.locator('text=No items found');
-        // Select acceptance status filter
-        const statusSelect = page.locator('label:has-text("Acceptance Status")').locator('..').locator('select');
+
+        // Wait for the filters section to load
+        await page.waitForSelector('label:has-text("Acceptance Status")', { timeout: 10000 });
+
+        // Select acceptance status filter - use nth(1) as it's the second select (Category is 0, Acceptance Status is 1)
+        const statusSelect = page.locator('select').nth(1);
 
         await statusSelect.waitFor({ state: 'visible', timeout: 10000 });
-        await statusSelect.waitFor({ state: 'attached', timeout: 10000 });
-        await page.waitForTimeout(500); // Give extra time for the select to be ready
-        await statusSelect.selectOption('Approved', { timeout: 10000 });
+        await statusSelect.selectOption('Approved');
         await page.waitForTimeout(1000); // Wait for filter to apply
 
         // Verify filter was applied
