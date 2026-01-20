@@ -1,11 +1,13 @@
 # Quick Start Guide
 
-This guide helps you get Rubik Analytics running on your local machine and deploy it to production.
+This guide helps you get Open Analytics running on your local machine and deploy it to production.
 
 ## Prerequisites
 
 - **Python 3.8+** - For backend
 - **Node.js 18+** - For frontend
+- **Docker & Docker Compose** - For containerized deployment (recommended)
+- **PostgreSQL 15** - For production database (or use Docker)
 - **Windows** - For batch scripts (Linux/Mac commands provided where different)
 
 ## Quick Setup (Windows)
@@ -156,48 +158,73 @@ venv\Scripts\python.exe scripts/init/init_symbols_database.py
 
 ## Production Deployment
 
-### Docker Deployment
+### Docker Deployment (Recommended)
 
-**Start services:**
+**Prerequisites:**
+- Docker and Docker Compose installed
+- `.env` file configured in `server/docker/`
+
+**Windows:**
+```batch
+server\windows\docker-start.bat
+```
+
+**Linux/Mac:**
 ```bash
 cd server/docker
-docker-compose up -d
+./docker-start.sh
 ```
+
+This will start:
+- **Backend** (FastAPI) on port 8000
+- **Frontend** (Next.js) on port 3000
+- **PostgreSQL** on port 5432
+- **Watchtower** (auto-updates)
 
 **Stop services:**
-```bash
-docker-compose down
+```batch
+server\windows\docker-stop.bat
 ```
 
-### Traditional Deployment
-
-**Backend:**
-1. Install Python 3.8+ and dependencies
-2. Create virtual environment
-3. Install requirements: `pip install -r requirements.txt`
-4. Initialize database: `python scripts/init/init_auth_database.py`
-5. Run with Gunicorn:
-   ```bash
-   gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker \
-     --bind 0.0.0.0:8000
-   ```
-
-**Frontend:**
-1. Install Node.js 18+
-2. Install dependencies: `npm install`
-3. Build: `npm run build`
-4. Start: `npm start`
+**View logs:**
+```bash
+docker-compose -f server/docker/docker-compose.yml logs -f
+```
 
 ### Environment Variables
 
-**Backend** (`.env` in backend directory):
+**Backend** (`.env` in backend directory or `server/docker/.env`):
 ```env
-DATA_DIR=../data
-JWT_SECRET_KEY=generate-strong-random-secret
-JWT_SYSTEM_SECRET_KEY=generate-strong-random-secret
+# Database
+DATABASE_URL=postgresql://postgres:password@postgres:5432/openanalytics
+DATA_DIR=/app/data
+
+# JWT
+JWT_SECRET_KEY=generate-strong-random-secret-min-32-chars
+JWT_SYSTEM_SECRET_KEY=generate-strong-random-secret-min-32-chars
 ACCESS_TOKEN_EXPIRE_MINUTES=480
 IDLE_TIMEOUT_MINUTES=30
-CORS_ORIGINS=https://yourdomain.com
+
+# Encryption
+ENCRYPTION_KEY=generate-fernet-key-44-chars-base64
+
+# Rate Limiting
+RATE_LIMIT_LOGIN=200/minute
+RATE_LIMIT_PASSWORD_RESET=50/minute
+RATE_LIMIT_ADMIN_CREATE_USER=200/minute
+RATE_LIMIT_ADMIN_DELETE_USER=200/minute
+RATE_LIMIT_ADMIN_CREATE_REQUEST=200/minute
+RATE_LIMIT_ADMIN_CREATE_AI_CONFIG=200/minute
+
+# CORS
+CORS_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+```
+
+**PostgreSQL** (in `server/docker/.env`):
+```env
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your-secure-password
+POSTGRES_DB=openanalytics
 ```
 
 **Frontend** (`.env.local` in frontend directory):
@@ -209,14 +236,17 @@ NEXT_PUBLIC_API_URL=https://api.yourdomain.com
 
 Before production deployment:
 
-- [ ] Change default JWT secrets
+- [ ] Change default JWT secrets (min 32 characters)
+- [ ] Generate Fernet encryption key
 - [ ] Change default admin password
-- [ ] Use strong database passwords
+- [ ] Use strong PostgreSQL password
+- [ ] Configure rate limits appropriately
 - [ ] Enable HTTPS
 - [ ] Configure CORS properly
 - [ ] Set up firewall rules
-- [ ] Enable logging
-- [ ] Set up monitoring
+- [ ] Enable logging and monitoring
+- [ ] Set up database backups
+- [ ] Configure Watchtower Slack notifications
 
 ### Nginx Configuration
 
