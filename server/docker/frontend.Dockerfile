@@ -14,8 +14,8 @@ RUN apt-get update && apt-get install -y \
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
-COPY frontend/package.json frontend/package-lock.json* ./
-RUN npm ci --prefer-offline --no-audit
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
 
 
 # ---------------- builder ----------------
