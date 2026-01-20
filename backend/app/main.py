@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from datetime import datetime, timezone, timedelta
 import logging
 import logging.config
@@ -71,12 +75,19 @@ async def lifespan(app: FastAPI):
     # Shutdown
     await shutdown_event()
 
+# Rate Limiter setup
+limiter = Limiter(key_func=get_remote_address, default_limits=["200 per minute"])
+
 app = FastAPI(
     title="Open Analytics API",
     description="Enterprise Analytics Platform API (v1)",
     version="1.0.1",
     lifespan=lifespan,
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # Gzip Compression - significantly reduces response payload size
 from fastapi.middleware.gzip import GZipMiddleware

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.core.auth.permissions import get_admin_user, get_super_admin
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, UserUpdate, UserStatusUpdate
@@ -13,6 +14,7 @@ from app.schemas.admin import (
 )
 from datetime import datetime, timezone
 from app.services.admin_service import AdminService
+from app.main import limiter
 
 router = APIRouter()
 
@@ -59,7 +61,9 @@ async def get_user(
     return service.get_user_by_id(user_id)
 
 @router.post("/users", response_model=UserResponse)
+@limiter.limit(settings.RATE_LIMIT_ADMIN_CREATE_USER)
 async def create_user(
+    request: Request,
     user_data: UserCreate,
     admin: User = Depends(get_admin_user),
     service: AdminService = Depends(get_admin_service)
@@ -76,7 +80,9 @@ async def update_user(
     return await service.update_user(user_id, user_data, admin)
 
 @router.delete("/users/{user_id}")
+@limiter.limit(settings.RATE_LIMIT_ADMIN_DELETE_USER)
 async def delete_user(
+    request: Request,
     user_id: int,
     admin: User = Depends(get_super_admin),
     service: AdminService = Depends(get_admin_service)
@@ -136,7 +142,9 @@ async def get_requests(
     return service.get_access_requests(status)
 
 @router.post("/requests", response_model=AccessRequestResponse)
+@limiter.limit(settings.RATE_LIMIT_ADMIN_CREATE_REQUEST)
 async def create_request(
+    request: Request,
     request_data: AccessRequestCreate,
     service: AdminService = Depends(get_admin_service)
 ):
@@ -252,7 +260,9 @@ async def get_ai_enrichment_configs(
         raise HTTPException(status_code=500, detail=f"Failed to fetch AI enrichment configs: {str(e)}")
 
 @router.post("/ai-enrichment-config")
+@limiter.limit(settings.RATE_LIMIT_ADMIN_CREATE_AI_CONFIG)
 async def create_ai_enrichment_config(
+    request: Request,
     data: dict,
     admin: User = Depends(get_admin_user)
 ):
