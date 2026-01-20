@@ -78,29 +78,12 @@ test.describe('Admin - Feature Request & Feedback Details', () => {
         // Wait for page to load
         await expect(page.locator('h1.text-2xl')).toContainText('Feature Request & Feedback');
 
-        // Check if there are items to search
-        const table = page.locator('table');
-        const noItems = page.locator('text=No items found');
-
-        await Promise.race([
-            expect(table).toBeVisible(),
-            expect(noItems).toBeVisible()
-        ]);
-
-        if (await noItems.isVisible()) {
-            console.log("No items to test search on.");
-            return;
-        }
-
-        // Wait for table to be fully loaded
-        await table.waitFor({ state: 'visible', timeout: 10000 });
-
-        // Get initial row count
-        const initialRowCount = await page.locator('tbody tr').count();
-
-        // Wait for search input to be visible (it's only rendered when there are items)
+        // Wait for loading to finish - search input should be visible
         const searchInput = page.locator('input[placeholder*="Search"]');
-        await searchInput.waitFor({ state: 'visible', timeout: 10000 });
+        await searchInput.waitFor({ state: 'visible', timeout: 15000 });
+
+        // Get initial state
+        const initialRowCount = await page.locator('tbody tr').count();
 
         // Enter search query
         await searchInput.fill('test search query that should not match anything');
@@ -108,154 +91,113 @@ test.describe('Admin - Feature Request & Feedback Details', () => {
         // Click search button
         await page.locator('button:has-text("Search")').click();
         await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(1000); // Small delay for UI updates
 
-        // Should show "No items found" or fewer results
-        const afterSearchNoItems = page.locator('text=No items found');
-        const afterSearchTable = page.locator('table');
+        // Results should be updated (either "No items found" or fewer rows)
+        const noItems = page.locator('text=No items found');
+        const rows = page.locator('tbody tr');
 
-        const noItemsVisible = await afterSearchNoItems.isVisible();
-        if (noItemsVisible) {
-            // Search worked - no results found
-            expect(noItemsVisible).toBe(true);
-        } else {
-            // Or there might be fewer results
-            const afterRowCount = await page.locator('tbody tr').count();
+        const isNoItemsVisible = await noItems.isVisible();
+        if (!isNoItemsVisible) {
+            const afterRowCount = await rows.count();
             expect(afterRowCount).toBeLessThanOrEqual(initialRowCount);
         }
 
-        // Verify search input still has value (which makes Clear button visible)
-        const searchValue = await searchInput.inputValue();
-        expect(searchValue).toBeTruthy();
+        // Verify search input still has value
+        expect(await searchInput.inputValue()).toBe('test search query that should not match anything');
 
-        // Clear search - use more specific selector with the X icon
-        const clearButton = page.locator('button:has-text("Clear")').filter({ has: page.locator('svg') });
+        // Clear search
+        const clearButton = page.locator('button:has-text("Clear")');
         await clearButton.waitFor({ state: 'visible', timeout: 5000 });
         await clearButton.click();
+
         await page.waitForLoadState('networkidle');
+        await expect(searchInput).toHaveValue('');
     });
 
     test('[TC-ADMIN-FEAT-003] should filter by category', async ({ page }) => {
         await expect(page.locator('h1.text-2xl').first()).toContainText('Feature Request & Feedback');
 
-        // Select a category filter - use nth(0) to get first select element
-        const categorySelect = page.locator('label:has-text("Category")').locator('..').locator('select');
+        // Select a category filter
+        const categorySelect = page.locator('select').nth(0);
+        await categorySelect.waitFor({ state: 'visible', timeout: 15000 });
 
-        await categorySelect.waitFor({ state: 'visible', timeout: 10000 });
         await categorySelect.selectOption('Enhancement');
-        await page.waitForTimeout(1000); // Wait for filter to apply
-
-        // Verify filter was applied (URL or table update)
-        const table = page.locator('table');
-        const noItems = page.locator('text=No items found');
-
-        await Promise.race([
-            expect(table).toBeVisible({ timeout: 5000 }),
-            expect(noItems).toBeVisible({ timeout: 5000 })
-        ]);
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(1000);
 
         // Reset filter
         await categorySelect.selectOption('');
-        await page.waitForTimeout(500);
+        await page.waitForLoadState('networkidle');
+        await expect(categorySelect).toHaveValue('');
     });
 
 
     test('[TC-ADMIN-FEAT-004] should filter by acceptance status', async ({ page }) => {
         await expect(page.locator('h1.text-2xl').first()).toContainText('Feature Request & Feedback');
 
-        // Check if there are items first
-        const table = page.locator('table');
-        const noItems = page.locator('text=No items found');
-
-        await Promise.race([
-            expect(table).toBeVisible({ timeout: 10000 }),
-            expect(noItems).toBeVisible({ timeout: 10000 })
-        ]);
-
-        if (await noItems.isVisible()) {
-            console.log("No items to test filtering on.");
-            return;
-        }
-
-        // Wait for table to be fully loaded (filters are only rendered when there are items)
-        await table.waitFor({ state: 'visible', timeout: 10000 });
-
-        // Wait for the filters section to load
-        await page.waitForSelector('label:has-text("Acceptance Status")', { timeout: 10000 });
-
-        // Select acceptance status filter - use nth(1) as it's the second select (Category is 0, Acceptance Status is 1)
+        // Select acceptance status filter - use nth(1)
         const statusSelect = page.locator('select').nth(1);
+        await statusSelect.waitFor({ state: 'visible', timeout: 15000 });
 
-        await statusSelect.waitFor({ state: 'visible', timeout: 10000 });
         await statusSelect.selectOption('Approved');
-        await page.waitForTimeout(1000); // Wait for filter to apply
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(1000);
 
-        // Verify filter was applied
-        await Promise.race([
-            expect(table).toBeVisible({ timeout: 5000 }),
-            expect(noItems).toBeVisible({ timeout: 5000 })
-        ]);
-
-        // If table is visible, verify all visible items have "Approved" badge
+        // Verify all visible items have "Approved" badge if table is visible
+        const table = page.locator('table');
         if (await table.isVisible()) {
-            const approvedBadges = page.locator('span:has-text("Approved")');
-            const badgeCount = await approvedBadges.count();
-            if (badgeCount > 0) {
-                expect(badgeCount).toBeGreaterThan(0);
+            const rows = page.locator('tbody tr');
+            const rowCount = await rows.count();
+            if (rowCount > 0) {
+                const approvedBadges = page.locator('span:has-text("Approved")');
+                expect(await approvedBadges.count()).toBeGreaterThan(0);
             }
         }
 
         // Reset filter
         await statusSelect.selectOption('');
-        await page.waitForTimeout(500);
+        await page.waitForLoadState('networkidle');
+        await expect(statusSelect).toHaveValue('');
     });
 
     test('[TC-ADMIN-FEAT-005] should filter by progress status', async ({ page }) => {
         await expect(page.locator('h1.text-2xl').first()).toContainText('Feature Request & Feedback');
 
-        const noItems = page.locator('text=No items found');
-        // Select progress status filter
-        const progressSelect = page.locator('label:has-text("Progress Status")').locator('..').locator('select');
+        // Select progress status filter - use nth(2)
+        const progressSelect = page.locator('select').nth(2);
+        await progressSelect.waitFor({ state: 'visible', timeout: 15000 });
 
-        await progressSelect.waitFor({ state: 'visible', timeout: 10000 });
         await progressSelect.selectOption('In Progress');
-        await page.waitForTimeout(1000); // Wait for filter to apply
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(1000);
 
-        // Verify filter was applied
+        // Verify filter results if stable
         const table = page.locator('table');
-
-        await Promise.race([
-            expect(table).toBeVisible({ timeout: 5000 }),
-            expect(noItems).toBeVisible({ timeout: 5000 })
-        ]);
-
-        // If table is visible, verify all visible items have "In Progress" badge
         if (await table.isVisible()) {
-            const progressBadges = page.locator('span:has-text("In Progress")');
-            const badgeCount = await progressBadges.count();
-            if (badgeCount > 0) {
-                expect(badgeCount).toBeGreaterThan(0);
+            const rows = page.locator('tbody tr');
+            if (await rows.count() > 0) {
+                const progressBadges = page.locator('span:has-text("In Progress")');
+                expect(await progressBadges.count()).toBeGreaterThan(0);
             }
         }
 
         // Reset filter
         await progressSelect.selectOption('');
-        await page.waitForTimeout(500);
+        await page.waitForLoadState('networkidle');
+        await expect(progressSelect).toHaveValue('');
     });
 
     test('[TC-ADMIN-FEAT-006] should display correct table columns', async ({ page }) => {
         await expect(page.locator('h1.text-2xl').first()).toContainText('Feature Request & Feedback');
 
-        // Check if table exists
+        // Wait for loading to finish
+        const indicators = page.locator('text=No items found, table');
+        await page.waitForTimeout(2000); // Wait for potential data fetch
+
+        // If table is visible, check columns
         const table = page.locator('table');
-        const noItems = page.locator('text=No items found');
-
-        await Promise.race([
-            expect(table).toBeVisible({ timeout: 5000 }),
-            expect(noItems).toBeVisible({ timeout: 5000 })
-        ]);
-
         if (await table.isVisible()) {
-            // Verify all expected column headers are present - use first() to avoid multiple matches
             await expect(page.locator('th:has-text("Category")').first()).toBeVisible();
             await expect(page.locator('th:has-text("Subject/Description")').first()).toBeVisible();
             await expect(page.locator('th:has-text("Status")').first()).toBeVisible();

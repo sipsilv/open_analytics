@@ -490,10 +490,6 @@ export default function RequestsFeedbackDetailsPage() {
         <Card compact>
           <div className="text-center py-8 text-text-secondary">Loading...</div>
         </Card>
-      ) : unifiedItems.length === 0 ? (
-        <Card compact>
-          <div className="text-center py-8 text-text-secondary">No items found</div>
-        </Card>
       ) : (
         <Card compact>
           <div className="mb-4 flex items-end gap-2 flex-wrap">
@@ -585,61 +581,68 @@ export default function RequestsFeedbackDetailsPage() {
               </select>
             </div>
           </div>
-          <Table>
-            <TableHeader>
-              <TableHeaderCell>Category</TableHeaderCell>
-              <TableHeaderCell>Subject/Description</TableHeaderCell>
-              <TableHeaderCell>Status</TableHeaderCell>
-              <TableHeaderCell>Progress Status</TableHeaderCell>
-              <TableHeaderCell>Created</TableHeaderCell>
-              <TableHeaderCell className="text-right">Actions</TableHeaderCell>
-            </TableHeader>
-            <TableBody>
-              {unifiedItems.map((item, index) => {
-                const displayText = item.type === 'feature_request'
-                  ? (item as FeatureRequest).description.substring(0, 60) + '...'
-                  : (item as Feedback).subject
-                const category = getItemCategory(item)
-                return (
-                  <TableRow key={`${item.type}-${item.id}`} index={index}>
-                    <TableCell>
-                      <span className="text-sm font-sans text-text-primary">
-                        {category || 'Other'}
-                      </span>
-                    </TableCell>
-                    <TableCell className="max-w-xs">
-                      <div className="truncate text-text-secondary" title={item.type === 'feature_request' ? (item as FeatureRequest).description : (item as Feedback).message}>
-                        {displayText}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${getAcceptanceStatusBadgeClasses(getAcceptanceStatus(item.status))}`}>
-                        {getAcceptanceStatus(item.status)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${getProgressStatusBadgeClasses(getProgressStatus(item.status, item.type))}`}>
-                        {getProgressStatus(item.status, item.type)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="font-sans text-xs text-text-secondary">
-                      {new Date(item.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1 justify-end">
-                        <Button
-                          size="sm"
-                          onClick={() => setSelectedItem(item)}
-                        >
-                          View
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
+
+          {unifiedItems.length === 0 ? (
+            <div className="text-center py-12 text-text-secondary bg-background/30 dark:bg-black/10 rounded-lg border border-dashed border-border">
+              No items found
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableHeaderCell>Category</TableHeaderCell>
+                <TableHeaderCell>Subject/Description</TableHeaderCell>
+                <TableHeaderCell>Status</TableHeaderCell>
+                <TableHeaderCell>Progress Status</TableHeaderCell>
+                <TableHeaderCell>Created</TableHeaderCell>
+                <TableHeaderCell className="text-right">Actions</TableHeaderCell>
+              </TableHeader>
+              <TableBody>
+                {unifiedItems.map((item, index) => {
+                  const displayText = item.type === 'feature_request'
+                    ? (item as FeatureRequest).description.substring(0, 60) + '...'
+                    : (item as Feedback).subject
+                  const category = getItemCategory(item)
+                  return (
+                    <TableRow key={`${item.type}-${item.id}`} index={index}>
+                      <TableCell>
+                        <span className="text-sm font-sans text-text-primary">
+                          {category || 'Other'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="max-w-xs">
+                        <div className="truncate text-text-secondary" title={item.type === 'feature_request' ? (item as FeatureRequest).description : (item as Feedback).message}>
+                          {displayText}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${getAcceptanceStatusBadgeClasses(getAcceptanceStatus(item.status))}`}>
+                          {getAcceptanceStatus(item.status)}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${getProgressStatusBadgeClasses(getProgressStatus(item.status, item.type))}`}>
+                          {getProgressStatus(item.status, item.type)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="font-sans text-xs text-text-secondary">
+                        {new Date(item.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1 justify-end">
+                          <Button
+                            size="sm"
+                            onClick={() => setSelectedItem(item)}
+                          >
+                            View
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          )}
         </Card>
       )}
 
