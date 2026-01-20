@@ -92,11 +92,17 @@ test.describe('Admin - Feature Request & Feedback Details', () => {
             return;
         }
 
+        // Wait for table to be fully loaded
+        await table.waitFor({ state: 'visible', timeout: 10000 });
+
         // Get initial row count
         const initialRowCount = await page.locator('tbody tr').count();
 
-        // Enter search query
+        // Wait for search input to be visible (it's only rendered when there are items)
         const searchInput = page.locator('input[placeholder*="Search"]');
+        await searchInput.waitFor({ state: 'visible', timeout: 10000 });
+
+        // Enter search query
         await searchInput.fill('test search query that should not match anything');
 
         // Click search button
@@ -156,7 +162,22 @@ test.describe('Admin - Feature Request & Feedback Details', () => {
     test('[TC-ADMIN-FEAT-004] should filter by acceptance status', async ({ page }) => {
         await expect(page.locator('h1.text-2xl').first()).toContainText('Feature Request & Feedback');
 
+        // Check if there are items first
+        const table = page.locator('table');
         const noItems = page.locator('text=No items found');
+
+        await Promise.race([
+            expect(table).toBeVisible({ timeout: 10000 }),
+            expect(noItems).toBeVisible({ timeout: 10000 })
+        ]);
+
+        if (await noItems.isVisible()) {
+            console.log("No items to test filtering on.");
+            return;
+        }
+
+        // Wait for table to be fully loaded (filters are only rendered when there are items)
+        await table.waitFor({ state: 'visible', timeout: 10000 });
 
         // Wait for the filters section to load
         await page.waitForSelector('label:has-text("Acceptance Status")', { timeout: 10000 });
@@ -169,8 +190,6 @@ test.describe('Admin - Feature Request & Feedback Details', () => {
         await page.waitForTimeout(1000); // Wait for filter to apply
 
         // Verify filter was applied
-        const table = page.locator('table');
-
         await Promise.race([
             expect(table).toBeVisible({ timeout: 5000 }),
             expect(noItems).toBeVisible({ timeout: 5000 })
