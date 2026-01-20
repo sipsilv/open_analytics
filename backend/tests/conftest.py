@@ -91,14 +91,34 @@ def client():
     # Drop tables (cleanup)
     Base.metadata.drop_all(bind=engine)
 
+@pytest.fixture(scope="function")
+def reset_limiter():
+    """Reset rate limiter state before each test"""
+    from app.core.limiter import limiter
+    # Clear the rate limiter's storage to reset all limits
+    limiter._storage.storage.clear()
+    yield
+    # Clear again after test
+    limiter._storage.storage.clear()
+
 @pytest.fixture(scope="module")
 def admin_token(client):
+    # Reset limiter before getting token to avoid rate limit issues
+    from app.core.limiter import limiter
+    limiter._storage.storage.clear()
+    
     response = client.post("/api/v1/auth/login", json={"identifier": "admin@example.com", "password": "admin123"})
+    assert response.status_code == 200, f"Failed to get admin token: {response.status_code} - {response.text}"
     return response.json()["access_token"]
 
 @pytest.fixture(scope="module")
 def user_token(client):
+    # Reset limiter before getting token to avoid rate limit issues
+    from app.core.limiter import limiter
+    limiter._storage.storage.clear()
+    
     response = client.post("/api/v1/auth/login", json={"identifier": "user@example.com", "password": "user123"})
+    assert response.status_code == 200, f"Failed to get user token: {response.status_code} - {response.text}"
     return response.json()["access_token"]
 
 import itertools

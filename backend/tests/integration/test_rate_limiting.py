@@ -2,7 +2,7 @@ import time
 import pytest
 
 
-def test_login_rate_limit(client, test_logger):
+def test_login_rate_limit(client, reset_limiter, test_logger):
     """Verify login endpoint enforces rate limit (5/minute by default)"""
     test_logger.info("TEST: Login Rate Limit - Starting")
     
@@ -14,7 +14,7 @@ def test_login_rate_limit(client, test_logger):
         )
         test_logger.info(f"TEST: Login Rate Limit - Request {i+1}/5 - Status: {response.status_code}")
         # Even failed logins count toward rate limit
-        assert response.status_code in [200, 401], f"Request {i+1} failed unexpectedly"
+        assert response.status_code in [200, 401], f"Request {i+1} failed unexpectedly: {response.status_code}"
     
     # 6th request should be rate limited
     response = client.post(
@@ -26,7 +26,7 @@ def test_login_rate_limit(client, test_logger):
     test_logger.info("TEST: Login Rate Limit - Verified 429 Response")
 
 
-def test_password_reset_rate_limit(client, test_logger):
+def test_password_reset_rate_limit(client, reset_limiter, test_logger):
     """Verify password reset endpoints enforce rate limit (3/minute by default)"""
     test_logger.info("TEST: Password Reset Rate Limit - Starting")
     
@@ -50,7 +50,7 @@ def test_password_reset_rate_limit(client, test_logger):
     test_logger.info("TEST: Password Reset Rate Limit - Verified 429 Response")
 
 
-def test_admin_create_user_rate_limit(client, admin_token, test_logger):
+def test_admin_create_user_rate_limit(client, reset_limiter, admin_token, test_logger):
     """Verify admin create user endpoint enforces rate limit (10/minute by default)"""
     test_logger.info("TEST: Admin Create User Rate Limit - Starting")
     
@@ -92,7 +92,7 @@ def test_admin_create_user_rate_limit(client, admin_token, test_logger):
     test_logger.info("TEST: Admin Create User Rate Limit - Verified 429 Response")
 
 
-def test_admin_delete_user_rate_limit(client, admin_token, test_logger):
+def test_admin_delete_user_rate_limit(client, reset_limiter, admin_token, test_logger):
     """Verify admin delete user endpoint enforces rate limit (5/minute by default)"""
     test_logger.info("TEST: Admin Delete User Rate Limit - Starting")
     
@@ -118,7 +118,7 @@ def test_admin_delete_user_rate_limit(client, admin_token, test_logger):
     test_logger.info("TEST: Admin Delete User Rate Limit - Verified 429 Response")
 
 
-def test_admin_create_request_rate_limit(client, test_logger):
+def test_admin_create_request_rate_limit(client, reset_limiter, test_logger):
     """Verify admin create access request endpoint enforces rate limit (5/minute by default)"""
     test_logger.info("TEST: Admin Create Request Rate Limit - Starting")
     
@@ -150,7 +150,7 @@ def test_admin_create_request_rate_limit(client, test_logger):
     test_logger.info("TEST: Admin Create Request Rate Limit - Verified 429 Response")
 
 
-def test_rate_limit_headers_present(client, test_logger):
+def test_rate_limit_headers_present(client, reset_limiter, test_logger):
     """Verify rate limit response includes appropriate headers"""
     test_logger.info("TEST: Rate Limit Headers - Starting")
     
