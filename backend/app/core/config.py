@@ -39,12 +39,12 @@ class Settings(BaseSettings):
     
     # Rate Limiting
     # Format: "number/time_unit" where time_unit can be: second, minute, hour, day
-    RATE_LIMIT_LOGIN: str = "5/minute"
-    RATE_LIMIT_PASSWORD_RESET: str = "3/minute"
-    RATE_LIMIT_ADMIN_CREATE_USER: str = "10/minute"
-    RATE_LIMIT_ADMIN_DELETE_USER: str = "5/minute"
-    RATE_LIMIT_ADMIN_CREATE_REQUEST: str = "5/minute"
-    RATE_LIMIT_ADMIN_CREATE_AI_CONFIG: str = "5/minute"
+    RATE_LIMIT_LOGIN: str = "200/minute"
+    RATE_LIMIT_PASSWORD_RESET: str = "50/minute"
+    RATE_LIMIT_ADMIN_CREATE_USER: str = "200/minute"
+    RATE_LIMIT_ADMIN_DELETE_USER: str = "200/minute"
+    RATE_LIMIT_ADMIN_CREATE_REQUEST: str = "200/minute"
+    RATE_LIMIT_ADMIN_CREATE_AI_CONFIG: str = "200/minute"
     
     # TrueData Connection Defaults
     TRUEDATA_DEFAULT_AUTH_URL: str = "https://auth.truedata.in/token"
