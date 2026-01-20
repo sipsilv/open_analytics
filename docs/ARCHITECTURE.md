@@ -2,7 +2,7 @@
 
 ## Overview
 
-Rubik Analytics follows a **modern three-tier architecture** with clear separation between presentation, business logic, and data layers. The system is designed for scalability, maintainability, and security.
+Open Analytics follows a **modern three-tier architecture** with clear separation between presentation, business logic, and data layers. The system is designed for scalability, maintainability, and security.
 
 ## Architecture Diagram
 
@@ -15,10 +15,11 @@ Rubik Analytics follows a **modern three-tier architecture** with clear separati
 │  │  - Components (UI, Business Logic)                   │   │
 │  │  - State Management (Zustand)                         │   │
 │  │  - API Client (Axios)                                 │   │
+│  │  - WebSocket Client (Real-time updates)              │   │
 │  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
                             │
-                    HTTP/REST API
+                    HTTP/REST API + WebSocket
                             │
 ┌─────────────────────────────────────────────────────────────┐
 │                    API LAYER                                │
@@ -26,18 +27,21 @@ Rubik Analytics follows a **modern three-tier architecture** with clear separati
 │  │  FastAPI Backend                                      │   │
 │  │  - Authentication (JWT)                               │   │
 │  │  - Authorization (Role-Based)                          │   │
+│  │  - Rate Limiting (SlowAPI)                            │   │
 │  │  - Business Logic                                     │   │
 │  │  - Request Validation (Pydantic)                      │   │
+│  │  - WebSocket Manager (Real-time)                      │   │
 │  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
                             │
-                    Database Abstraction
+                    Database Abstraction Layer
                             │
 ┌─────────────────────────────────────────────────────────────┐
 │                    DATA LAYER                                │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │   SQLite     │  │    DuckDB    │  │  PostgreSQL  │     │
-│  │  (Auth/Users)│  │  (Analytics) │  │   (Future)    │     │
+│  │  PostgreSQL  │  │    DuckDB    │  │  External    │     │
+│  │  (Auth/Users)│  │  (Analytics) │  │  APIs        │     │
+│  │  Production  │  │  Embedded    │  │  (TrueData)  │     │
 │  └──────────────┘  └──────────────┘  └──────────────┘     │
 │                                                              │
 │  Connection Manager + Database Router                        │
@@ -117,7 +121,7 @@ app/
 
 ### Authentication System
 
-Rubik Analytics uses **JWT (JSON Web Tokens)** for stateless authentication with multi-identifier login support.
+Open Analytics uses **JWT (JSON Web Tokens)** for stateless authentication with multi-identifier login support and Telegram-based password reset.
 
 #### Authentication Flow
 ```
@@ -154,8 +158,59 @@ The system supports login with any of the following:
 - **Password Hashing**: bcrypt with salt (10 rounds)
 - **Token Expiration**: 8 hours (configurable)
 - **Idle Timeout**: 30 minutes (configurable)
+- **Rate Limiting**: Configurable per-endpoint limits (see below)
 - **CORS Configuration**: Restricted to allowed origins
 - **Input Validation**: Pydantic schemas for all requests
+- **Encryption**: Fernet encryption for sensitive connection credentials
+
+### Rate Limiting
+
+Open Analytics implements **configurable rate limiting** using SlowAPI to protect against abuse and ensure fair resource usage.
+
+#### Rate Limit Configuration
+
+All rate limits are configurable via environment variables in `.env`:
+
+```env
+# Authentication endpoints
+RATE_LIMIT_LOGIN=200/minute
+RATE_LIMIT_PASSWORD_RESET=50/minute
+
+# Admin endpoints
+RATE_LIMIT_ADMIN_CREATE_USER=200/minute
+RATE_LIMIT_ADMIN_DELETE_USER=200/minute
+RATE_LIMIT_ADMIN_CREATE_REQUEST=200/minute
+RATE_LIMIT_ADMIN_CREATE_AI_CONFIG=200/minute
+```
+
+#### Default Limits
+
+- **Login**: 200 requests/minute
+- **Password Reset**: 50 requests/minute  
+- **Admin Operations**: 200 requests/minute
+- **Global Default**: 200 requests/minute per IP
+
+#### Rate Limit Format
+
+Format: `"number/time_unit"` where time_unit can be:
+- `second`
+- `minute`
+- `hour`
+- `day`
+
+Examples:
+- `"5/minute"` - 5 requests per minute
+- `"100/hour"` - 100 requests per hour
+- `"10/second"` - 10 requests per second
+
+#### Implementation
+
+- **Decorator-based**: Applied via `@limiter.limit()` decorators
+- **IP-based**: Limits tracked per client IP address
+- **Response**: Returns `429 Too Many Requests` when limit exceeded
+- **Storage**: In-memory storage (resets on server restart)
+
+See [.env.example](../backend/.env.example) for all configurable rate limits.
 
 ### Critical Security Items
 
@@ -171,13 +226,14 @@ See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for security-related issues.
 
 ### Multi-Database Architecture
 
-Rubik Analytics uses a **multi-database architecture** with dynamic connection management.
+Open Analytics uses a **multi-database architecture** with dynamic connection management.
 
-#### SQLite (Authentication Database)
+#### PostgreSQL (Authentication Database)
 - **Purpose**: User authentication, accounts, requests, feedback
-- **Location**: `data/auth/sqlite/auth.db`
+- **Location**: Docker container `openanalytics_postgres` or configured connection string
 - **Use Cases**: User accounts, access requests, feature requests, feedback, sessions
-- **Characteristics**: File-based, ACID compliant, embedded database
+- **Characteristics**: Production-grade RDBMS, ACID compliant, connection pooling, scalable
+- **Migration**: Migrated from SQLite for better performance and scalability
 
 #### DuckDB (Analytics Database)
 - **Purpose**: Analytical data, time-series data, large datasets
@@ -185,9 +241,10 @@ Rubik Analytics uses a **multi-database architecture** with dynamic connection m
 - **Databases**: `symbols.duckdb` for symbol data
 - **Characteristics**: Columnar storage, optimized for analytics, fast aggregations, embedded
 
-#### PostgreSQL (Future)
-- **Purpose**: Production-grade relational database
-- **Planned Use Cases**: Production deployments, high availability, replication
+#### External APIs
+- **TrueData API**: Market data, corporate announcements, symbols
+- **Telegram Bot API**: User notifications, OTP delivery, admin messaging
+- **AI Services**: OpenAI/Anthropic for content enrichment and analysis
 
 ### Database Models
 
@@ -375,6 +432,101 @@ See http://localhost:8000/docs for complete API documentation.
 - **Analytics Focus**: Optimized for analytical queries
 - **Embedded**: No separate server needed
 - **Performance**: Fast columnar operations
+- **SQL Interface**: Standard SQL queries
+
+### Why PostgreSQL?
+- **Production-Ready**: Battle-tested RDBMS
+- **Scalability**: Handles high concurrency
+- **ACID Compliance**: Data integrity guarantees
+- **Rich Ecosystem**: Extensive tooling and extensions
+
+## Deployment Architecture
+
+### Docker Containerization
+
+Open Analytics uses **Docker** for consistent deployment across environments.
+
+#### Container Services
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Docker Compose Stack                                        │
+│                                                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
+│  │   Frontend   │  │   Backend    │  │  PostgreSQL  │     │
+│  │   Next.js    │  │   FastAPI    │  │   Database   │     │
+│  │   Port 3000  │  │   Port 8000  │  │   Port 5432  │     │
+│  └──────────────┘  └──────────────┘  └──────────────┘     │
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │   Watchtower (Auto-update)                            │   │
+│  │   - Monitors Docker Hub for image updates            │   │
+│  │   - Auto-pulls and restarts containers               │   │
+│  │   - Slack notifications on updates                   │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                                                              │
+│  Network: rubik-network (bridge)                             │
+│  Volumes: postgres_data, host data directory mount          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### Container Configuration
+
+**Backend Container**:
+- **Image**: Custom FastAPI image
+- **Resources**: 2 CPU cores, 2GB RAM (limit)
+- **Health Check**: `/health` endpoint every 30s
+- **Restart Policy**: `unless-stopped`
+- **Logging**: JSON file driver (10MB max, 3 files)
+
+**Frontend Container**:
+- **Image**: Custom Next.js image
+- **Resources**: 1 CPU core, 1GB RAM (limit)
+- **Health Check**: Root endpoint every 30s
+- **Restart Policy**: `unless-stopped`
+- **Logging**: JSON file driver (10MB max, 3 files)
+
+**PostgreSQL Container**:
+- **Image**: `postgres:15-alpine`
+- **Persistent Storage**: Named volume `postgres_data`
+- **Health Check**: `pg_isready` every 10s
+- **Restart Policy**: `unless-stopped`
+
+**Watchtower Container**:
+- **Image**: `containrrr/watchtower:latest`
+- **Poll Interval**: 600 seconds (10 minutes)
+- **Cleanup**: Removes old images after update
+- **Notifications**: Slack webhook integration
+
+#### Deployment Scripts
+
+**Windows**:
+- `server/windows/docker-start.bat` - Start all services
+- `server/windows/docker-stop.bat` - Stop all services
+- `server/windows/docker-restart.bat` - Restart services
+
+**Linux/Mac**:
+- `server/docker/docker-start.sh` - Start all services
+- `server/docker/docker-stop.sh` - Stop all services
+
+#### Environment Configuration
+
+All services configured via `.env` file:
+- Database credentials
+- JWT secrets
+- API keys
+- Rate limits
+- CORS origins
+
+See `server/docker/.env.example` for all configuration options.
+
+### CI/CD Pipeline
+
+**GitHub Actions**:
+- **Frontend Tests**: Playwright E2E tests on pull requests
+- **Backend Tests**: Pytest unit and integration tests
+- **Docker Build**: Automated image builds on push to main
+- **Deployment**: Manual deployment via Docker Compose
 
 ## Scalability Considerations
 
