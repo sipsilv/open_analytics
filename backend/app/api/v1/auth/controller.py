@@ -5,8 +5,9 @@ from app.core.database import get_db
 from app.core.auth.permissions import get_current_user_from_token
 from app.schemas.auth import LoginRequest, TokenResponse, ForgotPasswordRequest, ForgotPasswordResponse, ResetPasswordRequest, ResetPasswordResponse
 from app.services.auth_service import AuthService
-from app.main import limiter
+from app.core.limiter import limiter
 from app.core.config import settings
+
 
 router = APIRouter()
 security = HTTPBearer()

@@ -75,8 +75,9 @@ async def lifespan(app: FastAPI):
     # Shutdown
     await shutdown_event()
 
-# Rate Limiter setup
-limiter = Limiter(key_func=get_remote_address, default_limits=["200 per minute"])
+# Import rate limiter from dedicated module to avoid circular imports
+from app.core.limiter import limiter
+
 
 app = FastAPI(
     title="Open Analytics API",

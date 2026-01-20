@@ -14,7 +14,8 @@ from app.schemas.admin import (
 )
 from datetime import datetime, timezone
 from app.services.admin_service import AdminService
-from app.main import limiter
+from app.core.limiter import limiter
+
 
 router = APIRouter()
 
