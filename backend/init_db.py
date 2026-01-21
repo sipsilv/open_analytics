@@ -52,7 +52,7 @@ def init_database():
             print(f"  - {table}")
         
         # Initialize IPO Scraper DB
-        from app.services.ipo_scraper.db import ensure_schema as ensure_ipo_schema
+        from app.providers.ipo_scraper.db import ensure_schema as ensure_ipo_schema
         try:
              ensure_ipo_schema()
              print("[OK] IPO DB initialized successfully")
