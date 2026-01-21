@@ -12,10 +12,10 @@ import time
 
 # For now, let's focus on RAW_DB which is the contention point.
 
-from app.services.telegram_extractor.config import OUTPUT_DB_PATH as RAW_DB_PATH
-from app.services.telegram_extractor.config import INPUT_DB_PATH as LISTING_DB_PATH
-from app.services.news_ai.config import AI_DB_PATH, AI_TABLE, FINAL_DB_PATH
-from app.services.news_ai.config import SCORING_DB_PATH
+from app.providers.telegram_extractor.config import OUTPUT_DB_PATH as RAW_DB_PATH
+from app.providers.telegram_extractor.config import INPUT_DB_PATH as LISTING_DB_PATH
+from app.providers.news_ai.config import AI_DB_PATH, AI_TABLE, FINAL_DB_PATH
+from app.providers.news_ai.config import SCORING_DB_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -429,13 +429,13 @@ class SharedDatabase:
             # 1. Extraction (telegram_raw)
             with self.raw_lock:
                 conn = self.get_raw_connection()
-                from app.services.telegram_extractor.config import OUTPUT_TABLE as RAW_TABLE
+                from app.providers.telegram_extractor.config import OUTPUT_TABLE as RAW_TABLE
                 conn.execute(f"DELETE FROM {RAW_TABLE} WHERE received_at < CURRENT_TIMESTAMP - INTERVAL '{hours}' HOUR")
 
             # 2. Scoring (news_scoring)
             with self.scoring_lock:
                 conn = self.get_scoring_connection()
-                from app.services.news_scoring.config import SCORING_TABLE
+                from app.providers.news_scoring.config import SCORING_TABLE
                 conn.execute(f"DELETE FROM {SCORING_TABLE} WHERE scored_at < CURRENT_TIMESTAMP - INTERVAL '{hours}' HOUR")
 
             # 3. AI Enrichment (news_ai & ai_queue)
@@ -447,7 +447,7 @@ class SharedDatabase:
                 conn.execute(f"DELETE FROM ai_queue WHERE created_at < CURRENT_TIMESTAMP - INTERVAL '{hours}' HOUR")
 
             # 4. File Cleanup (Caches)
-            from app.services.telegram_extractor.config import LINK_CACHE_DIR, OCR_CACHE_DIR, DATA_DIR
+            from app.providers.telegram_extractor.config import LINK_CACHE_DIR, OCR_CACHE_DIR, DATA_DIR
             MEDIA_DIR = os.path.join(DATA_DIR, "media_cache")
             
             self._cleanup_directory(LINK_CACHE_DIR, hours)

@@ -10,9 +10,9 @@ backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(cu
 if backend_dir not in sys.path:
     sys.path.append(backend_dir)
 
-from app.services.telegram_raw_listener.db import init_db, run_cleanup
-from app.services.telegram_raw_listener.config_loader import load_telegram_config
-from app.services.telegram_raw_listener.listener import TelegramListener
+from app.providers.telegram_raw_listener.db import init_db, run_cleanup
+from app.providers.telegram_raw_listener.config_loader import load_telegram_config
+from app.providers.telegram_raw_listener.listener import TelegramListener
 
 # Configure logging
 logging.basicConfig(

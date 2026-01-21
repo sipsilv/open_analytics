@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
-from app.services.telegram_extractor.db import get_global_stats
+from app.providers.telegram_extractor.db import get_global_stats
 from app.core.auth.permissions import get_current_user
 from app.models.user import User
 import logging
@@ -8,12 +8,12 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-from app.services.news_ai.db import get_pipeline_backlog
-from app.services.ipo_scraper.db import get_ipo_stats, get_bse_stats, get_gmp_stats, cleanup_old_data, get_ipo_data, get_bse_data, get_gmp_data
+from app.providers.news_ai.db import get_pipeline_backlog
+from app.providers.ipo_scraper.db import get_ipo_stats, get_bse_stats, get_gmp_stats, cleanup_old_data, get_ipo_data, get_bse_data, get_gmp_data
 from app.services.scheduler import add_job, remove_job, get_job_status
-from app.services.ipo_scraper.scraper import run_scraper
-from app.services.ipo_scraper.bse_scraper import run_bse_scraper
-from app.services.ipo_scraper.gmp_scraper import run_gmp_scraper
+from app.providers.ipo_scraper.scraper import run_scraper
+from app.providers.ipo_scraper.bse_scraper import run_bse_scraper
+from app.providers.ipo_scraper.gmp_scraper import run_gmp_scraper
 
 @router.get("/stats", response_model=dict)
 def get_processor_stats(
@@ -83,7 +83,7 @@ async def set_schedule(
         raise HTTPException(status_code=400, detail="Invalid scraper type")
 
     # Check if max schedules reached (limit to 5 per scraper)
-    from app.services.scheduler import get_jobs_for_scraper, generate_job_id
+    from app.providers.scheduler import get_jobs_for_scraper, generate_job_id
     existing_jobs = get_jobs_for_scraper(scraper_type)
     if len(existing_jobs) >= 5:
         raise HTTPException(status_code=400, detail="Maximum 5 schedules allowed per scraper")
@@ -136,7 +136,7 @@ async def cancel_schedule(
     job_id: str = None, # Optional: specific job ID to delete
     current_user: User = Depends(get_current_user)
 ):
-    from app.services.scheduler import get_jobs_for_scraper, remove_all_jobs_for_scraper
+    from app.providers.scheduler import get_jobs_for_scraper, remove_all_jobs_for_scraper
     
     if job_id:
         # Delete specific job
@@ -165,7 +165,7 @@ async def get_schedule_status(
           logger.error(f"[SCHEDULER] Invalid type for get_schedule: {type}")
           raise HTTPException(status_code=400, detail="Invalid scraper type")
      
-     from app.services.scheduler import get_jobs_for_scraper
+     from app.providers.scheduler import get_jobs_for_scraper
      jobs = get_jobs_for_scraper(type)
      
      if jobs:
@@ -174,9 +174,9 @@ async def get_schedule_status(
          return {"status": "inactive", "schedules": [], "count": 0}
 
 
-from app.services.telegram_extractor.db import get_recent_extractions
-from app.services.news_scoring.db import get_recent_scores
-from app.services.news_ai.db import get_recent_enrichments
+from app.providers.telegram_extractor.db import get_recent_extractions
+from app.providers.news_scoring.db import get_recent_scores
+from app.providers.news_ai.db import get_recent_enrichments
 
 @router.get("/data/{table_type}")
 def get_processor_data(
@@ -239,7 +239,7 @@ def get_ipo_scraper_status_endpoint(
     """
     Get the current status of the IPO scraper.
     """
-    from app.services.ipo_scraper.scraper import get_scraper_status
+    from app.providers.ipo_scraper.scraper import get_scraper_status
     return get_scraper_status()
 
 @router.get("/bse-ipo/status")
@@ -249,7 +249,7 @@ def get_bse_scraper_status_endpoint(
     """
     Get the current status of the BSE IPO scraper.
     """
-    from app.services.ipo_scraper.bse_scraper import get_bse_scraper_status
+    from app.providers.ipo_scraper.bse_scraper import get_bse_scraper_status
     return get_bse_scraper_status()
 
 # GMP IPO Scraper Endpoints
@@ -261,7 +261,7 @@ def trigger_gmp_scraper(
     """
     Trigger the GMP IPO scraper in the background.
     """
-    from app.services.ipo_scraper.gmp_scraper import run_gmp_scraper
+    from app.providers.ipo_scraper.gmp_scraper import run_gmp_scraper
     background_tasks.add_task(run_gmp_scraper)
     return {"status": "started", "message": "GMP IPO Scraper started in background"}
 
@@ -269,5 +269,5 @@ def trigger_gmp_scraper(
 def get_gmp_scraper_status_endpoint(
     current_user: User = Depends(get_current_user)
 ):
-    from app.services.ipo_scraper.gmp_scraper import get_gmp_scraper_status
+    from app.providers.ipo_scraper.gmp_scraper import get_gmp_scraper_status
     return get_gmp_scraper_status()

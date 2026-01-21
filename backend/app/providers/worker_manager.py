@@ -1,21 +1,21 @@
 import asyncio
 import logging
 import threading
-from app.services.telegram_raw_listener.listener import TelegramListener
-from app.services.telegram_raw_listener.config_loader import load_telegram_config
-from app.services.telegram_raw_listener.db import init_db as init_listener_db, run_cleanup as run_listener_cleanup
+from app.providers.telegram_raw_listener.listener import TelegramListener
+from app.providers.telegram_raw_listener.config_loader import load_telegram_config
+from app.providers.telegram_raw_listener.db import init_db as init_listener_db, run_cleanup as run_listener_cleanup
 
-from app.services.telegram_extractor.main import process_batch as process_extraction_batch
-from app.services.telegram_extractor.db import ensure_schema as init_extractor_db
+from app.providers.telegram_extractor.main import process_batch as process_extraction_batch
+from app.providers.telegram_extractor.db import ensure_schema as init_extractor_db
 
-from app.services.telegram_deduplication.main import process_batch as process_dedup_batch
-from app.services.telegram_deduplication.db import ensure_schema as init_dedup_db
+from app.providers.telegram_deduplication.main import process_batch as process_dedup_batch
+from app.providers.telegram_deduplication.db import ensure_schema as init_dedup_db
 
-from app.services.news_scoring.main import process_batch as process_scoring_batch
-from app.services.news_scoring.db import ensure_schema as init_scoring_db
+from app.providers.news_scoring.main import process_batch as process_scoring_batch
+from app.providers.news_scoring.db import ensure_schema as init_scoring_db
 
-from app.services.news_ai.processor import run_once as process_ai_batch
-from app.services.news_ai.db import ensure_schema as init_ai_db
+from app.providers.news_ai.processor import run_once as process_ai_batch
+from app.providers.news_ai.db import ensure_schema as init_ai_db
 
 logger = logging.getLogger("WorkerManager")
 

@@ -342,7 +342,7 @@ async def startup_event():
         
         # Start TrueData token refresh scheduler
         try:
-            from app.services.token_refresh_scheduler import start_token_refresh_scheduler, get_token_refresh_scheduler
+            from app.providers.token_refresh_scheduler import start_token_refresh_scheduler, get_token_refresh_scheduler
             start_token_refresh_scheduler()
             token_scheduler = get_token_refresh_scheduler()
             status = "RUNNING" if token_scheduler.running else "STOPPED"

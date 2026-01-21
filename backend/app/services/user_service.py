@@ -13,7 +13,7 @@ from app.repositories.user_repository import UserRepository
 from app.repositories.feedback_repository import FeedbackRepository
 from app.repositories.feature_request_repository import FeatureRequestRepository
 
-from app.services.telegram_notification_service import TelegramNotificationService
+from app.providers.telegram_notification_service import TelegramNotificationService
 from app.providers.telegram_bot import TelegramBotService
 from app.core.auth.security import verify_password, get_password_hash
 from app.core.database import get_connection_manager, get_db_router

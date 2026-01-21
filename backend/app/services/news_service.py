@@ -1,5 +1,5 @@
 from typing import Dict, Any, List, Optional, Tuple
-from app.services.news_ai.db import get_final_news, get_pipeline_backlog, get_system_setting, set_system_setting
+from app.providers.news_ai.db import get_final_news, get_pipeline_backlog, get_system_setting, set_system_setting
 
 class NewsService:
     def __init__(self, get_final_news_func=None, get_backlog_func=None):

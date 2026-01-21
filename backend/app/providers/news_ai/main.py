@@ -6,8 +6,8 @@ import os
 # Add parent directory to sys.path to allow imports from app
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from app.services.news_ai.processor import AIEnrichmentProcessor
-from app.services.news_ai.db import ensure_schema
+from app.providers.news_ai.processor import AIEnrichmentProcessor
+from app.providers.news_ai.db import ensure_schema
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

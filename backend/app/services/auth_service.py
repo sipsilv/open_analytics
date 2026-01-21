@@ -15,7 +15,7 @@ from app.schemas.auth import (
 )
 from app.core.auth.security import verify_password, create_access_token, get_password_hash
 from app.providers.telegram_bot import TelegramBotService
-from app.services.telegram_notification_service import TelegramNotificationService
+from app.providers.telegram_notification_service import TelegramNotificationService
 from app.core.database import get_connection_manager
 from app.core.config import settings
 from app.repositories.user_repository import UserRepository

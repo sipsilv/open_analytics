@@ -247,7 +247,7 @@ async def get_ai_enrichment_configs(
 ):
     """Get all AI enrichment configurations."""
     try:
-        from app.services.ai_enrichment_config_manager import get_all_enrichment_configs, get_active_enrichment_config
+        from app.providers.ai_enrichment_config_manager import get_all_enrichment_configs, get_active_enrichment_config
         
         configs = get_all_enrichment_configs()
         active_config = get_active_enrichment_config()
@@ -269,7 +269,7 @@ async def create_ai_enrichment_config(
 ):
     """Create a new AI enrichment configuration."""
     try:
-        from app.services.ai_enrichment_config_manager import create_enrichment_config
+        from app.providers.ai_enrichment_config_manager import create_enrichment_config
         
         # Validate required fields
         if not data.get('connection_id'):
@@ -295,7 +295,7 @@ async def update_ai_enrichment_config(
 ):
     """Update an existing AI enrichment configuration."""
     try:
-        from app.services.ai_enrichment_config_manager import update_enrichment_config, get_enrichment_config
+        from app.providers.ai_enrichment_config_manager import update_enrichment_config, get_enrichment_config
         
         # Check if config exists
         existing = get_enrichment_config(config_id)

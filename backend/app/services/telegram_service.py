@@ -12,7 +12,7 @@ from app.models.connection import Connection, ConnectionType
 from app.models.telegram_channel import TelegramChannel, ChannelStatus
 from app.core.auth.security import decrypt_data
 from app.repositories.telegram_repository import TelegramRepository
-from app.services.telegram_raw_listener.config import TABLE_NAME
+from app.providers.telegram_raw_listener.config import TABLE_NAME
 from app.providers.telegram_bot import TelegramBotService
 
 logger = logging.getLogger(__name__)

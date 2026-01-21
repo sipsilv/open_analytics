@@ -22,7 +22,7 @@ from app.schemas.admin import AccessRequestResponse, AdminMessage, ChangePasswor
 from app.core.auth.security import get_password_hash
 from app.core.websocket.manager import manager
 from app.core.logging.audit import AuditService
-from app.services.telegram_notification_service import TelegramNotificationService
+from app.providers.telegram_notification_service import TelegramNotificationService
 from app.services.user_service import UserService
 
 class AdminService:

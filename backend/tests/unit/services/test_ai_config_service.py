@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from app.services.ai_enrichment_config_manager import (
+from app.providers.ai_enrichment_config_manager import (
     create_enrichment_config,
     get_all_enrichment_configs,
     update_enrichment_config,

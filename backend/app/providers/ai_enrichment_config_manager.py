@@ -6,7 +6,7 @@ from typing import List, Optional, Dict, Any
 
 logger = logging.getLogger(__name__)
 
-from app.services.news_ai.config import AI_DB_PATH
+from app.providers.news_ai.config import AI_DB_PATH
 
 def get_ai_enrichment_conn():
     """Get connection to AI enrichment database."""

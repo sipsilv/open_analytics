@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.services.telegram_auth_service import TelegramAuthService
+from app.providers.telegram_auth_service import TelegramAuthService
 from app.schemas.telegram import OTPRequest, OTPRequestResponse, OTPVerify, OTPVerifyResponse
 
 router = APIRouter()

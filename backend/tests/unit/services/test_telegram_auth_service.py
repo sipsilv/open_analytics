@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock
-from app.services.telegram_auth_service import TelegramAuthService
+from app.providers.telegram_auth_service import TelegramAuthService
 
 class TestTelegramAuthService:
     @pytest.fixture
