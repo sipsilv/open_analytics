@@ -10,7 +10,7 @@ from app.providers.ai_enrichment_config_manager import (
 class TestAIEnrichmentConfig:
     @pytest.fixture
     def mock_duckdb(self):
-        with patch("app.services.ai_enrichment_config_manager.get_ai_enrichment_conn") as mock:
+        with patch("app.providers.ai_enrichment_config_manager.get_ai_enrichment_conn") as mock:
             conn = MagicMock()
             mock.return_value = conn
             yield conn
